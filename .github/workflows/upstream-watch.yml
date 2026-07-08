@@ -17,21 +17,19 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      TARGET_SHA: ${{ github.event.inputs.target_sha || '' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
       - name: Check upstream status
         id: check
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           args=(--check)
-          if [ -n "${{ inputs.target_sha }}" ]; then args+=(--target-sha "${{ inputs.target_sha }}"); fi
+          if [ -n "$TARGET_SHA" ]; then args+=(--target-sha "$TARGET_SHA"); fi
           python3 scripts/sync_upstream.py "${args[@]}" | tee /tmp/upstream-check.json
-          changed=$(python3 - <<'PY'
-import json
-print(str(json.load(open('/tmp/upstream-check.json'))['changed']).lower())
-PY
-)
+          changed=$(python3 -c "import json; print(str(json.load(open('/tmp/upstream-check.json'))['changed']).lower())")
           echo "changed=$changed" >> "$GITHUB_OUTPUT"
       - name: Sync upstream snapshot and generated artefacts
         if: steps.check.outputs.changed == 'true'
@@ -39,7 +37,7 @@ PY
           GH_TOKEN: ${{ github.token }}
         run: |
           args=(--sync)
-          if [ -n "${{ inputs.target_sha }}" ]; then args+=(--target-sha "${{ inputs.target_sha }}"); fi
+          if [ -n "$TARGET_SHA" ]; then args+=(--target-sha "$TARGET_SHA"); fi
           python3 scripts/sync_upstream.py "${args[@]}"
           python3 scripts/validate_output.py
       - name: Create or update sync PR
