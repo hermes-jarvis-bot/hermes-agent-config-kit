@@ -1,0 +1,19 @@
+name: Validate adapter
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate generated output
+        run: python3 scripts/validate_output.py
+      - name: Installer dry-run against temp Hermes home
+        run: python3 scripts/install_hermes.py --dry-run --hermes-home "$RUNNER_TEMP/hermes-home"

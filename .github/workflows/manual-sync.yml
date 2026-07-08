@@ -1,0 +1,33 @@
+name: Manual upstream sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: "Exact upstream commit SHA to sync"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Sync exact upstream SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/sync_upstream.py --sync --target-sha "${{ inputs.target_sha }}"
+          python3 scripts/validate_output.py
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: sync/upstream-claude-code-config
+          delete-branch: true
+          title: "sync: update claude-code-config to ${{ inputs.target_sha }}"
+          body-path: reports/upstream-sync/latest.md
+          commit-message: "sync: update claude-code-config to ${{ inputs.target_sha }}"
+          labels: upstream-sync, manual-review

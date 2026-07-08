@@ -1,0 +1,54 @@
+name: Watch upstream claude-code-config
+
+on:
+  schedule:
+    - cron: "17 */12 * * *"
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: "Optional exact upstream commit SHA"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check upstream status
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          args=(--check)
+          if [ -n "${{ inputs.target_sha }}" ]; then args+=(--target-sha "${{ inputs.target_sha }}"); fi
+          python3 scripts/sync_upstream.py "${args[@]}" | tee /tmp/upstream-check.json
+          changed=$(python3 - <<'PY'
+import json
+print(str(json.load(open('/tmp/upstream-check.json'))['changed']).lower())
+PY
+)
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+      - name: Sync upstream snapshot and generated artefacts
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          args=(--sync)
+          if [ -n "${{ inputs.target_sha }}" ]; then args+=(--target-sha "${{ inputs.target_sha }}"); fi
+          python3 scripts/sync_upstream.py "${args[@]}"
+          python3 scripts/validate_output.py
+      - name: Create or update sync PR
+        if: steps.check.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: sync/upstream-claude-code-config
+          delete-branch: true
+          title: "sync: update claude-code-config upstream snapshot"
+          body-path: reports/upstream-sync/latest.md
+          commit-message: "sync: update claude-code-config upstream snapshot"
+          labels: upstream-sync, manual-review
