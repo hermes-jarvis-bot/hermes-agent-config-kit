@@ -20,7 +20,7 @@ jobs:
     env:
       TARGET_SHA: ${{ github.event.inputs.target_sha || '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check upstream status
         id: check
         env:
