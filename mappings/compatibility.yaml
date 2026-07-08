@@ -85,6 +85,14 @@ scripts/*:
   notes:
     - Claude Code plugin descriptor has no direct Hermes equivalent yet.
 
+.github/workflows/*:
+  status: review
+  type: github_workflow
+  risk: high
+  notes:
+    - Upstream CI can execute arbitrary commands and must remain review-only.
+    - Never copy upstream workflows into active adapter workflows automatically.
+
 workflows/*.js:
   status: planned
   type: workflow

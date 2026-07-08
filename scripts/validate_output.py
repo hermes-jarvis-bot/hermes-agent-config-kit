@@ -7,6 +7,24 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+QUARANTINE_PREFIXES = (
+    "hooks/",
+    "scripts/",
+    ".claude-plugin/",
+    ".github/workflows/",
+)
+FORBIDDEN_INSTALLER_PATTERNS = (
+    r"Path\(['\"]~/.hermes",
+    r"expanduser\(['\"]~/.hermes",
+    r"hermes\s+gateway\s+(start|restart|run|install)",
+)
+SENSITIVE_PATTERNS = (
+    r"AKIA[0-9A-Z]{16}",
+    r"ghp_[A-Za-z0-9_]{20,}",
+    r"github_pat_[A-Za-z0-9_]{20,}",
+    r"xox[baprs]-[A-Za-z0-9-]{20,}",
+    r"sk-[A-Za-z0-9]{20,}",
+)
 
 
 def fail(msg: str) -> None:
@@ -14,8 +32,19 @@ def fail(msg: str) -> None:
     raise SystemExit(1)
 
 
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def try_read_text(path: Path) -> str | None:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return None
+
+
 def validate_lock() -> None:
-    data = json.loads((ROOT / "upstream.lock.json").read_text(encoding="utf-8"))
+    data = json.loads(read_text(ROOT / "upstream.lock.json"))
     upstream = data.get("upstream", {})
     if upstream.get("repo") != "AnastasiyaW/claude-code-config":
         fail("upstream.lock.json repo mismatch")
@@ -44,7 +73,7 @@ def validate_skills() -> None:
     if not skills:
         fail("no Hermes skills generated")
     for path in skills:
-        text = path.read_text(encoding="utf-8")
+        text = read_text(path)
         fm = parse_frontmatter(text, path)
         for field in ["name", "description"]:
             if not fm.get(field):
@@ -54,13 +83,27 @@ def validate_skills() -> None:
 
 
 def validate_no_live_writes_default() -> None:
-    risky = []
+    risky: list[str] = []
     for path in (ROOT / "scripts").glob("*.py"):
-        text = path.read_text(encoding="utf-8")
-        if re.search(r"Path\(['\"]~/.hermes|expanduser\(['\"]~/.hermes", text):
-            risky.append(str(path.relative_to(ROOT)))
+        text = read_text(path)
+        for pattern in FORBIDDEN_INSTALLER_PATTERNS:
+            if re.search(pattern, text):
+                risky.append(str(path.relative_to(ROOT)))
+                break
     if risky:
-        fail("scripts contain direct ~/.hermes path writes: " + ", ".join(risky))
+        fail("scripts contain direct live Hermes write/start patterns: " + ", ".join(risky))
+
+
+def validate_installer_contract() -> None:
+    text = read_text(ROOT / "scripts" / "install_hermes.py")
+    if 'ap.add_argument("--apply", action="store_true"' not in text:
+        fail("installer must require explicit --apply for writes")
+    if 'apply = bool(args.apply)' not in text:
+        fail("installer must derive write mode only from --apply")
+    if 'if apply:' not in text:
+        fail("installer must guard filesystem writes behind apply")
+    if 'shutil.copy2(path, target)' not in text:
+        fail("installer copy operation missing or unexpectedly changed")
 
 
 def validate_snapshot() -> None:
@@ -71,13 +114,60 @@ def validate_snapshot() -> None:
         fail("upstream snapshot README.md missing")
 
 
+def validate_quarantine_policy() -> None:
+    compat = read_text(ROOT / "mappings" / "compatibility.yaml")
+    for prefix in QUARANTINE_PREFIXES:
+        if prefix not in compat:
+            fail(f"compatibility mapping does not mention quarantine prefix {prefix}")
+    generated_paths = [p.relative_to(ROOT).as_posix() for p in (ROOT / "hermes").rglob("*") if p.is_file()]
+    leaked = [p for p in generated_paths if any(part in p for part in ("hooks/", "scripts/", ".claude-plugin/"))]
+    if leaked:
+        fail("quarantined upstream artefacts leaked into generated Hermes tree: " + ", ".join(leaked))
+
+
+def validate_docs() -> None:
+    for rel in ["INSTALL.md", "SECURITY.md", "README.md"]:
+        if not (ROOT / rel).exists():
+            fail(f"{rel} missing")
+    install = read_text(ROOT / "INSTALL.md")
+    security = read_text(ROOT / "SECURITY.md")
+    if "Disposable VM" not in install:
+        fail("INSTALL.md must document disposable VM testing")
+    if "Do not use the operator's live Hermes profile" not in install:
+        fail("INSTALL.md must warn against production profile testing")
+    if "treated as data, not as executable authority" not in security:
+        fail("SECURITY.md must document upstream trust model")
+
+
+def validate_secret_scan() -> None:
+    scanned_roots = [ROOT / "hermes", ROOT / "mappings", ROOT / "scripts", ROOT / ".github", ROOT / "INSTALL.md", ROOT / "SECURITY.md", ROOT / "README.md"]
+    hits: list[str] = []
+    for root in scanned_roots:
+        paths = [root] if root.is_file() else [p for p in root.rglob("*") if p.is_file()]
+        for path in paths:
+            text = try_read_text(path)
+            if text is None:
+                continue
+            for pattern in SENSITIVE_PATTERNS:
+                if re.search(pattern, text):
+                    hits.append(str(path.relative_to(ROOT)))
+                    break
+    if hits:
+        fail("possible credential pattern found in adapter-controlled files: " + ", ".join(sorted(set(hits))))
+
+
 def main() -> int:
     validate_lock()
     validate_snapshot()
     validate_skills()
     validate_no_live_writes_default()
+    validate_installer_contract()
+    validate_quarantine_policy()
+    validate_docs()
+    validate_secret_scan()
     print("Validation OK")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

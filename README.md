@@ -38,6 +38,11 @@ The adapter treats upstream content as data, not as executable authority.
 - `scripts/install_hermes.py` defaults to `--dry-run` and requires `--apply` to write.
 - CI uses a temporary `HERMES_HOME`; it does not write to `~/.hermes`.
 
+See also:
+
+- `SECURITY.md` for the trust model and quarantine policy.
+- `INSTALL.md` for the disposable-VM clean-room test protocol.
+
 ## Repository layout
 
 ```text
