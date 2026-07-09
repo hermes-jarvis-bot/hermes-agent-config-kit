@@ -123,6 +123,7 @@ Current generated Hermes skills:
 - `finish-the-task`
 - `harness-audit`
 - `independent-verification`
+- `documentation-integrity`
 - `long-run-feature-tracking`
 - `no-guessing`
 - `proof-loop`
