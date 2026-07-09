@@ -26,14 +26,14 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `docs/` | 3 | 0 | 3 |
 | `evals/` | 2 | 0 | 2 |
 | `hooks/` | 42 | 0 | 42 |
-| `principles/` | 30 | 7 | 23 |
+| `principles/` | 30 | 8 | 22 |
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 8 | 22 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **16** | **366** |
+| **Total** | **382** | **17** | **365** |
 
 ## Ported so far
 
@@ -45,6 +45,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `principles/02-proof-loop.md` | `hermes/skills/proof-loop/SKILL.md` |
 | `principles/04-deterministic-orchestration.md` | `hermes/skills/deterministic-orchestration/SKILL.md` |
 | `principles/05-structured-reasoning.md` | `hermes/skills/structured-reasoning/SKILL.md` |
+| `principles/08-skills-best-practices.md` | `hermes/skills/skill-authoring-best-practices/SKILL.md` |
 | `principles/09-supply-chain-defense.md` | `hermes/skills/supply-chain-defense/SKILL.md` |
 | `principles/10-agent-security.md` | `hermes/skills/agent-security/SKILL.md` |
 | `principles/11-documentation-integrity.md` | `hermes/skills/documentation-integrity/SKILL.md` |
@@ -188,7 +189,6 @@ The following principles are markdown candidates. They were not included in MVP 
 - `principles/03-autoresearch.md`
 - `principles/06-multi-agent-decomposition.md`
 - `principles/07-codified-context.md`
-- `principles/08-skills-best-practices.md`
 - `principles/12-low-signal-residual-training.md`
 - `principles/13-research-pipeline.md`
 - `principles/14-managed-agents.md`
@@ -210,9 +210,8 @@ The following principles are markdown candidates. They were not included in MVP 
 
 High-value next candidates:
 
-1. `principles/08-skills-best-practices.md` — likely useful for improving Hermes skill authoring guidance.
-2. `principles/18-multi-session-coordination.md` and `principles/19-inter-agent-communication.md` — may map to Hermes delegation/kanban/workspace protocols.
-3. `principles/21-knowledge-base-enforcement.md` — may map to Obsidian/codebase docs workflows.
+1. `principles/18-multi-session-coordination.md` and `principles/19-inter-agent-communication.md` — may map to Hermes delegation/kanban/workspace protocols.
+2. `principles/21-knowledge-base-enforcement.md` — may map to Obsidian/codebase docs workflows.
 
 ## Review lane: rules not yet ported
 
@@ -416,7 +415,6 @@ Goal: expand useful Hermes guidance without executable code.
 Candidates:
 
 - `rules/quality-code.md`
-- `principles/08-skills-best-practices.md`
 
 Acceptance criteria:
 

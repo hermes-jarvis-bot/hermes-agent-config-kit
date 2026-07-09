@@ -30,6 +30,14 @@ principles/05-structured-reasoning.md:
   description: Structure investigations as premises, traces, conclusions, and verified next steps.
   risk: low
 
+principles/08-skills-best-practices.md:
+  status: supported
+  target: hermes/skills/skill-authoring-best-practices/SKILL.md
+  type: principle_skill
+  name: skill-authoring-best-practices
+  description: Design, review, and maintain Hermes skills with strong triggers, clear procedures, gotchas, troubleshooting, and verified support files.
+  risk: low
+
 principles/09-supply-chain-defense.md:
   status: supported
   target: hermes/skills/supply-chain-defense/SKILL.md

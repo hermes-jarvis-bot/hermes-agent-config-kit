@@ -131,6 +131,7 @@ Current generated Hermes skills:
 - `secrets-as-data`
 - `session-handoff`
 - `silent-failure-detection`
+- `skill-authoring-best-practices`
 - `structured-reasoning`
 - `supply-chain-defense`
 - `verify-at-consumer`
