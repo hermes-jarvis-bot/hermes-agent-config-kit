@@ -128,6 +128,7 @@ Current generated Hermes skills:
 - `safe-deletion`
 - `secrets-as-data`
 - `session-handoff`
+- `silent-failure-detection`
 - `structured-reasoning`
 
 Each generated skill must:

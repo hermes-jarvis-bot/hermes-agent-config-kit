@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 5 | 25 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 5 | 25 |
+| `rules/` | 30 | 6 | 24 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **11** | **371** |
+| **Total** | **382** | **12** | **370** |
 
 ## Ported so far
 
@@ -52,6 +52,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/deletion-confirm-and-verify.md` | `hermes/skills/safe-deletion/SKILL.md` |
 | `rules/secrets-as-data.md` | `hermes/skills/secrets-as-data/SKILL.md` |
 | `rules/session-handoff.md` | `hermes/skills/session-handoff/SKILL.md` |
+| `rules/silent-failure-detection.md` | `hermes/skills/silent-failure-detection/SKILL.md` |
 
 These were chosen because they are broadly useful, markdown-centric, and can be adapted without executing upstream code or assuming Claude Code hook APIs.
 
@@ -239,16 +240,14 @@ The following rules stayed out of MVP:
 - `rules/rlm-context-as-program.md`
 - `rules/safety-billing.md`
 - `rules/safety-hooks.md`
-- `rules/silent-failure-detection.md`
 - `rules/system-verification-independent.md`
 - `rules/verify-at-consumer.md`
 
 High-value next candidates:
 
-1. `rules/silent-failure-detection.md` — useful for operations and background jobs.
-2. `rules/system-verification-independent.md` and `rules/verify-at-consumer.md` — useful verification modules.
-3. `rules/git-source-of-truth.md` — useful for GitHub/Git operations.
-4. `rules/quality-code.md` — likely overlaps with existing Hermes software-development skills; review before porting.
+1. `rules/system-verification-independent.md` and `rules/verify-at-consumer.md` — useful verification modules.
+2. `rules/git-source-of-truth.md` — useful for GitHub/Git operations.
+3. `rules/quality-code.md` — likely overlaps with existing Hermes software-development skills; review before porting.
 
 ## Skill packages not yet ported
 
@@ -419,7 +418,6 @@ Goal: expand useful Hermes guidance without executable code.
 
 Candidates:
 
-- `rules/silent-failure-detection.md`
 - `rules/system-verification-independent.md`
 - `rules/verify-at-consumer.md`
 - `principles/08-skills-best-practices.md`

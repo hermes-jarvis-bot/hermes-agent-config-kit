@@ -86,6 +86,14 @@ rules/session-handoff.md:
   description: Create concise, durable handoffs that preserve goal, state, blockers, verification evidence, and the exact next step across sessions.
   risk: low
 
+rules/silent-failure-detection.md:
+  status: supported
+  target: hermes/skills/silent-failure-detection/SKILL.md
+  type: rule_skill
+  name: silent-failure-detection
+  description: Detect when configured protections, jobs, hooks, services, or integrations silently fail despite appearing enabled.
+  risk: medium
+
 hooks/*:
   status: review
   type: hook
