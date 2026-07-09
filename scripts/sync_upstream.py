@@ -81,6 +81,16 @@ SUPPORTED = {
         "name": "silent-failure-detection",
         "description": "Detect when configured protections, jobs, hooks, services, or integrations silently fail despite appearing enabled.",
     },
+    "rules/system-verification-independent.md": {
+        "target": "hermes/skills/independent-verification/SKILL.md",
+        "name": "independent-verification",
+        "description": "Verify control systems, monitors, schedulers, cleanup routines, and side-effect functions by behaviour, not by names or claims.",
+    },
+    "rules/verify-at-consumer.md": {
+        "target": "hermes/skills/verify-at-consumer/SKILL.md",
+        "name": "verify-at-consumer",
+        "description": "Verify integrations at the receiving side; sender logs, specs, and HTTP acknowledgements are not enough.",
+    },
 }
 
 
@@ -358,6 +368,116 @@ Do not convert missing telemetry into success. A quiet interface may be healthy;
 ## Known gaps
 
 Document what the check does not cover. If a verifier only checks missing binaries, say that it does not prove credentials, permissions, environment variables, network reachability, or runtime behaviour. This prevents a safety check from becoming a more sophisticated illusion of safety.
+"""
+    if source_path == "rules/system-verification-independent.md":
+        return """# Independent Verification
+
+Upstream source policy was written from a watchdog failure case in a different harness. Hermes adaptation keeps the rule: verify behaviour independently; do not trust names, comments, or self-certification.
+
+## Principle
+
+Any control system or side-effect routine must be verified by observed behaviour, not by what it is called or what it claims to do.
+
+Apply this to:
+
+- watchdogs, monitors, health checks, and alerting routines;
+- kill switches, deadline enforcers, and stop/start controls;
+- schedulers, cron jobs, and recurring protocols;
+- cleanup, deletion, rotation, and migration routines;
+- functions that mutate state, send messages, deploy, restart, bill, or revoke access.
+
+A function named `kill_training_at_deadline`, a script named `cleanup_old_files`, or a service marked `healthy` is only a claim until the expected effect is verified.
+
+## Verification layers
+
+1. Read the implementation with scepticism. Follow control flow, branches, error handling, and side effects.
+2. Run a safe dry-run, mock, or disposable-environment test where possible.
+3. Verify the effect at the target: process gone, file absent, row written, event delivered, service restarted, schedule fired.
+4. For critical systems, use a fresh-context verifier or reviewer that did not write the implementation.
+
+## Hermes examples
+
+- A scheduled protocol is not proven by successful creation; inspect its run history or run it once deliberately.
+- A remover is not proven by `Actions: 1`; verify the target directory is absent.
+- A background watchdog is not proven by a process id; verify heartbeat and trigger behaviour.
+- A deployment script is not proven by exit code alone; check the running version and health endpoint.
+- A safety check is not proven by its name; inspect the condition it actually enforces.
+
+## Anti-patterns
+
+- Trusting a function name, comment, README, or service label as behavioural proof.
+- Letting the same agent that wrote the control logic provide the only verdict.
+- Testing only the happy path while the danger lies in timeout, empty target, missing permission, or partial failure.
+- Reporting `configured`, `installed`, or `started` as if it meant `working`.
+
+## Reporting
+
+State the evidence source explicitly:
+
+- `implementation read: trigger condition confirmed at line ...`;
+- `dry-run selected the expected target only`;
+- `post-action read-back confirmed target absent`;
+- `run history shows the scheduled protocol fired at ...`;
+- `independent reviewer verdict: MATCH / MISMATCH / AMBIGUOUS`.
+
+If the evidence is incomplete, say `not independently verified` and describe the missing behavioural check.
+"""
+    if source_path == "rules/verify-at-consumer.md":
+        return """# Verify At Consumer
+
+Upstream source policy was written for webhook/API/queue integration failures. Hermes adaptation keeps the rule: verify an integration where the receiving side consumes the event, not where the sender claims it was sent.
+
+## Principle
+
+For integrations, the receiving side is the source of truth. Sender logs, OpenAPI documents, schemas, queue acknowledgements, and HTTP `200` responses prove at most that something was emitted or accepted. They do not prove that the consumer parsed it, applied it, rendered it, stored it, or acted on it.
+
+Use this rule for:
+
+- webhooks and callback URLs;
+- API request bodies where sender and receiver evolve separately;
+- queues, pub/sub, workers, and event buses;
+- RPC or JSON-RPC payloads;
+- gateway integrations and cross-service contracts.
+
+## Protocol
+
+1. Identify the consumer code, worker, handler, database write, UI state, or downstream side effect that matters.
+2. Read the exact fields, paths, types, and wrappers the consumer actually uses.
+3. Compare the proposed sender payload to those consumer expectations.
+4. Trigger an end-to-end test or replay through the real boundary when safe.
+5. Verify the receiver-side outcome: row written, queue job processed, UI rendered, state changed, callback handled, or consumer log marker observed.
+
+## What is not enough
+
+- `HTTP 200` from the receiver.
+- `webhook delivered` in sender telemetry.
+- A schema that permits the payload shape.
+- A retry of the same malformed event.
+- The author's memory of how the integration usually works.
+
+## Hermes examples
+
+- For a gateway webhook, confirm both the platform send result and the Hermes-side received event or resulting session/job.
+- For a GitHub Actions trigger, confirm the workflow run/check-run, not only the `git push`.
+- For a queue producer, confirm the worker consumed the job and produced the expected artefact.
+- For an API integration, confirm the downstream state, not merely request success.
+
+## Fresh verification prompt
+
+For important integrations, ask a fresh verifier to inspect the consumer:
+
+```text
+Read the consumer code at <path:line>. List the exact payload fields, nesting, types, and required side effects it uses. Compare that to this sender payload: <payload>. Verdict: MATCH / MISMATCH / AMBIGUOUS with evidence.
+```
+
+## Reporting
+
+Report both sides separately:
+
+- sender evidence: request id, delivery status, queue id, or emitted event;
+- consumer evidence: parsed field path, database row, UI state, worker log, callback effect, or downstream artefact.
+
+If only sender-side evidence exists, say `sent but not consumer-verified`.
 """
     return text
 

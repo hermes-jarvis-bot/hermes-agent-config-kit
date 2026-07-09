@@ -122,6 +122,7 @@ Current generated Hermes skills:
 - `deterministic-orchestration`
 - `finish-the-task`
 - `harness-audit`
+- `independent-verification`
 - `long-run-feature-tracking`
 - `no-guessing`
 - `proof-loop`
@@ -130,6 +131,7 @@ Current generated Hermes skills:
 - `session-handoff`
 - `silent-failure-detection`
 - `structured-reasoning`
+- `verify-at-consumer`
 
 Each generated skill must:
 

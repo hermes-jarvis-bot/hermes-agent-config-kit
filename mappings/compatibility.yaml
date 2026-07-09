@@ -94,6 +94,22 @@ rules/silent-failure-detection.md:
   description: Detect when configured protections, jobs, hooks, services, or integrations silently fail despite appearing enabled.
   risk: medium
 
+rules/system-verification-independent.md:
+  status: supported
+  target: hermes/skills/independent-verification/SKILL.md
+  type: rule_skill
+  name: independent-verification
+  description: Verify control systems, monitors, schedulers, cleanup routines, and side-effect functions by behaviour, not by names or claims.
+  risk: medium
+
+rules/verify-at-consumer.md:
+  status: supported
+  target: hermes/skills/verify-at-consumer/SKILL.md
+  type: rule_skill
+  name: verify-at-consumer
+  description: Verify integrations at the receiving side; sender logs, specs, and HTTP acknowledgements are not enough.
+  risk: medium
+
 hooks/*:
   status: review
   type: hook
