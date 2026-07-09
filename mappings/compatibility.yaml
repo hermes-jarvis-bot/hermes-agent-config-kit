@@ -70,6 +70,14 @@ rules/deletion-confirm-and-verify.md:
   description: Require explicit confirmation, scoped execution, and post-action verification for destructive operations.
   risk: low
 
+rules/secrets-as-data.md:
+  status: supported
+  target: hermes/skills/secrets-as-data/SKILL.md
+  type: rule_skill
+  name: secrets-as-data
+  description: Treat access credentials as high-attention operational data; use only when authorised, never publish, and verify public-boundary hygiene.
+  risk: medium
+
 hooks/*:
   status: review
   type: hook
