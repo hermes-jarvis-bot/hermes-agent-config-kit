@@ -28,16 +28,16 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 5 | 25 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 2 | 28 |
+| `rules/` | 30 | 3 | 27 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **8** | **374** |
+| **Total** | **382** | **9** | **373** |
 
-## Ported in MVP
+## Ported so far
 
-The first release intentionally auto-converts only selected markdown-only material into Hermes skills:
+The adapter intentionally auto-converts only selected markdown-only material into Hermes skills:
 
 | Upstream source | Hermes target |
 | --- | --- |
@@ -49,6 +49,7 @@ The first release intentionally auto-converts only selected markdown-only materi
 | `principles/27-feature-tracking.md` | `hermes/skills/long-run-feature-tracking/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
+| `rules/deletion-confirm-and-verify.md` | `hermes/skills/safe-deletion/SKILL.md` |
 
 These were chosen because they are broadly useful, markdown-centric, and can be adapted without executing upstream code or assuming Claude Code hook APIs.
 
@@ -220,7 +221,6 @@ The following rules stayed out of MVP:
 - `rules/app-prelaunch-security-checklist.md`
 - `rules/autonomy-risk-tiers.md`
 - `rules/cross-harness-agents-md.md`
-- `rules/deletion-confirm-and-verify.md`
 - `rules/edit-formats-and-tiering.md`
 - `rules/file-organization-cohesion.md`
 - `rules/folder-lifecycle-labels.md`
@@ -245,13 +245,12 @@ The following rules stayed out of MVP:
 
 High-value next candidates:
 
-1. `rules/deletion-confirm-and-verify.md` — aligns with Ruslan's approval-first operational style.
-2. `rules/secrets-as-data.md` — useful for handling credentials, logs, and redaction boundaries.
-3. `rules/session-handoff.md` — useful for long-running Hermes work and compaction handoff.
-4. `rules/silent-failure-detection.md` — useful for operations and background jobs.
-5. `rules/system-verification-independent.md` and `rules/verify-at-consumer.md` — useful verification modules.
-6. `rules/git-source-of-truth.md` — useful for GitHub/Git operations.
-7. `rules/quality-code.md` — likely overlaps with existing Hermes software-development skills; review before porting.
+1. `rules/secrets-as-data.md` — useful for handling credentials, logs, and redaction boundaries.
+2. `rules/session-handoff.md` — useful for long-running Hermes work and compaction handoff.
+3. `rules/silent-failure-detection.md` — useful for operations and background jobs.
+4. `rules/system-verification-independent.md` and `rules/verify-at-consumer.md` — useful verification modules.
+5. `rules/git-source-of-truth.md` — useful for GitHub/Git operations.
+6. `rules/quality-code.md` — likely overlaps with existing Hermes software-development skills; review before porting.
 
 ## Skill packages not yet ported
 
@@ -422,7 +421,6 @@ Goal: expand useful Hermes guidance without executable code.
 
 Candidates:
 
-- `rules/deletion-confirm-and-verify.md`
 - `rules/secrets-as-data.md`
 - `rules/session-handoff.md`
 - `rules/silent-failure-detection.md`

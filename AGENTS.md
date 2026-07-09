@@ -125,6 +125,7 @@ Current generated Hermes skills:
 - `long-run-feature-tracking`
 - `no-guessing`
 - `proof-loop`
+- `safe-deletion`
 - `structured-reasoning`
 
 Each generated skill must:

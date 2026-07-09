@@ -61,6 +61,11 @@ SUPPORTED = {
         "name": "finish-the-task",
         "description": "Continue until the requested artefact is built, run, and verified, or report a real blocker.",
     },
+    "rules/deletion-confirm-and-verify.md": {
+        "target": "hermes/skills/safe-deletion/SKILL.md",
+        "name": "safe-deletion",
+        "description": "Require explicit confirmation, scoped execution, and post-action verification for destructive operations.",
+    },
 }
 
 
@@ -127,6 +132,12 @@ def adapt_text(text: str) -> str:
         "PostToolUse": "post-action verification concept",
         "SessionStart": "session-start routine concept",
         "Stop hook": "session-finish routine concept",
+        "## Механически (на хуках, активно — все wired)": "## Hermes adaptation — guard candidates, not active hooks",
+        "(PreToolUse)": "(pre-action guard concept)",
+        "(PostToolUse)": "(post-action verification concept)",
+        "Связано: AGENTS.md or project guidance": "Related upstream references, review before porting: AGENTS.md or project guidance",
+        "Не уверена — спросить": "Если нет уверенности — спросить",
+        "пользователя** ДО выполнения": "оператора** ДО выполнения",
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
