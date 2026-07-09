@@ -131,6 +131,7 @@ Current generated Hermes skills:
 - `session-handoff`
 - `silent-failure-detection`
 - `structured-reasoning`
+- `supply-chain-defense`
 - `verify-at-consumer`
 
 Each generated skill must:

@@ -30,6 +30,14 @@ principles/05-structured-reasoning.md:
   description: Structure investigations as premises, traces, conclusions, and verified next steps.
   risk: low
 
+principles/09-supply-chain-defense.md:
+  status: supported
+  target: hermes/skills/supply-chain-defense/SKILL.md
+  type: principle_skill
+  name: supply-chain-defense
+  description: Reduce package and upstream adapter risk with freshness gates, lockfiles, provenance checks, and quarantine boundaries.
+  risk: medium
+
 principles/10-agent-security.md:
   status: supported
   target: hermes/skills/agent-security/SKILL.md
