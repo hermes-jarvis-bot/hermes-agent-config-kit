@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 8 | 22 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 8 | 22 |
+| `rules/` | 30 | 9 | 21 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **17** | **365** |
+| **Total** | **382** | **18** | **364** |
 
 ## Ported so far
 
@@ -52,6 +52,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `principles/27-feature-tracking.md` | `hermes/skills/long-run-feature-tracking/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
+| `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
 | `rules/deletion-confirm-and-verify.md` | `hermes/skills/safe-deletion/SKILL.md` |
 | `rules/secrets-as-data.md` | `hermes/skills/secrets-as-data/SKILL.md` |
 | `rules/session-handoff.md` | `hermes/skills/session-handoff/SKILL.md` |
@@ -226,7 +227,6 @@ The following rules stayed out of MVP:
 - `rules/edit-formats-and-tiering.md`
 - `rules/file-organization-cohesion.md`
 - `rules/folder-lifecycle-labels.md`
-- `rules/git-source-of-truth.md`
 - `rules/learn-from-corrections.md`
 - `rules/long-run-harness.md`
 - `rules/memory-maintenance.md`
@@ -242,8 +242,7 @@ The following rules stayed out of MVP:
 
 High-value next candidates:
 
-1. `rules/git-source-of-truth.md` — useful for GitHub/Git operations.
-2. `rules/quality-code.md` — likely overlaps with existing Hermes software-development skills; review before porting.
+1. `rules/quality-code.md` — likely overlaps with existing Hermes software-development skills; review before porting.
 
 ## Skill packages not yet ported
 

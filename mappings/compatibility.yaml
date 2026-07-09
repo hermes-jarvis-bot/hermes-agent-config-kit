@@ -86,6 +86,14 @@ rules/finish-the-task.md:
   description: Continue until the requested artefact is built, run, and verified, or report a real blocker.
   risk: low
 
+rules/git-source-of-truth.md:
+  status: supported
+  target: hermes/skills/git-source-of-truth/SKILL.md
+  type: rule_skill
+  name: git-source-of-truth
+  description: Treat Git and remote push state as durable project truth; commit and push deployed or meaningful changes with verification evidence.
+  risk: low
+
 rules/deletion-confirm-and-verify.md:
   status: supported
   target: hermes/skills/safe-deletion/SKILL.md

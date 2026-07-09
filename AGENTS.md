@@ -121,6 +121,7 @@ Current generated Hermes skills:
 - `agent-security`
 - `deterministic-orchestration`
 - `finish-the-task`
+- `git-source-of-truth`
 - `harness-audit`
 - `independent-verification`
 - `documentation-integrity`
