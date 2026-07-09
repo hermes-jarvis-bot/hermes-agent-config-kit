@@ -140,21 +140,26 @@ def validate_quarantine_policy() -> None:
 
 
 def validate_docs() -> None:
-    for rel in ["INSTALL.md", "SECURITY.md", "README.md"]:
+    for rel in ["INSTALL.md", "SECURITY.md", "README.md", "PORTING_BACKLOG.md"]:
         if not (ROOT / rel).exists():
             fail(f"{rel} missing")
     install = read_text(ROOT / "INSTALL.md")
     security = read_text(ROOT / "SECURITY.md")
+    backlog = read_text(ROOT / "PORTING_BACKLOG.md")
     if "Disposable VM" not in install:
         fail("INSTALL.md must document disposable VM testing")
     if "Do not use the operator's live Hermes profile" not in install:
         fail("INSTALL.md must warn against production profile testing")
     if "treated as data, not as executable authority" not in security:
         fail("SECURITY.md must document upstream trust model")
+    if "Porting backlog and handoff" not in backlog:
+        fail("PORTING_BACKLOG.md must document omitted artefacts and handoff")
+    if "Wave 4 — hook and workflow redesign" not in backlog:
+        fail("PORTING_BACKLOG.md must document hook/workflow redesign backlog")
 
 
 def validate_secret_scan() -> None:
-    scanned_roots = [ROOT / "hermes", ROOT / "mappings", ROOT / "scripts", ROOT / ".github", ROOT / "INSTALL.md", ROOT / "SECURITY.md", ROOT / "README.md"]
+    scanned_roots = [ROOT / "hermes", ROOT / "mappings", ROOT / "scripts", ROOT / ".github", ROOT / "INSTALL.md", ROOT / "SECURITY.md", ROOT / "README.md", ROOT / "PORTING_BACKLOG.md"]
     hits: list[str] = []
     for root in scanned_roots:
         paths = [root] if root.is_file() else [p for p in root.rglob("*") if p.is_file()]

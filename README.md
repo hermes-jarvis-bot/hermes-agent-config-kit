@@ -42,6 +42,7 @@ See also:
 
 - `SECURITY.md` for the trust model and quarantine policy.
 - `INSTALL.md` for the disposable-VM clean-room test protocol.
+- `PORTING_BACKLOG.md` for omitted upstream artefacts, next-wave candidates, and handoff/TODO planning.
 
 ## Repository layout
 
@@ -49,6 +50,7 @@ See also:
 upstream.lock.json                         # source-of-truth upstream checkpoint
 upstream/claude-code-config/snapshot/      # current upstream snapshot
 mappings/compatibility.yaml                # source -> target conversion policy
+PORTING_BACKLOG.md                         # omitted artefacts, next waves, and handoff plan
 hermes/skills/                             # generated/adapted Hermes skills
 hermes/templates/                          # adapted templates
 reports/upstream-sync/                     # generated upstream sync reports

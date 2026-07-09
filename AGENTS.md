@@ -47,7 +47,8 @@ The MVP currently supports:
 - generated upstream sync reports under `reports/upstream-sync/`;
 - GitHub Actions validation;
 - range-based upstream watcher;
-- dry-run-first installer.
+- dry-run-first installer;
+- porting backlog and handoff in `PORTING_BACKLOG.md`.
 
 The MVP deliberately defers:
 
@@ -65,6 +66,7 @@ AGENTS.md                                  # this agent-ready design and operati
 README.md                                  # human-facing overview
 INSTALL.md                                 # clean-room install and disposable VM protocol
 SECURITY.md                                # trust model and quarantine policy
+PORTING_BACKLOG.md                         # omitted artefacts, next waves, and handoff plan
 LICENSE
 upstream.lock.json                         # source-of-truth upstream checkpoint
 mappings/compatibility.yaml                # source path -> support/risk/conversion policy
