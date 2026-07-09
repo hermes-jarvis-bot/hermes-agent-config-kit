@@ -21,3 +21,12 @@ jobs:
         run: |
           python3 scripts/install_hermes.py --dry-run --hermes-home "$RUNNER_TEMP/hermes-home"
           test ! -e "$RUNNER_TEMP/hermes-home"
+      - name: Install and remove against temp Hermes home
+        run: |
+          python3 scripts/install_hermes.py --apply --hermes-home "$RUNNER_TEMP/hermes-home"
+          test -d "$RUNNER_TEMP/hermes-home/skills/config-kit"
+          python3 scripts/remove_hermes.py --dry-run --hermes-home "$RUNNER_TEMP/hermes-home"
+          test -d "$RUNNER_TEMP/hermes-home/skills/config-kit"
+          python3 scripts/remove_hermes.py --apply --hermes-home "$RUNNER_TEMP/hermes-home"
+          test ! -e "$RUNNER_TEMP/hermes-home/skills/config-kit"
+          test ! -e "$RUNNER_TEMP/hermes-home/templates/config-kit"

@@ -80,10 +80,22 @@ python3 scripts/install_hermes.py --dry-run --hermes-home /tmp/hermes-home
 Real installation is intentionally explicit:
 
 ```bash
-python3 scripts/install_hermes.py --apply --hermes-home ~/.hermes
+python3 scripts/install_hermes.py --apply --hermes-home /tmp/hermes-home
 ```
 
-Do not run real installation on production profiles without operator confirmation.
+Preview removal from that same temporary Hermes home:
+
+```bash
+python3 scripts/remove_hermes.py --dry-run --hermes-home /tmp/hermes-home
+```
+
+Real removal is also explicit:
+
+```bash
+python3 scripts/remove_hermes.py --apply --hermes-home /tmp/hermes-home
+```
+
+Do not run real installation or removal on production profiles without operator confirmation.
 
 ## Upstream batching protocol
 

@@ -106,6 +106,20 @@ def validate_installer_contract() -> None:
         fail("installer copy operation missing or unexpectedly changed")
 
 
+def validate_remover_contract() -> None:
+    text = read_text(ROOT / "scripts" / "remove_hermes.py")
+    if 'ap.add_argument("--apply", action="store_true"' not in text:
+        fail("remover must require explicit --apply for deletes")
+    if 'apply = bool(args.apply)' not in text:
+        fail("remover must derive delete mode only from --apply")
+    if 'Path("skills") / "config-kit"' not in text:
+        fail("remover must target only skills/config-kit")
+    if 'Path("templates") / "config-kit"' not in text:
+        fail("remover must target only templates/config-kit")
+    if 'shutil.rmtree(path)' not in text:
+        fail("remover directory removal operation missing or unexpectedly changed")
+
+
 def validate_snapshot() -> None:
     snap = ROOT / "upstream" / "claude-code-config" / "snapshot"
     if not snap.exists():
@@ -162,6 +176,7 @@ def main() -> int:
     validate_skills()
     validate_no_live_writes_default()
     validate_installer_contract()
+    validate_remover_contract()
     validate_quarantine_policy()
     validate_docs()
     validate_secret_scan()

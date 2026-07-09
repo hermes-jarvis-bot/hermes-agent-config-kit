@@ -68,9 +68,30 @@ hermes skills list || true
 
 The `--apply` example above targets `/tmp`, not a production profile.
 
+## Removal
+
+Preview removal from an isolated Hermes home:
+
+```bash
+python3 scripts/remove_hermes.py --dry-run --hermes-home /tmp/hermes-config-kit-home
+```
+
+Apply removal only after reviewing the dry-run output:
+
+```bash
+python3 scripts/remove_hermes.py --apply --hermes-home /tmp/hermes-config-kit-home
+```
+
+The remover only targets:
+
+- `/tmp/hermes-config-kit-home/skills/config-kit`
+- `/tmp/hermes-config-kit-home/templates/config-kit`
+
+It does not remove the whole Hermes home.
+
 ## Rollback
 
-For `/tmp`-based testing:
+For `/tmp`-based testing, after running the remover, remove the remaining disposable profile if desired:
 
 ```bash
 rm -rf /tmp/hermes-config-kit-home

@@ -71,6 +71,7 @@ mappings/compatibility.yaml                # source path -> support/risk/convers
 scripts/sync_upstream.py                   # upstream check/sync/snapshot/report/conversion routine
 scripts/validate_output.py                 # safety and generated-output validator
 scripts/install_hermes.py                  # dry-run-first file copier for generated artefacts
+scripts/remove_hermes.py                   # dry-run-first remover for config-kit artefacts
 hermes/skills/*/SKILL.md                   # generated/adapted Hermes skills
 upstream/claude-code-config/snapshot/      # pinned upstream source snapshot for review
 reports/upstream-sync/*.md                 # generated sync reports; latest.md mirrors newest
@@ -201,6 +202,22 @@ Important invariants:
 - no gateway start/restart/install behaviour belongs here;
 - no upstream hooks/scripts/plugins are installed by the MVP installer.
 
+### `scripts/remove_hermes.py`
+
+Responsibilities:
+
+- preview or remove adapter artefacts from a selected Hermes home/profile;
+- default to dry-run/non-mutating mode;
+- require explicit `--apply` for deletes;
+- remove only `<hermes-home>/skills/config-kit/` and `<hermes-home>/templates/config-kit/`.
+
+Important invariants:
+
+- `--dry-run` must not delete anything.
+- no default target may be `~/.hermes`;
+- no whole-profile deletion belongs here;
+- no gateway start/restart/install behaviour belongs here.
+
 ## GitHub Actions design
 
 ### `validate.yml`
@@ -214,9 +231,15 @@ python3 -m py_compile scripts/*.py
 python3 scripts/validate_output.py
 python3 scripts/install_hermes.py --dry-run --hermes-home "$RUNNER_TEMP/hermes-home"
 test ! -e "$RUNNER_TEMP/hermes-home"
+python3 scripts/install_hermes.py --apply --hermes-home "$RUNNER_TEMP/hermes-home"
+test -d "$RUNNER_TEMP/hermes-home/skills/config-kit"
+python3 scripts/remove_hermes.py --dry-run --hermes-home "$RUNNER_TEMP/hermes-home"
+test -d "$RUNNER_TEMP/hermes-home/skills/config-kit"
+python3 scripts/remove_hermes.py --apply --hermes-home "$RUNNER_TEMP/hermes-home"
+test ! -e "$RUNNER_TEMP/hermes-home/skills/config-kit"
 ```
 
-The final assertion is deliberate: dry-run must not create the target profile directory.
+The first dry-run assertion is deliberate: dry-run must not create the target profile directory. The remove dry-run assertion is also deliberate: dry-run must not delete installed kit artefacts.
 
 ### `upstream-watch.yml`
 
