@@ -62,6 +62,14 @@ principles/11-documentation-integrity.md:
   description: Treat stale documentation references as correctness faults; verify docs, paths, commands, and generated state before relying on them.
   risk: medium
 
+principles/21-knowledge-base-enforcement.md:
+  status: supported
+  target: hermes/skills/knowledge-base-enforcement/SKILL.md
+  type: principle_skill
+  name: knowledge-base-enforcement
+  description: Turn accepted review findings into durable contracts; fixes, regression checks, and invariant records with cross-references.
+  risk: medium
+
 principles/27-feature-tracking.md:
   status: supported
   target: hermes/skills/long-run-feature-tracking/SKILL.md

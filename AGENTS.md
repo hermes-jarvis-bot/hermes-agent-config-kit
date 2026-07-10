@@ -126,6 +126,7 @@ Current generated Hermes skills:
 - `harness-audit`
 - `independent-verification`
 - `documentation-integrity`
+- `knowledge-base-enforcement`
 - `long-run-feature-tracking`
 - `no-guessing`
 - `proof-loop`
