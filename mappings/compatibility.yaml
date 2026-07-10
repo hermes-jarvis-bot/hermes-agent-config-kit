@@ -94,6 +94,14 @@ principles/21-knowledge-base-enforcement.md:
   description: Turn accepted review findings into durable contracts; fixes, regression checks, and invariant records with cross-references.
   risk: medium
 
+principles/22-visual-context-pattern.md:
+  status: supported
+  target: hermes/skills/visual-context-pattern/SKILL.md
+  type: principle_skill
+  name: visual-context-pattern
+  description: Use visual artefacts for UI, spatial, and design decisions where seeing options beats textual explanation; collect structured feedback and preserve evidence.
+  risk: low
+
 principles/27-feature-tracking.md:
   status: supported
   target: hermes/skills/long-run-feature-tracking/SKILL.md

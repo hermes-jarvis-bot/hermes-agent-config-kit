@@ -141,6 +141,7 @@ Current generated Hermes skills:
 - `supply-chain-defense`
 - `verify-at-consumer`
 - `vulnerability-detection-pipeline`
+- `visual-context-pattern`
 
 Each generated skill must:
 
