@@ -125,6 +125,7 @@ Current generated Hermes skills:
 - `codified-context`
 - `coordination-primitives-mapping`
 - `deterministic-orchestration`
+- `dbs-skill-architecture`
 - `feature-layer-architecture`
 - `finish-the-task`
 - `git-source-of-truth`
