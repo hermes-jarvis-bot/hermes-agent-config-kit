@@ -125,9 +125,11 @@ Current generated Hermes skills:
 - `git-source-of-truth`
 - `harness-audit`
 - `independent-verification`
+- `inter-agent-communication`
 - `documentation-integrity`
 - `knowledge-base-enforcement`
 - `long-run-feature-tracking`
+- `multi-session-coordination`
 - `no-guessing`
 - `proof-loop`
 - `safe-deletion`

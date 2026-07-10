@@ -26,14 +26,14 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `docs/` | 3 | 0 | 3 |
 | `evals/` | 2 | 0 | 2 |
 | `hooks/` | 42 | 0 | 42 |
-| `principles/` | 30 | 9 | 21 |
+| `principles/` | 30 | 11 | 19 |
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 10 | 20 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **20** | **362** |
+| **Total** | **382** | **22** | **360** |
 
 ## Ported so far
 
@@ -49,6 +49,8 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `principles/09-supply-chain-defense.md` | `hermes/skills/supply-chain-defense/SKILL.md` |
 | `principles/10-agent-security.md` | `hermes/skills/agent-security/SKILL.md` |
 | `principles/11-documentation-integrity.md` | `hermes/skills/documentation-integrity/SKILL.md` |
+| `principles/18-multi-session-coordination.md` | `hermes/skills/multi-session-coordination/SKILL.md` |
+| `principles/19-inter-agent-communication.md` | `hermes/skills/inter-agent-communication/SKILL.md` |
 | `principles/21-knowledge-base-enforcement.md` | `hermes/skills/knowledge-base-enforcement/SKILL.md` |
 | `principles/27-feature-tracking.md` | `hermes/skills/long-run-feature-tracking/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
@@ -198,8 +200,6 @@ The following principles are markdown candidates. They were not included in MVP 
 - `principles/15-red-lines.md`
 - `principles/16-project-chronicles.md`
 - `principles/17-dbs-skill-creation.md`
-- `principles/18-multi-session-coordination.md`
-- `principles/19-inter-agent-communication.md`
 - `principles/20-vulnerability-detection-pipeline.md`
 - `principles/22-visual-context-pattern.md`
 - `principles/23-anti-pattern-as-config.md`
@@ -212,7 +212,7 @@ The following principles are markdown candidates. They were not included in MVP 
 
 High-value next candidates:
 
-1. `principles/18-multi-session-coordination.md` and `principles/19-inter-agent-communication.md` — may map to Hermes delegation/kanban/workspace protocols.
+No principle candidates are currently singled out. Inspect the remaining principles one by one and deduplicate against existing Hermes skills before porting.
 
 ## Review lane: rules not yet ported
 

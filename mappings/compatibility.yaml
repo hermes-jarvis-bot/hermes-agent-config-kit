@@ -62,6 +62,22 @@ principles/11-documentation-integrity.md:
   description: Treat stale documentation references as correctness faults; verify docs, paths, commands, and generated state before relying on them.
   risk: medium
 
+principles/18-multi-session-coordination.md:
+  status: supported
+  target: hermes/skills/multi-session-coordination/SKILL.md
+  type: principle_skill
+  name: multi-session-coordination
+  description: Coordinate parallel sessions with append-only handoffs, resource locks, heartbeats, stale-lock checks, and verified release.
+  risk: medium
+
+principles/19-inter-agent-communication.md:
+  status: supported
+  target: hermes/skills/inter-agent-communication/SKILL.md
+  type: principle_skill
+  name: inter-agent-communication
+  description: Use mailbox-style files for asynchronous directed messages between agents or sessions, with recipients, subjects, threading, and status.
+  risk: medium
+
 principles/21-knowledge-base-enforcement.md:
   status: supported
   target: hermes/skills/knowledge-base-enforcement/SKILL.md
