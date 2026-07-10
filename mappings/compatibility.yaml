@@ -334,6 +334,14 @@ rules/activity-journal-and-state-registry.md:
   description: Maintain an append-only activity journal and a verified current-state registry for shared resources without activating enforcement hooks.
   risk: medium
 
+rules/folder-lifecycle-labels.md:
+  status: supported
+  target: hermes/skills/folder-lifecycle-classification/SKILL.md
+  type: rule_skill
+  name: folder-lifecycle-classification
+  description: Classify project directories by recoverability and cleanup risk before proposing any archival or deletion action.
+  risk: low
+
 hooks/*:
   status: review
   type: hook
