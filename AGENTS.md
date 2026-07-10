@@ -145,6 +145,7 @@ Current generated Hermes skills:
 - `proof-loop`
 - `project-chronicles`
 - `research-intake`
+- `red-lines`
 - `safe-deletion`
 - `secrets-as-data`
 - `session-handoff`

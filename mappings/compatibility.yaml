@@ -102,6 +102,14 @@ principles/13-research-pipeline.md:
   description: Capture research findings as reviewable, source-grounded intake records so useful evidence survives sessions without creating unapproved project state.
   risk: low
 
+principles/15-red-lines.md:
+  status: supported
+  target: hermes/skills/red-lines/SKILL.md
+  type: principle_skill
+  name: red-lines
+  description: Define a small, evidence-backed set of non-negotiable operational safety boundaries and stop conditions.
+  risk: low
+
 principles/16-project-chronicles.md:
   status: supported
   target: hermes/skills/project-chronicles/SKILL.md
