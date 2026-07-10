@@ -150,6 +150,14 @@ principles/28-feature-layer-architecture.md:
   description: Organize long-running project knowledge into layers and feature narratives that preserve rationale, evidence, and history without replacing machine state.
   risk: medium
 
+principles/29-mvp-agent-blueprint.md:
+  status: supported
+  target: hermes/skills/mvp-agent-blueprint/SKILL.md
+  type: principle_skill
+  name: mvp-agent-blueprint
+  description: Design a minimal useful agent with explicit domain intake, autonomy level, tool policy, safety gates, observability, and release checklist.
+  risk: medium
+
 rules/no-guessing.md:
   status: supported
   target: hermes/skills/no-guessing/SKILL.md

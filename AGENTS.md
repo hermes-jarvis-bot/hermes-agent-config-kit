@@ -134,6 +134,7 @@ Current generated Hermes skills:
 - `long-run-feature-tracking`
 - `merge-conflict-resolution`
 - `multi-session-coordination`
+- `mvp-agent-blueprint`
 - `no-guessing`
 - `no-pre-existing-evasion`
 - `proof-loop`
