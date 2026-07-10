@@ -26,14 +26,14 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `docs/` | 3 | 0 | 3 |
 | `evals/` | 2 | 0 | 2 |
 | `hooks/` | 42 | 0 | 42 |
-| `principles/` | 30 | 28 | 2 |
+| `principles/` | 30 | 29 | 1 |
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 12 | 18 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **41** | **341** |
+| **Total** | **382** | **42** | **340** |
 
 ## Ported so far
 
@@ -53,6 +53,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `principles/09-supply-chain-defense.md` | `hermes/skills/supply-chain-defense/SKILL.md` |
 | `principles/10-agent-security.md` | `hermes/skills/agent-security/SKILL.md` |
 | `principles/11-documentation-integrity.md` | `hermes/skills/documentation-integrity/SKILL.md` |
+| `principles/12-low-signal-residual-training.md` | `hermes/skills/low-signal-residual-training/SKILL.md` |
 | `principles/13-research-pipeline.md` | `hermes/skills/research-intake/SKILL.md` |
 | `principles/14-managed-agents.md` | `hermes/skills/managed-execution-boundaries/SKILL.md` |
 | `principles/15-red-lines.md` | `hermes/skills/red-lines/SKILL.md` |
@@ -209,7 +210,6 @@ Reason: executable upstream code must remain data until reviewed. Some scripts m
 
 The following principles are markdown candidates. They were not included in MVP because they need deduplication against Hermes built-ins, scope decisions, or stronger product framing.
 
-- `principles/12-low-signal-residual-training.md`
 - `principles/README.md`
 
 High-value next candidates:

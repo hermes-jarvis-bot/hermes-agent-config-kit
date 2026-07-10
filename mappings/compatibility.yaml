@@ -94,6 +94,14 @@ principles/11-documentation-integrity.md:
   description: Treat stale documentation references as correctness faults; verify docs, paths, commands, and generated state before relying on them.
   risk: medium
 
+principles/12-low-signal-residual-training.md:
+  status: supported
+  target: hermes/skills/low-signal-residual-training/SKILL.md
+  type: principle_skill
+  name: low-signal-residual-training
+  description: Diagnose and design reproducible training experiments where sparse residual targets make aggregate metrics misleading.
+  risk: medium
+
 principles/13-research-pipeline.md:
   status: supported
   target: hermes/skills/research-intake/SKILL.md
