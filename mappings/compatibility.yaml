@@ -110,6 +110,14 @@ principles/23-anti-pattern-as-config.md:
   description: Encode recurring failure modes as explicit negative rules with exceptions, alternatives, and optional deterministic detectors.
   risk: medium
 
+principles/24-merge-conflict-resolution.md:
+  status: supported
+  target: hermes/skills/merge-conflict-resolution/SKILL.md
+  type: principle_skill
+  name: merge-conflict-resolution
+  description: Resolve Git, rebase, cherry-pick, sync, and parallel-work conflicts with evidence, intent preservation, and independent verification.
+  risk: medium
+
 principles/27-feature-tracking.md:
   status: supported
   target: hermes/skills/long-run-feature-tracking/SKILL.md
