@@ -142,6 +142,14 @@ principles/27-feature-tracking.md:
   description: Track long-running project scope with machine-readable features, evidence, and WIP discipline.
   risk: low
 
+principles/28-feature-layer-architecture.md:
+  status: supported
+  target: hermes/skills/feature-layer-architecture/SKILL.md
+  type: principle_skill
+  name: feature-layer-architecture
+  description: Organize long-running project knowledge into layers and feature narratives that preserve rationale, evidence, and history without replacing machine state.
+  risk: medium
+
 rules/no-guessing.md:
   status: supported
   target: hermes/skills/no-guessing/SKILL.md

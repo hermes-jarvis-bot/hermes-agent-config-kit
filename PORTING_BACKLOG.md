@@ -26,14 +26,14 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `docs/` | 3 | 0 | 3 |
 | `evals/` | 2 | 0 | 2 |
 | `hooks/` | 42 | 0 | 42 |
-| `principles/` | 30 | 17 | 13 |
+| `principles/` | 30 | 18 | 12 |
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 10 | 20 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **28** | **354** |
+| **Total** | **382** | **29** | **353** |
 
 ## Ported so far
 
@@ -59,6 +59,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `principles/25-coordination-primitives-mapping.md` | `hermes/skills/coordination-primitives-mapping/SKILL.md` |
 | `principles/26-no-pre-existing-evasion.md` | `hermes/skills/no-pre-existing-evasion/SKILL.md` |
 | `principles/27-feature-tracking.md` | `hermes/skills/long-run-feature-tracking/SKILL.md` |
+| `principles/28-feature-layer-architecture.md` | `hermes/skills/feature-layer-architecture/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
 | `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
@@ -206,7 +207,6 @@ The following principles are markdown candidates. They were not included in MVP 
 - `principles/15-red-lines.md`
 - `principles/16-project-chronicles.md`
 - `principles/17-dbs-skill-creation.md`
-- `principles/28-feature-layer-architecture.md`
 - `principles/29-mvp-agent-blueprint.md`
 - `principles/README.md`
 

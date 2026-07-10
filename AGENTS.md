@@ -123,6 +123,7 @@ Current generated Hermes skills:
 - `code-quality`
 - `coordination-primitives-mapping`
 - `deterministic-orchestration`
+- `feature-layer-architecture`
 - `finish-the-task`
 - `git-source-of-truth`
 - `harness-audit`
