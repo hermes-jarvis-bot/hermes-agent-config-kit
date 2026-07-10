@@ -46,6 +46,14 @@ principles/05-structured-reasoning.md:
   description: Structure investigations as premises, traces, conclusions, and verified next steps.
   risk: low
 
+principles/07-codified-context.md:
+  status: supported
+  target: hermes/skills/codified-context/SKILL.md
+  type: principle_skill
+  name: codified-context
+  description: Treat agent context as operational infrastructure; concise project guidance, just-in-time loading, durable state, compaction policy, and isolation.
+  risk: medium
+
 principles/08-skills-best-practices.md:
   status: supported
   target: hermes/skills/skill-authoring-best-practices/SKILL.md

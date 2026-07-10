@@ -122,6 +122,7 @@ Current generated Hermes skills:
 - `anti-pattern-as-config`
 - `autoresearch`
 - `code-quality`
+- `codified-context`
 - `coordination-primitives-mapping`
 - `deterministic-orchestration`
 - `feature-layer-architecture`

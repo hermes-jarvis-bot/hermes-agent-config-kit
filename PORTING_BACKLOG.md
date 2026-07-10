@@ -26,14 +26,14 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `docs/` | 3 | 0 | 3 |
 | `evals/` | 2 | 0 | 2 |
 | `hooks/` | 42 | 0 | 42 |
-| `principles/` | 30 | 21 | 9 |
+| `principles/` | 30 | 22 | 8 |
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 10 | 20 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **32** | **350** |
+| **Total** | **382** | **33** | **349** |
 
 ## Ported so far
 
@@ -47,6 +47,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `principles/03-autoresearch.md` | `hermes/skills/autoresearch/SKILL.md` |
 | `principles/04-deterministic-orchestration.md` | `hermes/skills/deterministic-orchestration/SKILL.md` |
 | `principles/05-structured-reasoning.md` | `hermes/skills/structured-reasoning/SKILL.md` |
+| `principles/07-codified-context.md` | `hermes/skills/codified-context/SKILL.md` |
 | `principles/08-skills-best-practices.md` | `hermes/skills/skill-authoring-best-practices/SKILL.md` |
 | `principles/09-supply-chain-defense.md` | `hermes/skills/supply-chain-defense/SKILL.md` |
 | `principles/10-agent-security.md` | `hermes/skills/agent-security/SKILL.md` |
@@ -201,7 +202,6 @@ Reason: executable upstream code must remain data until reviewed. Some scripts m
 The following principles are markdown candidates. They were not included in MVP because they need deduplication against Hermes built-ins, scope decisions, or stronger product framing.
 
 - `principles/06-multi-agent-decomposition.md`
-- `principles/07-codified-context.md`
 - `principles/12-low-signal-residual-training.md`
 - `principles/13-research-pipeline.md`
 - `principles/14-managed-agents.md`
