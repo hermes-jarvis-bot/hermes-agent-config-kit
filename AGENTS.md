@@ -126,6 +126,7 @@ Current generated Hermes skills:
 - `feature-layer-architecture`
 - `finish-the-task`
 - `git-source-of-truth`
+- `harness-design`
 - `harness-audit`
 - `independent-verification`
 - `inter-agent-communication`

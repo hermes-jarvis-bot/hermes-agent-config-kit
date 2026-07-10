@@ -6,6 +6,14 @@ skills/operational/harness-audit/SKILL.md:
   type: skill
   risk: low
 
+principles/01-harness-design.md:
+  status: supported
+  target: hermes/skills/harness-design/SKILL.md
+  type: principle_skill
+  name: harness-design
+  description: Improve agent harnesses with generator/evaluator separation, frozen sprint contracts, stagnation signals, context resets, and measured complexity.
+  risk: medium
+
 principles/02-proof-loop.md:
   status: supported
   target: hermes/skills/proof-loop/SKILL.md

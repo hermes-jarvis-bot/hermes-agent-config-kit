@@ -26,14 +26,14 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `docs/` | 3 | 0 | 3 |
 | `evals/` | 2 | 0 | 2 |
 | `hooks/` | 42 | 0 | 42 |
-| `principles/` | 30 | 19 | 11 |
+| `principles/` | 30 | 20 | 10 |
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 10 | 20 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **30** | **352** |
+| **Total** | **382** | **31** | **351** |
 
 ## Ported so far
 
@@ -42,6 +42,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | Upstream source | Hermes target |
 | --- | --- |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
+| `principles/01-harness-design.md` | `hermes/skills/harness-design/SKILL.md` |
 | `principles/02-proof-loop.md` | `hermes/skills/proof-loop/SKILL.md` |
 | `principles/04-deterministic-orchestration.md` | `hermes/skills/deterministic-orchestration/SKILL.md` |
 | `principles/05-structured-reasoning.md` | `hermes/skills/structured-reasoning/SKILL.md` |
@@ -198,7 +199,6 @@ Reason: executable upstream code must remain data until reviewed. Some scripts m
 
 The following principles are markdown candidates. They were not included in MVP because they need deduplication against Hermes built-ins, scope decisions, or stronger product framing.
 
-- `principles/01-harness-design.md`
 - `principles/03-autoresearch.md`
 - `principles/06-multi-agent-decomposition.md`
 - `principles/07-codified-context.md`
