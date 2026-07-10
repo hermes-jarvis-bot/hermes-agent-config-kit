@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 28 | 2 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 10 | 20 |
+| `rules/` | 30 | 11 | 19 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **39** | **343** |
+| **Total** | **382** | **40** | **342** |
 
 ## Ported so far
 
@@ -78,6 +78,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/secrets-as-data.md` | `hermes/skills/secrets-as-data/SKILL.md` |
 | `rules/session-handoff.md` | `hermes/skills/session-handoff/SKILL.md` |
 | `rules/silent-failure-detection.md` | `hermes/skills/silent-failure-detection/SKILL.md` |
+| `rules/learn-from-corrections.md` | `hermes/skills/learning-from-corrections/SKILL.md` |
 | `rules/system-verification-independent.md` | `hermes/skills/independent-verification/SKILL.md` |
 | `rules/verify-at-consumer.md` | `hermes/skills/verify-at-consumer/SKILL.md` |
 
@@ -227,7 +228,6 @@ The following rules stayed out of MVP:
 - `rules/edit-formats-and-tiering.md`
 - `rules/file-organization-cohesion.md`
 - `rules/folder-lifecycle-labels.md`
-- `rules/learn-from-corrections.md`
 - `rules/long-run-harness.md`
 - `rules/memory-maintenance.md`
 - `rules/moa-gemini-delegation-eval.md`

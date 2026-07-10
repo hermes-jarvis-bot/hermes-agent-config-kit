@@ -294,6 +294,14 @@ rules/silent-failure-detection.md:
   description: Detect when configured protections, jobs, hooks, services, or integrations silently fail despite appearing enabled.
   risk: medium
 
+rules/learn-from-corrections.md:
+  status: supported
+  target: hermes/skills/learning-from-corrections/SKILL.md
+  type: rule_skill
+  name: learning-from-corrections
+  description: Distil recurring operator corrections into reviewable, scoped guidance without automatically changing persistent state or activating enforcement.
+  risk: medium
+
 rules/system-verification-independent.md:
   status: supported
   target: hermes/skills/independent-verification/SKILL.md
