@@ -136,6 +136,7 @@ Current generated Hermes skills:
 - `knowledge-base-enforcement`
 - `long-run-feature-tracking`
 - `merge-conflict-resolution`
+- `multi-agent-task-decomposition`
 - `multi-session-coordination`
 - `mvp-agent-blueprint`
 - `no-guessing`

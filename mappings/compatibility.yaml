@@ -46,6 +46,14 @@ principles/05-structured-reasoning.md:
   description: Structure investigations as premises, traces, conclusions, and verified next steps.
   risk: low
 
+principles/06-multi-agent-decomposition.md:
+  status: supported
+  target: hermes/skills/multi-agent-task-decomposition/SKILL.md
+  type: principle_skill
+  name: multi-agent-task-decomposition
+  description: Decide when a task needs decomposition, define dependency-aware work boundaries, and coordinate sub-agents through explicit contracts and verified integration.
+  risk: medium
+
 principles/07-codified-context.md:
   status: supported
   target: hermes/skills/codified-context/SKILL.md
