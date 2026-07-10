@@ -342,6 +342,14 @@ rules/folder-lifecycle-labels.md:
   description: Classify project directories by recoverability and cleanup risk before proposing any archival or deletion action.
   risk: low
 
+rules/file-organization-cohesion.md:
+  status: supported
+  target: hermes/skills/file-organization-cohesion/SKILL.md
+  type: rule_skill
+  name: file-organization-cohesion
+  description: Keep durable project artefacts in the established hierarchy, group related work together, and separate disposable scratch output from retained state.
+  risk: low
+
 hooks/*:
   status: review
   type: hook

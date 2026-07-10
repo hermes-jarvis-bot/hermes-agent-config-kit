@@ -128,6 +128,7 @@ Current generated Hermes skills:
 - `deterministic-orchestration`
 - `dbs-skill-architecture`
 - `feature-layer-architecture`
+- `file-organization-cohesion`
 - `folder-lifecycle-classification`
 - `finish-the-task`
 - `git-source-of-truth`
