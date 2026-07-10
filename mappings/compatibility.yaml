@@ -94,6 +94,14 @@ principles/11-documentation-integrity.md:
   description: Treat stale documentation references as correctness faults; verify docs, paths, commands, and generated state before relying on them.
   risk: medium
 
+principles/13-research-pipeline.md:
+  status: supported
+  target: hermes/skills/research-intake/SKILL.md
+  type: principle_skill
+  name: research-intake
+  description: Capture research findings as reviewable, source-grounded intake records so useful evidence survives sessions without creating unapproved project state.
+  risk: low
+
 principles/18-multi-session-coordination.md:
   status: supported
   target: hermes/skills/multi-session-coordination/SKILL.md
