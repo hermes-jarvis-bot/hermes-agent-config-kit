@@ -222,6 +222,14 @@ principles/29-mvp-agent-blueprint.md:
   description: Design a minimal useful agent with explicit domain intake, autonomy level, tool policy, safety gates, observability, and release checklist.
   risk: medium
 
+principles/14-managed-agents.md:
+  status: supported
+  target: hermes/skills/managed-execution-boundaries/SKILL.md
+  type: principle_skill
+  name: managed-execution-boundaries
+  description: Decide when a managed execution environment is appropriate, preserve approval and credential boundaries, and verify delegated results independently.
+  risk: medium
+
 rules/no-guessing.md:
   status: supported
   target: hermes/skills/no-guessing/SKILL.md
