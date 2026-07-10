@@ -26,14 +26,14 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `docs/` | 3 | 0 | 3 |
 | `evals/` | 2 | 0 | 2 |
 | `hooks/` | 42 | 0 | 42 |
-| `principles/` | 30 | 11 | 19 |
+| `principles/` | 30 | 12 | 18 |
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 10 | 20 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **22** | **360** |
+| **Total** | **382** | **23** | **359** |
 
 ## Ported so far
 
@@ -51,6 +51,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `principles/11-documentation-integrity.md` | `hermes/skills/documentation-integrity/SKILL.md` |
 | `principles/18-multi-session-coordination.md` | `hermes/skills/multi-session-coordination/SKILL.md` |
 | `principles/19-inter-agent-communication.md` | `hermes/skills/inter-agent-communication/SKILL.md` |
+| `principles/20-vulnerability-detection-pipeline.md` | `hermes/skills/vulnerability-detection-pipeline/SKILL.md` |
 | `principles/21-knowledge-base-enforcement.md` | `hermes/skills/knowledge-base-enforcement/SKILL.md` |
 | `principles/27-feature-tracking.md` | `hermes/skills/long-run-feature-tracking/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
@@ -200,7 +201,6 @@ The following principles are markdown candidates. They were not included in MVP 
 - `principles/15-red-lines.md`
 - `principles/16-project-chronicles.md`
 - `principles/17-dbs-skill-creation.md`
-- `principles/20-vulnerability-detection-pipeline.md`
 - `principles/22-visual-context-pattern.md`
 - `principles/23-anti-pattern-as-config.md`
 - `principles/24-merge-conflict-resolution.md`

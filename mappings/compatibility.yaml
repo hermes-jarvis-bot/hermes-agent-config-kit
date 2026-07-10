@@ -78,6 +78,14 @@ principles/19-inter-agent-communication.md:
   description: Use mailbox-style files for asynchronous directed messages between agents or sessions, with recipients, subjects, threading, and status.
   risk: medium
 
+principles/20-vulnerability-detection-pipeline.md:
+  status: supported
+  target: hermes/skills/vulnerability-detection-pipeline/SKILL.md
+  type: principle_skill
+  name: vulnerability-detection-pipeline
+  description: Run staged vulnerability review with deterministic scanners, contextual analysis, diverse perspectives, adversarial verification, and sandbox-only PoC checks.
+  risk: medium
+
 principles/21-knowledge-base-enforcement.md:
   status: supported
   target: hermes/skills/knowledge-base-enforcement/SKILL.md
