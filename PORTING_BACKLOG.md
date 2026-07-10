@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 28 | 2 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 11 | 19 |
+| `rules/` | 30 | 12 | 18 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **40** | **342** |
+| **Total** | **382** | **41** | **341** |
 
 ## Ported so far
 
@@ -70,6 +70,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `principles/27-feature-tracking.md` | `hermes/skills/long-run-feature-tracking/SKILL.md` |
 | `principles/28-feature-layer-architecture.md` | `hermes/skills/feature-layer-architecture/SKILL.md` |
 | `principles/29-mvp-agent-blueprint.md` | `hermes/skills/mvp-agent-blueprint/SKILL.md` |
+| `rules/activity-journal-and-state-registry.md` | `hermes/skills/activity-journal-and-state-registry/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
 | `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
@@ -219,7 +220,7 @@ No principle candidates are currently singled out. Inspect the remaining princip
 
 The following rules stayed out of MVP:
 
-- `rules/activity-journal-and-state-registry.md`
+
 - `rules/agent-docs-freshness.md`
 - `rules/api-utf8-posting.md`
 - `rules/app-prelaunch-security-checklist.md`

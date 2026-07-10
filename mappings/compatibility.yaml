@@ -318,6 +318,14 @@ rules/verify-at-consumer.md:
   description: Verify integrations at the receiving side; sender logs, specs, and HTTP acknowledgements are not enough.
   risk: medium
 
+rules/activity-journal-and-state-registry.md:
+  status: supported
+  target: hermes/skills/activity-journal-and-state-registry/SKILL.md
+  type: rule_skill
+  name: activity-journal-and-state-registry
+  description: Maintain an append-only activity journal and a verified current-state registry for shared resources without activating enforcement hooks.
+  risk: medium
+
 hooks/*:
   status: review
   type: hook
