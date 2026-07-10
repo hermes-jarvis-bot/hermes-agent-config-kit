@@ -118,6 +118,14 @@ principles/24-merge-conflict-resolution.md:
   description: Resolve Git, rebase, cherry-pick, sync, and parallel-work conflicts with evidence, intent preservation, and independent verification.
   risk: medium
 
+principles/25-coordination-primitives-mapping.md:
+  status: supported
+  target: hermes/skills/coordination-primitives-mapping/SKILL.md
+  type: principle_skill
+  name: coordination-primitives-mapping
+  description: Choose coordination primitives by mapping locks, leases, logs, mailboxes, queues, registries, and schedulers to known failure modes and deployment scope.
+  risk: medium
+
 principles/27-feature-tracking.md:
   status: supported
   target: hermes/skills/long-run-feature-tracking/SKILL.md

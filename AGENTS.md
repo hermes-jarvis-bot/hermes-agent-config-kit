@@ -121,6 +121,7 @@ Current generated Hermes skills:
 - `agent-security`
 - `anti-pattern-as-config`
 - `code-quality`
+- `coordination-primitives-mapping`
 - `deterministic-orchestration`
 - `finish-the-task`
 - `git-source-of-truth`
