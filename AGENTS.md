@@ -119,6 +119,7 @@ Fast lane: auto-converted only when explicitly listed in `scripts/sync_upstream.
 Current generated Hermes skills:
 
 - `agent-security`
+- `anti-pattern-as-config`
 - `code-quality`
 - `deterministic-orchestration`
 - `finish-the-task`

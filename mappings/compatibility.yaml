@@ -102,6 +102,14 @@ principles/22-visual-context-pattern.md:
   description: Use visual artefacts for UI, spatial, and design decisions where seeing options beats textual explanation; collect structured feedback and preserve evidence.
   risk: low
 
+principles/23-anti-pattern-as-config.md:
+  status: supported
+  target: hermes/skills/anti-pattern-as-config/SKILL.md
+  type: principle_skill
+  name: anti-pattern-as-config
+  description: Encode recurring failure modes as explicit negative rules with exceptions, alternatives, and optional deterministic detectors.
+  risk: medium
+
 principles/27-feature-tracking.md:
   status: supported
   target: hermes/skills/long-run-feature-tracking/SKILL.md
