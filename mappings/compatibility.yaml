@@ -22,6 +22,14 @@ principles/02-proof-loop.md:
   description: Use durable proof artefacts and verification loops before declaring work complete.
   risk: low
 
+principles/03-autoresearch.md:
+  status: supported
+  target: hermes/skills/autoresearch/SKILL.md
+  type: principle_skill
+  name: autoresearch
+  description: Run cautious score-driven optimisation loops for single artefacts with mechanical evaluation, guard metrics, git-backed experiment logs, and stop rules.
+  risk: medium
+
 principles/04-deterministic-orchestration.md:
   status: supported
   target: hermes/skills/deterministic-orchestration/SKILL.md
