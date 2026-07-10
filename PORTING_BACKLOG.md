@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 8 | 22 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 9 | 21 |
+| `rules/` | 30 | 10 | 20 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **18** | **364** |
+| **Total** | **382** | **19** | **363** |
 
 ## Ported so far
 
@@ -53,6 +53,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
 | `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
+| `rules/quality-code.md` | `hermes/skills/code-quality/SKILL.md` |
 | `rules/deletion-confirm-and-verify.md` | `hermes/skills/safe-deletion/SKILL.md` |
 | `rules/secrets-as-data.md` | `hermes/skills/secrets-as-data/SKILL.md` |
 | `rules/session-handoff.md` | `hermes/skills/session-handoff/SKILL.md` |
@@ -234,7 +235,6 @@ The following rules stayed out of MVP:
 - `rules/no-claude-attribution.md`
 - `rules/no-pre-existing-evasion.md`
 - `rules/post-ui-change-review.md`
-- `rules/quality-code.md`
 - `rules/quality-over-tokens-independent-verify.md`
 - `rules/rlm-context-as-program.md`
 - `rules/safety-billing.md`
@@ -242,7 +242,7 @@ The following rules stayed out of MVP:
 
 High-value next candidates:
 
-1. `rules/quality-code.md` — likely overlaps with existing Hermes software-development skills; review before porting.
+No rule candidates are currently singled out. Inspect the remaining rules one by one and deduplicate against existing Hermes skills before porting.
 
 ## Skill packages not yet ported
 
@@ -413,7 +413,7 @@ Goal: expand useful Hermes guidance without executable code.
 
 Candidates:
 
-- `rules/quality-code.md`
+No specific Wave 1 rule candidate is singled out at this point; inspect remaining rules one by one before porting.
 
 Acceptance criteria:
 

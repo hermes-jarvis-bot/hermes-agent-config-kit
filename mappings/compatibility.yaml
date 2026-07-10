@@ -94,6 +94,14 @@ rules/git-source-of-truth.md:
   description: Treat Git and remote push state as durable project truth; commit and push deployed or meaningful changes with verification evidence.
   risk: low
 
+rules/quality-code.md:
+  status: supported
+  target: hermes/skills/code-quality/SKILL.md
+  type: rule_skill
+  name: code-quality
+  description: Build the minimum correct solution; avoid both monkey patches and speculative over-engineering, then verify the result.
+  risk: low
+
 rules/deletion-confirm-and-verify.md:
   status: supported
   target: hermes/skills/safe-deletion/SKILL.md
