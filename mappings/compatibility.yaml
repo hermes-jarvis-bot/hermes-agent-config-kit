@@ -126,6 +126,14 @@ principles/25-coordination-primitives-mapping.md:
   description: Choose coordination primitives by mapping locks, leases, logs, mailboxes, queues, registries, and schedulers to known failure modes and deployment scope.
   risk: medium
 
+principles/26-no-pre-existing-evasion.md:
+  status: supported
+  target: hermes/skills/no-pre-existing-evasion/SKILL.md
+  type: principle_skill
+  name: no-pre-existing-evasion
+  description: Require fix-or-ticket discipline for discovered defects; only legitimate blockers may defer work, and each needs durable evidence.
+  risk: medium
+
 principles/27-feature-tracking.md:
   status: supported
   target: hermes/skills/long-run-feature-tracking/SKILL.md

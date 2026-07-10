@@ -134,6 +134,7 @@ Current generated Hermes skills:
 - `merge-conflict-resolution`
 - `multi-session-coordination`
 - `no-guessing`
+- `no-pre-existing-evasion`
 - `proof-loop`
 - `safe-deletion`
 - `secrets-as-data`
