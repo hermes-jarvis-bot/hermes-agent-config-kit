@@ -26,14 +26,14 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `docs/` | 3 | 0 | 3 |
 | `evals/` | 2 | 0 | 2 |
 | `hooks/` | 42 | 0 | 42 |
-| `principles/` | 30 | 25 | 5 |
+| `principles/` | 30 | 26 | 4 |
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 10 | 20 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **36** | **346** |
+| **Total** | **382** | **37** | **345** |
 
 ## Ported so far
 
@@ -54,6 +54,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `principles/10-agent-security.md` | `hermes/skills/agent-security/SKILL.md` |
 | `principles/11-documentation-integrity.md` | `hermes/skills/documentation-integrity/SKILL.md` |
 | `principles/13-research-pipeline.md` | `hermes/skills/research-intake/SKILL.md` |
+| `principles/16-project-chronicles.md` | `hermes/skills/project-chronicles/SKILL.md` |
 | `principles/17-dbs-skill-creation.md` | `hermes/skills/dbs-skill-architecture/SKILL.md` |
 | `principles/18-multi-session-coordination.md` | `hermes/skills/multi-session-coordination/SKILL.md` |
 | `principles/19-inter-agent-communication.md` | `hermes/skills/inter-agent-communication/SKILL.md` |
@@ -207,7 +208,6 @@ The following principles are markdown candidates. They were not included in MVP 
 - `principles/12-low-signal-residual-training.md`
 - `principles/14-managed-agents.md`
 - `principles/15-red-lines.md`
-- `principles/16-project-chronicles.md`
 - `principles/README.md`
 
 High-value next candidates:

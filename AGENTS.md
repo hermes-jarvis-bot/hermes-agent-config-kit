@@ -143,6 +143,7 @@ Current generated Hermes skills:
 - `no-guessing`
 - `no-pre-existing-evasion`
 - `proof-loop`
+- `project-chronicles`
 - `research-intake`
 - `safe-deletion`
 - `secrets-as-data`
