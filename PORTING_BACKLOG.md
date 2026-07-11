@@ -585,6 +585,15 @@ dry-run/apply/remove, and the unchanged generated-output contract.
    `copytree` with no completion marker → truncated snapshot still passes
    `SNAPSHOT.exists()`, compounding #1. Fix: temp-file+`os.replace`; write a
    `.sync-complete` marker and check it in the short-circuit.
+
+Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
+both direct-write/replace sequences. `atomic_write_text()` now fsyncs a sibling
+staging file before `os.replace`; snapshot refresh stages a complete copy, swaps it
+with rollback to the previous snapshot on in-process failure, and writes a
+SHA-matching `.sync-complete` marker. The unchanged-SHA short-circuit requires that
+marker. Focused ad-hoc verification exercised marker mismatch, atomic snapshot
+replacement, lock JSON readability, conversion stability, and disposable
+install/remove.
 5. `validate_output.py:validate_skills()` checks only `name`+`description`, not the
    documented `version`/`license`/`metadata.hermes_config_kit.*` frontmatter contract.
    A regressed skill passes CI. Fix: assert the full documented frontmatter shape.

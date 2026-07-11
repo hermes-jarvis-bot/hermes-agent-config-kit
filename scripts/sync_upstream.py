@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -16,6 +17,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 LOCK = ROOT / "upstream.lock.json"
 SNAPSHOT = ROOT / "upstream" / "claude-code-config" / "snapshot"
+SNAPSHOT_MARKER = SNAPSHOT.parent / ".sync-complete"
 REPORT_DIR = ROOT / "reports" / "upstream-sync"
 UPSTREAM_REPO = "AnastasiyaW/claude-code-config"
 BRANCH = "main"
@@ -323,6 +325,24 @@ def compare(base: str | None, head: str) -> dict[str, Any]:
     return gh_api(f"repos/{UPSTREAM_REPO}/compare/{base}...{head}")
 
 
+def atomic_write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as fh:
+        fh.write(text)
+        fh.flush()
+        os.fsync(fh.fileno())
+        staged = Path(fh.name)
+    os.replace(staged, path)
+
+
+def snapshot_is_complete(sha: str) -> bool:
+    return (
+        SNAPSHOT.is_dir()
+        and SNAPSHOT_MARKER.is_file()
+        and SNAPSHOT_MARKER.read_text(encoding="utf-8").strip() == sha
+    )
+
+
 def download_snapshot(sha: str) -> None:
     url = f"https://github.com/{UPSTREAM_REPO}/archive/{sha}.tar.gz"
     with tempfile.TemporaryDirectory() as td:
@@ -336,10 +356,26 @@ def download_snapshot(sha: str) -> None:
         roots = [p for p in extract_dir.iterdir() if p.is_dir()]
         if len(roots) != 1:
             raise RuntimeError(f"Unexpected archive root count: {roots}")
-        if SNAPSHOT.exists():
-            shutil.rmtree(SNAPSHOT)
         SNAPSHOT.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(roots[0], SNAPSHOT)
+        staging_root = Path(tempfile.mkdtemp(prefix=".snapshot-staging-", dir=SNAPSHOT.parent))
+        staged_snapshot = staging_root / "snapshot"
+        backup = SNAPSHOT.parent / ".snapshot-previous"
+        try:
+            shutil.copytree(roots[0], staged_snapshot)
+            if backup.exists():
+                shutil.rmtree(backup)
+            if SNAPSHOT.exists():
+                os.replace(SNAPSHOT, backup)
+            os.replace(staged_snapshot, SNAPSHOT)
+            atomic_write_text(SNAPSHOT_MARKER, f"{sha}\n")
+            if backup.exists():
+                shutil.rmtree(backup)
+        except Exception:
+            if not SNAPSHOT.exists() and backup.exists():
+                os.replace(backup, SNAPSHOT)
+            raise
+        finally:
+            shutil.rmtree(staging_root, ignore_errors=True)
 
 
 def strip_frontmatter(text: str) -> str:
@@ -4469,7 +4505,7 @@ def save_lock(lock: dict[str, Any], sha: str) -> None:
     lock["upstream"]["last_synced_sha"] = sha
     lock["upstream"]["latest_seen_sha"] = sha
     lock["upstream"]["last_synced_at"] = datetime.now(timezone.utc).isoformat()
-    LOCK.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    atomic_write_text(LOCK, json.dumps(lock, indent=2, ensure_ascii=False) + "\n")
 
 
 def converted_output_matches_supported() -> bool:
@@ -4498,7 +4534,7 @@ def main() -> int:
     if args.check or not args.sync:
         print(json.dumps({"repo": UPSTREAM_REPO, "branch": BRANCH, "last_synced_sha": base, "latest_sha": head, "changed": base != head, "commit_count": len(cmp.get("commits", []) or []), "file_count": len(cmp.get("files", []) or [])}, indent=2))
         return 0
-    if base == head and SNAPSHOT.exists() and converted_output_matches_supported():
+    if base == head and snapshot_is_complete(head) and converted_output_matches_supported():
         print(f"Already synced at {head}")
         return 0
     download_snapshot(head)

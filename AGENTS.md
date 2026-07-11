@@ -384,19 +384,16 @@ As of this design note, the repository is public under `hermes-jarvis-bot/hermes
 
 Current upstream snapshot is whatever `upstream.lock.json` says. Do not rely on memory; read the lockfile.
 
-An external review found that `scripts/sync_upstream.py`'s `--sync` short-circuit
-(`if base == head and SNAPSHOT.exists()`) can skip re-checking `SUPPORTED`/
-`mappings/compatibility.yaml` changes, which is why several recently-ported skills
-have no matching `reports/upstream-sync/` entry. See "External review findings" in
-`PORTING_BACKLOG.md` (verify independently before acting; it's review input, not
-authority).
+External-review findings are tracked in `PORTING_BACKLOG.md` as untrusted review
+input and must be independently rechecked before action. The previously reported
+unchanged-SHA provenance, installer/remover target-safety, and dry-run conflict gaps
+are closed. Snapshot/lock persistence now uses staged replacement and a
+SHA-matching completion marker; the exact invariant and focused ad-hoc verification
+evidence are recorded beside the original finding in `PORTING_BACKLOG.md`.
 
-A second review (2026-07-11) added safety findings for the next agent to act on:
-(a) `install_hermes.py`/`remove_hermes.py` accept any `--hermes-home`, including
-`~/.hermes` — the "never write to a production profile" red line is convention-only,
-not enforced in code; (b) their `--dry-run` flag is decorative, so `--apply
---dry-run` still writes. See "Review findings 2026-07-11" in `PORTING_BACKLOG.md`.
-Review input — verify before acting, not authority.
+Remaining review inputs are frontmatter-contract validation and missing-supported-
+source handling. Do not infer their status from this summary; inspect current code,
+then record evidence without deleting the original review wording.
 
 ## Future work
 
