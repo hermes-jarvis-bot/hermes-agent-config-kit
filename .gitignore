@@ -7,3 +7,6 @@ dist/
 .DS_Store
 .autopilot/
 .claude/
+# Interrupted upstream snapshot transactions are disposable and must never be staged.
+/upstream/claude-code-config/.snapshot-previous/
+/upstream/claude-code-config/.snapshot-staging-*/
