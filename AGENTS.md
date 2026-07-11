@@ -119,6 +119,7 @@ Fast lane: auto-converted only when explicitly listed in `scripts/sync_upstream.
 Current generated Hermes skills:
 
 - `activity-journal-and-state-registry`
+- `app-prelaunch-security`
 - `agent-security`
 - `anti-pattern-as-config`
 - `autoresearch`

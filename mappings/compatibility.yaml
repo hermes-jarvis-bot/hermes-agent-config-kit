@@ -366,6 +366,14 @@ rules/edit-formats-and-tiering.md:
   description: Choose a precise file-edit format, keep planning separate from mechanical application when useful, and verify the resulting diff.
   risk: low
 
+rules/app-prelaunch-security-checklist.md:
+  status: supported
+  target: hermes/skills/app-prelaunch-security/SKILL.md
+  type: rule_skill
+  name: app-prelaunch-security
+  description: Prepare web apps and public APIs for launch with evidence-backed privacy, access-control, abuse-resistance, and safe-error gates.
+  risk: medium
+
 hooks/*:
   status: review
   type: hook

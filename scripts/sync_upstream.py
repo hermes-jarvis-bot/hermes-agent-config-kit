@@ -251,6 +251,11 @@ SUPPORTED = {
         "name": "edit-formats-and-tiering",
         "description": "Choose a precise file-edit format, keep planning separate from mechanical application when useful, and verify the resulting diff.",
     },
+    "rules/app-prelaunch-security-checklist.md": {
+        "target": "hermes/skills/app-prelaunch-security/SKILL.md",
+        "name": "app-prelaunch-security",
+        "description": "Prepare web apps and public APIs for launch with evidence-backed privacy, access-control, abuse-resistance, and safe-error gates.",
+    },
 }
 
 
