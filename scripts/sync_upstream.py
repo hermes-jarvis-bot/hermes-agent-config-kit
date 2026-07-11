@@ -34,6 +34,12 @@ SUPPORTED = {
         "description": "Create a frozen, testable verification plan before implementation.",
         "type": "template",
     },
+    "templates/agent-task/spec.md": {
+        "target": "hermes/templates/agent-task-spec.md",
+        "name": "agent-task-spec",
+        "description": "Define a bounded agent task with explicit scope, constraints, acceptance criteria, and verification evidence.",
+        "type": "template",
+    },
     "principles/01-harness-design.md": {
         "target": "hermes/skills/harness-design/SKILL.md",
         "name": "harness-design",

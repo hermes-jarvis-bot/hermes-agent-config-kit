@@ -186,6 +186,7 @@ Each generated skill must:
 Current generated Hermes templates:
 
 - `proof-plan.md` at `hermes/templates/proof-plan.md`
+- `agent-task-spec.md` at `hermes/templates/agent-task-spec.md`
 
 Each generated template must be markdown-only, carry source attribution and the
 Hermes adaptation notice, and remain a data-only artefact. It is installed only under

@@ -366,7 +366,7 @@ namespace. The remaining template categories stay out of MVP:
   - `templates/memory-project.md`
   - `templates/memory-reference.md`
 - Agent task structure:
-  - `templates/agent-task/*`
+  - remaining `templates/agent-task/*` artefacts after separate review
 - Knowledge-base skeleton:
   - `templates/kb-skeleton/*`
 - Long-run project skeleton:
@@ -409,10 +409,10 @@ number; do not infer a Wave transition from an artefact's category alone.
 
 | Field | Current value |
 | --- | --- |
-| Active Wave | Wave 1 close-out |
-| Active release line | `0.1` |
-| Latest released tag | `v0.1.42` |
-| `upstream.lock.json` `adapter.version` | `0.1.0` (Wave 1 baseline, not a patch-release counter) |
+| Active Wave | Wave 2 — support files and templates |
+| Active release line | `0.2` |
+| Latest released tag | `v0.2.0` (created for this accepted artefact) |
+| `upstream.lock.json` `adapter.version` | `0.2.0` (Wave 2 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
 | First Wave 2 version | `v0.2.0`, with `adapter.version` updated to `0.2.0` in that same commit |
@@ -457,6 +457,12 @@ Acceptance criteria:
 ### Wave 2 — support files and templates
 
 Goal: add selected templates without expanding execution risk.
+
+Status: active. The exact Wave 2 trigger was satisfied by the first accepted,
+verified `templates/agent-task/*` artefact: `templates/agent-task/spec.md` ->
+`hermes/templates/agent-task-spec.md`. It remains a markdown-only, data-only
+template in the existing scoped installer/remover namespace; no task state,
+hooks, scripts, or automation were activated.
 
 Candidates:
 
