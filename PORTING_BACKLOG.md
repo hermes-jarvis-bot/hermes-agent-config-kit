@@ -511,6 +511,12 @@ commits) — re-grep the function names rather than trusting the numbers.
    commits/files, and the empty-fallback branch (`if not files and not base`) doesn't
    fire because `base` is non-empty, so the report claims 0 changed files despite a
    full conversion having run.
+
+Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
+the empty compare-data path after a forced snapshot refresh at an unchanged SHA. The
+report now receives an explicit refresh signal and enumerates the refreshed snapshot
+when compare data is empty. Focused ad-hoc verification asserts a non-zero snapshot
+file count and classification for that path (`Fixes #9`).
 3. `download_snapshot()`: `rmtree` + `copytree` with no atomic swap/completion marker
    — a killed run can leave a truncated snapshot that `SNAPSHOT.exists()` still treats
    as complete, compounding #1's short-circuit.

@@ -4451,13 +4451,14 @@ def write_report(
     cmp: dict[str, Any],
     converted: list[str],
     missing_sources: list[str],
+    snapshot_refreshed: bool,
 ) -> Path:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d-%H%M%S")
     report = REPORT_DIR / f"{stamp}-{head[:7]}.md"
     commits = cmp.get("commits", []) or []
     files = cmp.get("files", []) or []
-    if not files and not base:
+    if not files and (not base or snapshot_refreshed):
         files = [{"filename": p.relative_to(SNAPSHOT).as_posix(), "status": "snapshot"} for p in SNAPSHOT.rglob("*") if p.is_file()]
     buckets: dict[str, list[str]] = {}
     risk_counts: dict[str, int] = {}
@@ -4560,7 +4561,7 @@ def main() -> int:
         return 0
     download_snapshot(head)
     converted, missing_sources = convert_supported()
-    report = write_report(base, head, cmp, converted, missing_sources)
+    report = write_report(base, head, cmp, converted, missing_sources, snapshot_refreshed=True)
     if missing_sources:
         print(
             json.dumps(

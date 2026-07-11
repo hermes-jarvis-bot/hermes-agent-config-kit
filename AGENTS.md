@@ -391,15 +391,16 @@ are closed. Snapshot/lock persistence now uses staged replacement and a
 SHA-matching completion marker; the exact invariant and focused ad-hoc verification
 evidence are recorded beside the original finding in `PORTING_BACKLOG.md`.
 
-Remaining review inputs are frontmatter-contract validation and missing-supported-
-source handling. Do not infer their status from this summary; inspect current code,
-then record evidence without deleting the original review wording.
+The frontmatter-contract and missing-supported-source findings are closed; the latter
+is fixed by `c6795b4`. Do not infer future review-finding status from this summary:
+inspect current code, then record evidence without deleting the original review
+wording.
 
 Going forward, code-review findings are tracked as GitHub Issues labeled
 `review-finding` (`gh issue list --label review-finding`), not in this file or
 `PORTING_BACKLOG.md`; close them with `Fixes #<n>` in the fix commit. The 2026-07-11
-second-pass findings are issues #2–#7 (F1–F5 closed with fix-commit references; F6,
-missing-supported-source handling, is #7 and still open).
+second-pass findings are issues #2–#7 and are closed. The lower-risk forced-resync
+report finding is issue #9; inspect its current state through GitHub before acting.
 
 ## Future work
 
