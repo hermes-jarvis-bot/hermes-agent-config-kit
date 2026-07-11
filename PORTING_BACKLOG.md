@@ -401,15 +401,50 @@ Reason: JS workflows are executable orchestration artefacts. Hermes equivalents 
 
 Reason: these are useful reference materials but not installable Hermes modules yet.
 
+## Release and Wave state
+
+This ledger is the authoritative release-state input for a scheduled porting
+protocol. Git tags are authoritative for the active release line and patch
+number; do not infer a Wave transition from an artefact's category alone.
+
+| Field | Current value |
+| --- | --- |
+| Active Wave | Wave 1 close-out |
+| Active release line | `0.1` |
+| Latest released tag | `v0.1.42` |
+| `upstream.lock.json` `adapter.version` | `0.1.0` (Wave 1 baseline, not a patch-release counter) |
+| Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
+| Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
+| First Wave 2 version | `v0.2.0`, with `adapter.version` updated to `0.2.0` in that same commit |
+
+Release decision rules:
+
+1. A review fix or a Wave 1 close-out commit stays in the active `0.1` line and
+   increments only its patch tag.
+2. A tag such as `v0.1.42` is compatible with `adapter.version: "0.1.0"`:
+   compare only major/minor for the active line. The patch components are not
+   expected to match.
+3. Do not start Wave 2 merely because a template was previously ported. Only
+   the exact Wave 2 trigger above authorises `v0.2.0`.
+4. Before any later Wave transition, add its exact trigger and release line to
+   this ledger in the transition commit. If the ledger is absent or ambiguous,
+   report `BLOCKED` rather than choosing a version by inference.
+
 ## Recommended next porting waves
 
 ### Wave 1 — low-risk markdown modules
 
 Goal: expand useful Hermes guidance without executable code.
 
-Candidates:
-
-Most recently ported: `templates/proof-plan.md` as a data-only Hermes template, retaining frozen acceptance criteria, exact verification commands, expected outcomes, scope, and constraints. It adds Hermes-native provenance and operator-confirmation wording; the existing scoped installer/remover contract was independently exercised against a disposable home. `rules/long-run-harness.md` was reviewed and not selected because its useful feature-state and baseline-health guidance is already covered by `long-run-feature-tracking`, while its active-hook and shell conventions require a separate threat model. The next recommended candidate is `templates/agent-task/`, but only after a separate multi-file template, overwrite, and removal-contract review.
+Status: close-out. `templates/proof-plan.md` was ported as a data-only Hermes
+template, retaining frozen acceptance criteria, exact verification commands,
+expected outcomes, scope, and constraints. It adds Hermes-native provenance and
+operator-confirmation wording; the existing scoped installer/remover contract
+was independently exercised against a disposable home. `rules/long-run-harness.md`
+was reviewed and not selected because its useful feature-state and baseline-health
+guidance is already covered by `long-run-feature-tracking`, while its active-hook
+and shell conventions require a separate threat model. The next porting candidate
+belongs to Wave 2 under the release ledger above.
 
 Acceptance criteria:
 
