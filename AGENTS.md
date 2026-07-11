@@ -157,6 +157,7 @@ Current generated Hermes skills:
 - `post-ui-change-review`
 - `proof-loop`
 - `project-chronicles`
+- `quality-first-independent-review`
 - `repository-attribution-hygiene`
 - `research-intake`
 - `red-lines`

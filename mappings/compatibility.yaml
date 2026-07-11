@@ -422,6 +422,14 @@ rules/post-ui-change-review.md:
   description: Independently review material UI changes with live evidence, bounded verdicts, and approval-gated remediation.
   risk: medium
 
+rules/quality-over-tokens-independent-verify.md:
+  status: supported
+  target: hermes/skills/quality-first-independent-review/SKILL.md
+  type: rule_skill
+  name: quality-first-independent-review
+  description: Use proportionate fresh-context review and evidence-based verdicts for complex, high-impact, or irreversible work without activating delegation or automation.
+  risk: medium
+
 hooks/*:
   status: review
   type: hook

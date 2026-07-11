@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 30 | 0 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 23 | 7 |
+| `rules/` | 30 | 24 | 6 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **53** | **329** |
+| **Total** | **382** | **54** | **328** |
 
 ## Ported so far
 
@@ -94,6 +94,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/api-utf8-posting.md` | `hermes/skills/api-utf8-posting/SKILL.md` |
 | `rules/no-claude-attribution.md` | `hermes/skills/repository-attribution-hygiene/SKILL.md` |
 | `rules/post-ui-change-review.md` | `hermes/skills/post-ui-change-review/SKILL.md` |
+| `rules/quality-over-tokens-independent-verify.md` | `hermes/skills/quality-first-independent-review/SKILL.md` |
 
 These were chosen because they are broadly useful, markdown-centric, and can be adapted without executing upstream code or assuming Claude Code hook APIs.
 
@@ -229,7 +230,6 @@ The following rules stayed out of MVP:
 - `rules/long-run-harness.md`
 - `rules/moa-gemini-delegation-eval.md`
 - `rules/no-pre-existing-evasion.md`
-- `rules/quality-over-tokens-independent-verify.md`
 - `rules/rlm-context-as-program.md`
 - `rules/safety-billing.md`
 - `rules/safety-hooks.md`
@@ -407,7 +407,7 @@ Goal: expand useful Hermes guidance without executable code.
 
 Candidates:
 
-Most recently ported: `rules/post-ui-change-review.md` as `post-ui-change-review`, retaining evidence-based independent UI review while excluding automatic reviewers, hooks, public preview exposure, provider spending, and write-impacting browser actions. `rules/long-run-harness.md` was reviewed and not selected because its useful feature-state and baseline-health guidance is already covered by `long-run-feature-tracking`, while its active-hook and shell conventions require a separate threat model. Next candidate: `rules/quality-over-tokens-independent-verify.md`, only after fresh overlap review against `independent-verification`, `proof-loop`, and `code-quality`.
+Most recently ported: `rules/quality-over-tokens-independent-verify.md` as `quality-first-independent-review`, retaining proportionate fresh-context review and evidence-based verdicts while excluding forced fan-out, automatic delegation, provider spending, hooks, and external action. `rules/long-run-harness.md` was reviewed and not selected because its useful feature-state and baseline-health guidance is already covered by `long-run-feature-tracking`, while its active-hook and shell conventions require a separate threat model. Next candidate: `rules/safety-billing.md`, only after fresh overlap review against `risk-tiered-autonomy`, `secrets-as-data`, and existing Hermes billing safeguards.
 
 Acceptance criteria:
 
