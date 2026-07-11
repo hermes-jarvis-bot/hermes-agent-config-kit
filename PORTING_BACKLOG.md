@@ -32,9 +32,9 @@ rechecked against the pinned snapshot when this table changes.
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
 | `skills/` | 159 | 1 | 158 |
-| `templates/` | 47 | 9 | 38 |
+| `templates/` | 47 | 10 | 37 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **64** | **330** |
+| **Total** | **394** | **65** | **329** |
 
 ## Ported so far
 
@@ -51,6 +51,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `templates/agent-task/README.md` | `hermes/templates/agent-task-overview.md` |
 | `templates/agent-task/evidence/README.md` | `hermes/templates/agent-task-evidence.md` |
 | `templates/agent-task/state.json` | `hermes/templates/agent-task-state.md` |
+| `templates/agent-task/trace.jsonl` | `hermes/templates/agent-task-trace.md` |
 | `principles/01-harness-design.md` | `hermes/skills/harness-design/SKILL.md` |
 | `principles/02-proof-loop.md` | `hermes/skills/proof-loop/SKILL.md` |
 | `principles/03-autoresearch.md` | `hermes/skills/autoresearch/SKILL.md` |
@@ -391,7 +392,9 @@ namespace. The remaining template categories stay out of MVP:
     record, `templates/agent-task/scratchpad.md` as concise resumable working
     notes, `templates/agent-task/evidence/README.md` as a redacted evidence
     register, and `templates/agent-task/state.json` as a data-only task-state record;
-    remaining trace and verdict files need separate review.
+    `templates/agent-task/trace.jsonl` has been ported as a markdown-only,
+    data-only timeline record; it does not initialise a task, create state, or
+    activate a workflow. The remaining verdict file needs separate review.
 - Knowledge-base skeleton:
   - `templates/kb-skeleton/*`
 - Long-run project skeleton:

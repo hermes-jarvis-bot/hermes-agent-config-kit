@@ -82,6 +82,12 @@ SUPPORTED = {
         "description": "Record bounded task state, acceptance criteria, blockers, evidence references, and the next reviewed action without activating a workflow.",
         "type": "template",
     },
+    "templates/agent-task/trace.jsonl": {
+        "target": "hermes/templates/agent-task-trace.md",
+        "name": "agent-task-trace",
+        "description": "Record a bounded task timeline as reviewed project data without creating task state or activating a workflow.",
+        "type": "template",
+    },
     "principles/01-harness-design.md": {
         "target": "hermes/skills/harness-design/SKILL.md",
         "name": "harness-design",
@@ -482,6 +488,28 @@ def adapt_text(text: str) -> str:
 
 
 def adapt_source_text(source_path: str, text: str) -> str:
+    if source_path == "templates/agent-task/trace.jsonl":
+        return """# Agent Task Trace Record
+
+Use this data-only template to record one reviewed event in the timeline of a bounded task. It does not create a task directory, initialise state, dispatch an agent, run a workflow, or authorise an action. Keep the record in a project-approved location and obtain operator confirmation before write-impacting, external, security-sensitive, or production work.
+
+## Trace entry
+
+| Field | Value |
+| --- | --- |
+| Timestamp | {{YYYY-MM-DDTHH:MM:SSZ}} |
+| Task ID | {{task_id}} |
+| Phase | {{spec_or_approved_phase}} |
+| Responsible session or agent | {{session_or_agent_id}} |
+| Reviewed event | {{concise_event}} |
+| Claim | {{evidence-backed_claim}} |
+| Evidence reference | {{project_approved_path_or_link}} |
+| Decision | {{continue_pause_or_handoff}} |
+
+## Next action boundary
+
+Record at most one proposed bounded next action, such as freezing a specification, implementing an approved change, collecting evidence, running fresh verification, correcting a verified fault, or preparing a handoff. This entry is project data, not authority to change scope, perform the action, or declare completion. Recheck the current repository state and telemetry before relying on it.
+"""
     if source_path == "templates/agent-task/state.json":
         return """# Agent Task State Record
 

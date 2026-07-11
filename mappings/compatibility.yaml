@@ -78,6 +78,14 @@ templates/agent-task/state.json:
   description: Record bounded task state, acceptance criteria, blockers, evidence references, and the next reviewed action without activating a workflow.
   risk: low
 
+templates/agent-task/trace.jsonl:
+  status: supported
+  target: hermes/templates/agent-task-trace.md
+  type: template
+  name: agent-task-trace
+  description: Record a bounded task timeline as reviewed project data without creating task state or activating a workflow.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md
