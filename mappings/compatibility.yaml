@@ -54,6 +54,14 @@ templates/agent-task/scratchpad.md:
   description: Keep concise current task state, findings, rejected paths, and the next step for safe resumption.
   risk: low
 
+templates/agent-task/README.md:
+  status: supported
+  target: hermes/templates/agent-task-overview.md
+  type: template
+  name: agent-task-overview
+  description: Summarise the reviewed, data-only task records that support safe task resumption and handoff.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md
