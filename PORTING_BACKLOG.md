@@ -26,14 +26,14 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `docs/` | 3 | 0 | 3 |
 | `evals/` | 2 | 0 | 2 |
 | `hooks/` | 42 | 0 | 42 |
-| `principles/` | 30 | 29 | 1 |
+| `principles/` | 30 | 30 | 0 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 17 | 13 |
+| `rules/` | 30 | 18 | 12 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **47** | **335** |
+| **Total** | **382** | **48** | **334** |
 
 ## Ported so far
 
@@ -77,6 +77,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/memory-maintenance.md` | `hermes/skills/durable-context-maintenance/SKILL.md` |
 | `rules/edit-formats-and-tiering.md` | `hermes/skills/edit-formats-and-tiering/SKILL.md` |
 | `rules/app-prelaunch-security-checklist.md` | `hermes/skills/app-prelaunch-security/SKILL.md` |
+| `rules/autonomy-risk-tiers.md` | `hermes/skills/risk-tiered-autonomy/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
 | `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
@@ -213,13 +214,7 @@ Reason: executable upstream code must remain data until reviewed. Some scripts m
 
 ## Review lane: principles not yet ported
 
-The following principles are markdown candidates. They were not included in MVP because they need deduplication against Hermes built-ins, scope decisions, or stronger product framing.
-
-- `principles/README.md`
-
-High-value next candidates:
-
-No principle candidates are currently singled out. Inspect the remaining principles one by one and deduplicate against existing Hermes skills before porting.
+All upstream principles in the pinned snapshot have now been reviewed and ported as low- or medium-risk Hermes-native guidance. Further principle work should arrive through a deliberate upstream sync and fresh overlap review.
 
 ## Review lane: rules not yet ported
 
@@ -228,7 +223,6 @@ The following rules stayed out of MVP:
 
 - `rules/agent-docs-freshness.md`
 - `rules/api-utf8-posting.md`
-- `rules/autonomy-risk-tiers.md`
 - `rules/cross-harness-agents-md.md`
 - `rules/long-run-harness.md`
 - `rules/moa-gemini-delegation-eval.md`
@@ -240,9 +234,9 @@ The following rules stayed out of MVP:
 - `rules/safety-billing.md`
 - `rules/safety-hooks.md`
 
-High-value next candidates:
+High-value next candidate:
 
-No rule candidates are currently singled out. Inspect the remaining rules one by one and deduplicate against existing Hermes skills before porting.
+1. `rules/cross-harness-agents-md.md` — low-risk markdown guidance for a portable `AGENTS.md` project context, subject to deduplication against existing Hermes documentation modules.
 
 ## Skill packages not yet ported
 

@@ -374,6 +374,14 @@ rules/app-prelaunch-security-checklist.md:
   description: Prepare web apps and public APIs for launch with evidence-backed privacy, access-control, abuse-resistance, and safe-error gates.
   risk: medium
 
+rules/autonomy-risk-tiers.md:
+  status: supported
+  target: hermes/skills/risk-tiered-autonomy/SKILL.md
+  type: rule_skill
+  name: risk-tiered-autonomy
+  description: Classify agent actions by reversibility and impact so routine low-risk work can proceed while destructive, external, billing, or production changes remain approval-gated.
+  risk: medium
+
 hooks/*:
   status: review
   type: hook

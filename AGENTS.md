@@ -156,6 +156,7 @@ Current generated Hermes skills:
 - `research-intake`
 - `red-lines`
 - `safe-deletion`
+- `risk-tiered-autonomy`
 - `secrets-as-data`
 - `session-handoff`
 - `silent-failure-detection`
