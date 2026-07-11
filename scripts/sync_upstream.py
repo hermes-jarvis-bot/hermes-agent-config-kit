@@ -58,6 +58,12 @@ SUPPORTED = {
         "description": "Record open verifier findings, evidence, required fixes, and resolved findings for a bounded task.",
         "type": "template",
     },
+    "templates/agent-task/scratchpad.md": {
+        "target": "hermes/templates/agent-task-scratchpad.md",
+        "name": "agent-task-scratchpad",
+        "description": "Keep concise current task state, findings, rejected paths, and the next step for safe resumption.",
+        "type": "template",
+    },
     "principles/01-harness-design.md": {
         "target": "hermes/skills/harness-design/SKILL.md",
         "name": "harness-design",

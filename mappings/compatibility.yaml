@@ -46,6 +46,14 @@ templates/agent-task/problems.md:
   description: Record open verifier findings, evidence, required fixes, and resolved findings for a bounded task.
   risk: low
 
+templates/agent-task/scratchpad.md:
+  status: supported
+  target: hermes/templates/agent-task-scratchpad.md
+  type: template
+  name: agent-task-scratchpad
+  description: Keep concise current task state, findings, rejected paths, and the next step for safe resumption.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md

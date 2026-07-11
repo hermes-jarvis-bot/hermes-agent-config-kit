@@ -32,9 +32,9 @@ rechecked against the pinned snapshot when this table changes.
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
 | `skills/` | 159 | 1 | 158 |
-| `templates/` | 47 | 5 | 42 |
+| `templates/` | 47 | 6 | 41 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **60** | **334** |
+| **Total** | **394** | **61** | **333** |
 
 ## Ported so far
 
@@ -47,6 +47,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `templates/agent-task/handoff.md` | `hermes/templates/agent-task-handoff.md` |
 | `templates/agent-task/fix-log.md` | `hermes/templates/agent-task-fix-log.md` |
 | `templates/agent-task/problems.md` | `hermes/templates/agent-task-problems.md` |
+| `templates/agent-task/scratchpad.md` | `hermes/templates/agent-task-scratchpad.md` |
 | `principles/01-harness-design.md` | `hermes/skills/harness-design/SKILL.md` |
 | `principles/02-proof-loop.md` | `hermes/skills/proof-loop/SKILL.md` |
 | `principles/03-autoresearch.md` | `hermes/skills/autoresearch/SKILL.md` |
@@ -357,7 +358,8 @@ operator-confirmation wording: `templates/proof-plan.md` ->
 `hermes/templates/agent-task-spec.md`, `templates/agent-task/handoff.md` ->
 `hermes/templates/agent-task-handoff.md`, `templates/agent-task/fix-log.md` ->
 `hermes/templates/agent-task-fix-log.md`, and `templates/agent-task/problems.md` ->
-`hermes/templates/agent-task-problems.md`. The installer copies them only into the isolated
+`hermes/templates/agent-task-problems.md`, and `templates/agent-task/scratchpad.md` ->
+`hermes/templates/agent-task-scratchpad.md`. The installer copies them only into the isolated
 `<hermes-home>/templates/config-kit/` namespace and the remover deletes only that
 namespace. The remaining template categories stay out of MVP:
 
@@ -377,7 +379,8 @@ namespace. The remaining template categories stay out of MVP:
   - `templates/agent-task/handoff.md` has been ported as a data-only task transfer
     template, `templates/agent-task/fix-log.md` as a data-only corrective-change
     record, and `templates/agent-task/problems.md` as a data-only verifier-finding
-    record; remaining `templates/agent-task/*` artefacts need separate review.
+    record, and `templates/agent-task/scratchpad.md` as concise resumable working
+    notes; remaining `templates/agent-task/*` artefacts need separate review.
 - Knowledge-base skeleton:
   - `templates/kb-skeleton/*`
 - Long-run project skeleton:
