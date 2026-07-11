@@ -414,6 +414,14 @@ rules/no-claude-attribution.md:
   description: Keep repository and external-work metadata accurate, intentional, and free of automatic tool-attribution noise.
   risk: low
 
+rules/post-ui-change-review.md:
+  status: supported
+  target: hermes/skills/post-ui-change-review/SKILL.md
+  type: rule_skill
+  name: post-ui-change-review
+  description: Independently review material UI changes with live evidence, bounded verdicts, and approval-gated remediation.
+  risk: medium
+
 hooks/*:
   status: review
   type: hook

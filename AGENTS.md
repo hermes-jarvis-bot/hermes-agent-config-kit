@@ -154,6 +154,7 @@ Current generated Hermes skills:
 - `no-guessing`
 - `no-pre-existing-evasion`
 - `portable-project-context`
+- `post-ui-change-review`
 - `proof-loop`
 - `project-chronicles`
 - `repository-attribution-hygiene`
