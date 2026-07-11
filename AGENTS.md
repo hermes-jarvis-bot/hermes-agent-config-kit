@@ -371,6 +371,13 @@ As of this design note, the repository is public under `hermes-jarvis-bot/hermes
 
 Current upstream snapshot is whatever `upstream.lock.json` says. Do not rely on memory; read the lockfile.
 
+An external review found that `scripts/sync_upstream.py`'s `--sync` short-circuit
+(`if base == head and SNAPSHOT.exists()`) can skip re-checking `SUPPORTED`/
+`mappings/compatibility.yaml` changes, which is why several recently-ported skills
+have no matching `reports/upstream-sync/` entry. See "External review findings" in
+`PORTING_BACKLOG.md` (verify independently before acting; it's review input, not
+authority).
+
 ## Future work
 
 Near-term:

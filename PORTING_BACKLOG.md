@@ -484,6 +484,59 @@ Acceptance criteria:
 5. Should workflow JS become Hermes scripts, scheduled protocols, or merely documented patterns?
 6. Should `PORTING_BACKLOG.md` be regenerated on every upstream sync, or maintained manually as a human-curated roadmap?
 
+## External review findings (as of commit `f10d655`, verify before trusting)
+
+An external reviewer (not this repo's own autonomous porting run) audited
+`scripts/sync_upstream.py` at commit `f10d655`. This is *review input to verify
+independently*, in the same spirit as this adapter's own stance on upstream content:
+data to check, not automatic authority. Line numbers below drift every time
+`SUPPORTED` grows (the file has grown from ~3100 to ~4200 lines across recent porting
+commits) — re-grep the function names rather than trusting the numbers.
+
+**Priority — breaks the adapter's core provenance guarantee:**
+
+1. `main()` (grep `if base == head and SNAPSHOT.exists()`, near end of file): `--sync`
+   short-circuits whenever the upstream SHA hasn't moved, **without checking whether
+   `SUPPORTED` or `mappings/compatibility.yaml` changed**. Evidence this already bit
+   the repo: most recently-ported skills have no matching `reports/upstream-sync/`
+   entry or lockfile advance — they were hand-authored directly into `hermes/skills/`
+   in the same commits that edited `SUPPORTED`, because an actual `--sync` run at the
+   same upstream SHA would have silently no-op'd. This undermines the "every generated
+   skill traces to a recorded, reviewed sync" property the whole adapter exists to
+   provide. Verify independently: `ls reports/upstream-sync/ | wc -l` vs. `git log
+   --oneline -- hermes/skills | wc -l`.
+
+**Secondary — real but lower blast radius:**
+
+2. `write_report()`: under-reports if `--sync` is forced at an unchanged SHA (e.g. by
+   deleting the snapshot to work around #1) — GitHub's compare API returns empty
+   commits/files, and the empty-fallback branch (`if not files and not base`) doesn't
+   fire because `base` is non-empty, so the report claims 0 changed files despite a
+   full conversion having run.
+3. `download_snapshot()`: `rmtree` + `copytree` with no atomic swap/completion marker
+   — a killed run can leave a truncated snapshot that `SNAPSHOT.exists()` still treats
+   as complete, compounding #1's short-circuit.
+4. `save_lock()`: writes `upstream.lock.json` directly via `write_text`, no
+   temp-file+rename — a kill mid-write can corrupt the lockfile and break every
+   subsequent invocation, including `--check`.
+5. `gh_api()`: runs `gh` with `stderr=subprocess.STDOUT`, so a stderr warning can
+   corrupt the JSON it parses; currently masked by a broad `except Exception` fallback
+   to the unauthenticated, 60-req/hr GitHub REST API path.
+6. `convert_supported()`: silently skips (`if not src.exists(): continue`) a
+   `SUPPORTED` entry whose upstream source file no longer exists — no warning in the
+   report or exit code, so a generated skill can go stale with zero signal.
+
+Cross-file consistency was re-checked at commit `f10d655` and currently holds: the
+`SUPPORTED` dict, `mappings/compatibility.yaml`'s `status: supported` count,
+`hermes/skills/*` directories, and `AGENTS.md`'s skill list all agree (50 as of this
+commit). This agreement is accidental/hand-maintained, not enforced by any script —
+don't treat it as a guarantee for future commits (see finding 1).
+
+No fix is applied here. Recommended: pick finding 1 as the next single-artefact
+task (fix the short-circuit to also diff `SUPPORTED`/`mappings/compatibility.yaml`
+against what's already reflected in `hermes/skills/`), log it as a real fix rather
+than silently working around it, per this repo's own no-pre-existing-evasion stance.
+
 ## Handoff protocol for the next agent
 
 Before porting anything from this backlog:
