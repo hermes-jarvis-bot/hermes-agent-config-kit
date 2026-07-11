@@ -358,6 +358,14 @@ rules/memory-maintenance.md:
   description: Maintain durable project guidance and archive records with meaningful links, claim provenance, and targeted reviewable updates.
   risk: low
 
+rules/edit-formats-and-tiering.md:
+  status: supported
+  target: hermes/skills/edit-formats-and-tiering/SKILL.md
+  type: rule_skill
+  name: edit-formats-and-tiering
+  description: Choose a precise file-edit format, keep planning separate from mechanical application when useful, and verify the resulting diff.
+  risk: low
+
 hooks/*:
   status: review
   type: hook
