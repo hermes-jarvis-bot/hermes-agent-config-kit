@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 30 | 0 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 21 | 9 |
+| `rules/` | 30 | 22 | 8 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **51** | **331** |
+| **Total** | **382** | **52** | **330** |
 
 ## Ported so far
 
@@ -92,6 +92,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/system-verification-independent.md` | `hermes/skills/independent-verification/SKILL.md` |
 | `rules/verify-at-consumer.md` | `hermes/skills/verify-at-consumer/SKILL.md` |
 | `rules/api-utf8-posting.md` | `hermes/skills/api-utf8-posting/SKILL.md` |
+| `rules/no-claude-attribution.md` | `hermes/skills/repository-attribution-hygiene/SKILL.md` |
 
 These were chosen because they are broadly useful, markdown-centric, and can be adapted without executing upstream code or assuming Claude Code hook APIs.
 
@@ -226,7 +227,6 @@ The following rules stayed out of MVP:
 
 - `rules/long-run-harness.md`
 - `rules/moa-gemini-delegation-eval.md`
-- `rules/no-claude-attribution.md`
 - `rules/no-pre-existing-evasion.md`
 - `rules/post-ui-change-review.md`
 - `rules/quality-over-tokens-independent-verify.md`
@@ -407,7 +407,7 @@ Goal: expand useful Hermes guidance without executable code.
 
 Candidates:
 
-Most recently ported: `rules/api-utf8-posting.md` as data-only Unicode payload and receiver-side read-back guidance. Next candidate: `rules/long-run-harness.md`, only after fresh overlap and threat review.
+Most recently ported: `rules/no-claude-attribution.md` as `repository-attribution-hygiene`, retaining an opt-in, policy-aware metadata review while excluding vendor-specific overrides, hooks, global Git configuration, and history rewriting. `rules/long-run-harness.md` was reviewed and not selected because its useful feature-state and baseline-health guidance is already covered by `long-run-feature-tracking`, while its active-hook and shell conventions require a separate threat model. Next candidate: `rules/post-ui-change-review.md`, only as non-activating guidance after fresh overlap review against the installed visual-design modules.
 
 Acceptance criteria:
 

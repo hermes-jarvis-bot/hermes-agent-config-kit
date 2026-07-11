@@ -156,6 +156,7 @@ Current generated Hermes skills:
 - `portable-project-context`
 - `proof-loop`
 - `project-chronicles`
+- `repository-attribution-hygiene`
 - `research-intake`
 - `red-lines`
 - `safe-deletion`

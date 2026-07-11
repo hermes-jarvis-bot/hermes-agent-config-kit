@@ -406,6 +406,14 @@ rules/agent-docs-freshness.md:
   description: Assess whether agent-facing project guidance remains current using bounded Git evidence, explicit adoption signals, and reviewable refresh decisions.
   risk: low
 
+rules/no-claude-attribution.md:
+  status: supported
+  target: hermes/skills/repository-attribution-hygiene/SKILL.md
+  type: rule_skill
+  name: repository-attribution-hygiene
+  description: Keep repository and external-work metadata accurate, intentional, and free of automatic tool-attribution noise.
+  risk: low
+
 hooks/*:
   status: review
   type: hook
