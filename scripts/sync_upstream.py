@@ -46,6 +46,12 @@ SUPPORTED = {
         "description": "Record a concise task handoff with verified state, decisions, evidence, and the exact next step.",
         "type": "template",
     },
+    "templates/agent-task/fix-log.md": {
+        "target": "hermes/templates/agent-task-fix-log.md",
+        "name": "agent-task-fix-log",
+        "description": "Record a concise corrective change, its verification evidence, and any remaining risk.",
+        "type": "template",
+    },
     "principles/01-harness-design.md": {
         "target": "hermes/skills/harness-design/SKILL.md",
         "name": "harness-design",

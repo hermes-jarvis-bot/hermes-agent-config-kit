@@ -30,6 +30,14 @@ templates/agent-task/handoff.md:
   description: Record a concise task handoff with verified state, decisions, evidence, and the exact next step.
   risk: low
 
+templates/agent-task/fix-log.md:
+  status: supported
+  target: hermes/templates/agent-task-fix-log.md
+  type: template
+  name: agent-task-fix-log
+  description: Record a concise corrective change, its verification evidence, and any remaining risk.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md
