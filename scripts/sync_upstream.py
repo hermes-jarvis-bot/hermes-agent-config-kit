@@ -4472,6 +4472,19 @@ def save_lock(lock: dict[str, Any], sha: str) -> None:
     LOCK.write_text(json.dumps(lock, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def converted_output_matches_supported() -> bool:
+    """Return whether every supported source has its current generated output."""
+    for source, meta in SUPPORTED.items():
+        src = SNAPSHOT / source
+        target = ROOT / meta["target"]
+        if not src.is_file() or not target.is_file():
+            return False
+        expected = make_skill(source, meta, src.read_text(encoding="utf-8", errors="replace"))
+        if target.read_text(encoding="utf-8", errors="replace") != expected:
+            return False
+    return True
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true")
@@ -4485,7 +4498,7 @@ def main() -> int:
     if args.check or not args.sync:
         print(json.dumps({"repo": UPSTREAM_REPO, "branch": BRANCH, "last_synced_sha": base, "latest_sha": head, "changed": base != head, "commit_count": len(cmp.get("commits", []) or []), "file_count": len(cmp.get("files", []) or [])}, indent=2))
         return 0
-    if base == head and SNAPSHOT.exists():
+    if base == head and SNAPSHOT.exists() and converted_output_matches_supported():
         print(f"Already synced at {head}")
         return 0
     download_snapshot(head)

@@ -535,6 +535,12 @@ task (fix the short-circuit to also diff `SUPPORTED`/`mappings/compatibility.yam
 against what's already reflected in `hermes/skills/`), log it as a real fix rather
 than silently working around it, per this repo's own no-pre-existing-evasion stance.
 
+Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
+the SHA-only short-circuit. The condition now also requires every supported source to
+match its generated target byte-for-byte under the current conversion policy; a
+missing or stale target forces a complete sync/report path. Focused ad-hoc verification
+exercises the stale-output branch before this status is recorded.
+
 ## Review findings 2026-07-11 (second pass — verify before trusting)
 
 Independent second review. Same stance as everything inbound here: review input to
@@ -549,6 +555,10 @@ numbers drift as SUPPORTED grows.
    `ls reports/upstream-sync/*.md | grep -v latest | wc -l` = 2, but
    `ls hermes/skills | wc -l` = 50 — 48 skills have no recorded sync. Fix: gate the
    short-circuit on "converted output already matches SUPPORTED", not SHA equality.
+
+Status (2026-07-11): **confirmed and closed**. Reproduced against the current
+SHA-equality branch, then closed by the generated-output invariant and focused
+ad-hoc stale-output sync verification described above.
 
 **Priority 2 — installer/remover safety is convention-only, not enforced (NEW):**
 2. `install_hermes.py` / `remove_hermes.py` accept any `--hermes-home` — including
