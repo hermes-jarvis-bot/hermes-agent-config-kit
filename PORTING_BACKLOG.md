@@ -537,6 +537,49 @@ task (fix the short-circuit to also diff `SUPPORTED`/`mappings/compatibility.yam
 against what's already reflected in `hermes/skills/`), log it as a real fix rather
 than silently working around it, per this repo's own no-pre-existing-evasion stance.
 
+## Upstream lockfile integrity note (`skills-lock.json`, not this repo's file)
+
+Checked 2026-07-11 against the live installed upstream plugin checkout at
+`/root/claude-code-config` (commit `71863de`, the same SHA pinned in this repo's
+`upstream.lock.json`). This is a note about *upstream's own* lockfile, not a defect
+in this adapter — recorded here only because it affects how much trust to place in
+upstream provenance signals when reviewing future sync candidates.
+
+Upstream ships `scripts/generate_skills_lock.py`, which hashes each `skills/*`
+package (`SKILL.md` + `references/` + `scripts/`) into `skills-lock.json` and offers
+a `--check` mode wired into upstream's own CI (`.github/workflows/skills-lock-check.yml`)
+to catch skill edits that weren't accompanied by a lock regeneration.
+
+Running that `--check` against the live checkout fails:
+
+```
+python3 scripts/generate_skills_lock.py --check
+→ [skills-lock] DRIFT DETECTED — 30 of 33 skills changed
+```
+
+Skill inventory itself is fine — all 33 `skills-lock.json` entries match the 33
+`SKILL.md` directories on disk (both in the plugin checkout and in the installed
+`~/.claude/skills/`); nothing is missing or orphaned.
+
+The hash mismatch is not recent drift from an uncommitted edit, though:
+
+- `git log` on `skills/` after the lock's `generated_at` timestamp shows exactly one
+  commit (`cc00f61`, adding `ml-research-lab`) — and that is the one skill whose
+  hash *does* match.
+- Recomputing the hash directly from git blobs at the commit the lock claims to have
+  been generated from (`00ab6a1`), with no working-tree checkout involved, still
+  shows 31 of 32 pre-existing skills mismatching what `skills-lock.json` recorded
+  *in that same commit*.
+- `scripts/generate_skills_lock.py` has only ever been touched once (`1e84627`, the
+  commit that introduced it) — so this isn't algorithm drift either.
+
+Conclusion: upstream's `skills-lock.json` appears to have never actually been
+produced by running `generate_skills_lock.py` against the tree it was committed
+with — it looks hand-patched (count/aggregate/one new entry bumped) rather than
+regenerated on each change. Treat it as decorative, not as a real integrity
+guarantee, when using upstream's lockfile state as input to future review decisions.
+No action needed in this repo; nothing here is portable or fixable from our side.
+
 ## Handoff protocol for the next agent
 
 Before porting anything from this backlog:
