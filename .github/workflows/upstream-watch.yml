@@ -50,3 +50,4 @@ jobs:
           body-path: reports/upstream-sync/latest.md
           commit-message: "sync: update claude-code-config upstream snapshot"
           labels: upstream-sync, manual-review
+          draft: true

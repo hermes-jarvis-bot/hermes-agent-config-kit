@@ -31,3 +31,4 @@ jobs:
           body-path: reports/upstream-sync/latest.md
           commit-message: "sync: update claude-code-config to ${{ inputs.target_sha }}"
           labels: upstream-sync, manual-review
+          draft: true

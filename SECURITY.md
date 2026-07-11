@@ -13,7 +13,8 @@ This adapter may snapshot, classify, and transform selected markdown artefacts i
 - No automatic execution of upstream hooks or scripts.
 - No automatic installation of upstream plugin metadata.
 - No use of production credentials in CI.
-- No auto-merge of upstream changes.
+- No auto-merge of upstream changes: sync workflows create draft PRs, and only an
+  operator may move a sync PR to review, approve it, or merge it.
 - Upstream sync is batched into reviewable changes rather than applied directly to a live agent.
 
 ## Quarantine lane
