@@ -124,6 +124,7 @@ Current generated Hermes skills:
 - `agent-security`
 - `anti-pattern-as-config`
 - `autoresearch`
+- `billing-spend-controls`
 - `code-quality`
 - `codified-context`
 - `coordination-primitives-mapping`

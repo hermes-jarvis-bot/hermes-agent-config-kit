@@ -398,6 +398,14 @@ rules/autonomy-risk-tiers.md:
   description: Classify agent actions by reversibility and impact so routine low-risk work can proceed while destructive, external, billing, or production changes remain approval-gated.
   risk: medium
 
+rules/safety-billing.md:
+  status: supported
+  target: hermes/skills/billing-spend-controls/SKILL.md
+  type: rule_skill
+  name: billing-spend-controls
+  description: Control provider and automation spend through scoped preflight, explicit budgets, bounded fan-out, monitoring, and approval-gated recovery.
+  risk: medium
+
 rules/agent-docs-freshness.md:
   status: supported
   target: hermes/skills/documentation-freshness/SKILL.md

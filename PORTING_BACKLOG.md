@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 30 | 0 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 24 | 6 |
+| `rules/` | 30 | 25 | 5 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **54** | **328** |
+| **Total** | **382** | **55** | **327** |
 
 ## Ported so far
 
@@ -78,6 +78,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/edit-formats-and-tiering.md` | `hermes/skills/edit-formats-and-tiering/SKILL.md` |
 | `rules/app-prelaunch-security-checklist.md` | `hermes/skills/app-prelaunch-security/SKILL.md` |
 | `rules/autonomy-risk-tiers.md` | `hermes/skills/risk-tiered-autonomy/SKILL.md` |
+| `rules/safety-billing.md` | `hermes/skills/billing-spend-controls/SKILL.md` |
 | `rules/cross-harness-agents-md.md` | `hermes/skills/portable-project-context/SKILL.md` |
 | `rules/agent-docs-freshness.md` | `hermes/skills/documentation-freshness/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
@@ -231,12 +232,9 @@ The following rules stayed out of MVP:
 - `rules/moa-gemini-delegation-eval.md`
 - `rules/no-pre-existing-evasion.md`
 - `rules/rlm-context-as-program.md`
-- `rules/safety-billing.md`
 - `rules/safety-hooks.md`
 
-Next candidate requiring fresh overlap and threat review:
-
-1. `rules/long-run-harness.md` — evaluate only as non-activating Hermes guidance; do not introduce orchestration routines, hooks, or external-provider coupling.
+No remaining rule is a clear low-risk auto-conversion candidate. `rules/long-run-harness.md` overlaps `long-run-feature-tracking`; `rules/moa-gemini-delegation-eval.md` and `rules/rlm-context-as-program.md` require provider or orchestration review; `rules/safety-hooks.md` remains executable-adjacent and quarantined.
 
 ## Skill packages not yet ported
 
@@ -407,7 +405,7 @@ Goal: expand useful Hermes guidance without executable code.
 
 Candidates:
 
-Most recently ported: `rules/quality-over-tokens-independent-verify.md` as `quality-first-independent-review`, retaining proportionate fresh-context review and evidence-based verdicts while excluding forced fan-out, automatic delegation, provider spending, hooks, and external action. `rules/long-run-harness.md` was reviewed and not selected because its useful feature-state and baseline-health guidance is already covered by `long-run-feature-tracking`, while its active-hook and shell conventions require a separate threat model. Next candidate: `rules/safety-billing.md`, only after fresh overlap review against `risk-tiered-autonomy`, `secrets-as-data`, and existing Hermes billing safeguards.
+Most recently ported: `rules/safety-billing.md` as `billing-spend-controls`, retaining provider-neutral preflight, bounded fan-out, telemetry, explicit limits, and approval-gated recovery while excluding unverified provider-specific claims, credential names, history rewrites, and hook proposals. `rules/long-run-harness.md` was reviewed and not selected because its useful feature-state and baseline-health guidance is already covered by `long-run-feature-tracking`, while its active-hook and shell conventions require a separate threat model. The next recommended candidate is `templates/proof-plan.md`, after a separate template-target and overwrite/removal-contract review.
 
 Acceptance criteria:
 
