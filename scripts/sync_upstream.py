@@ -76,6 +76,12 @@ SUPPORTED = {
         "description": "Record redacted, project-approved verification evidence with stable references for a bounded task.",
         "type": "template",
     },
+    "templates/agent-task/state.json": {
+        "target": "hermes/templates/agent-task-state.md",
+        "name": "agent-task-state",
+        "description": "Record bounded task state, acceptance criteria, blockers, evidence references, and the next reviewed action without activating a workflow.",
+        "type": "template",
+    },
     "principles/01-harness-design.md": {
         "target": "hermes/skills/harness-design/SKILL.md",
         "name": "harness-design",
@@ -476,6 +482,40 @@ def adapt_text(text: str) -> str:
 
 
 def adapt_source_text(source_path: str, text: str) -> str:
+    if source_path == "templates/agent-task/state.json":
+        return """# Agent Task State Record
+
+Use this data-only template to record the current state of one bounded task. It does not create directories, initialise a task, dispatch an agent, run a workflow, or authorise any action. Keep it in a project-approved location and obtain operator confirmation before write-impacting, external, security-sensitive, or production work.
+
+## Current state
+
+| Field | Value |
+| --- | --- |
+| Task ID | {{task_id}} |
+| Status | not-started |
+| Objective | {{one_sentence_objective}} |
+| Owner | {{session_or_agent_id}} |
+| Repository branch | {{branch}} |
+| Current phase | spec |
+| Last reviewed | {{YYYY-MM-DDTHH:MM:SSZ}} |
+
+## Acceptance criteria
+
+| Criterion | Status | Evidence reference |
+| --- | --- | --- |
+| AC1 | pending | {{evidence_or_not_started}} |
+| AC2 | pending | {{evidence_or_not_started}} |
+| AC3 | pending | {{evidence_or_not_started}} |
+
+## Blockers and evidence
+
+- Blocked by: {{none_or_concise_blocker}}
+- Evidence references: {{project_approved_paths_or_links}}
+
+## Next reviewed action
+
+Choose one bounded next action only: freeze the specification, implement an approved change, collect evidence, run fresh verification, correct a verified fault, or prepare a handoff. This record is project data, not authority to change scope, perform actions, or declare completion. Recheck the current repository state and telemetry before relying on it.
+"""
     if source_path == "templates/agent-task/evidence/README.md":
         return """# Task Evidence Register
 

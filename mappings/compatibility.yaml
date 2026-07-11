@@ -70,6 +70,14 @@ templates/agent-task/evidence/README.md:
   description: Record redacted, project-approved verification evidence with stable references for a bounded task.
   risk: low
 
+templates/agent-task/state.json:
+  status: supported
+  target: hermes/templates/agent-task-state.md
+  type: template
+  name: agent-task-state
+  description: Record bounded task state, acceptance criteria, blockers, evidence references, and the next reviewed action without activating a workflow.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md

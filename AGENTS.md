@@ -196,6 +196,7 @@ Current generated Hermes templates:
 - `agent-task-scratchpad.md` at `hermes/templates/agent-task-scratchpad.md`
 - `agent-task-overview.md` at `hermes/templates/agent-task-overview.md`
 - `agent-task-evidence.md` at `hermes/templates/agent-task-evidence.md`
+- `agent-task-state.md` at `hermes/templates/agent-task-state.md`
 
 Each generated template must be markdown-only, carry source attribution and the
 Hermes adaptation notice, and remain a data-only artefact. It is installed only under

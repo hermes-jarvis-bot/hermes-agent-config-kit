@@ -32,9 +32,9 @@ rechecked against the pinned snapshot when this table changes.
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
 | `skills/` | 159 | 1 | 158 |
-| `templates/` | 47 | 8 | 39 |
+| `templates/` | 47 | 9 | 38 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **63** | **331** |
+| **Total** | **394** | **64** | **330** |
 
 ## Ported so far
 
@@ -50,6 +50,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `templates/agent-task/scratchpad.md` | `hermes/templates/agent-task-scratchpad.md` |
 | `templates/agent-task/README.md` | `hermes/templates/agent-task-overview.md` |
 | `templates/agent-task/evidence/README.md` | `hermes/templates/agent-task-evidence.md` |
+| `templates/agent-task/state.json` | `hermes/templates/agent-task-state.md` |
 | `principles/01-harness-design.md` | `hermes/skills/harness-design/SKILL.md` |
 | `principles/02-proof-loop.md` | `hermes/skills/proof-loop/SKILL.md` |
 | `principles/03-autoresearch.md` | `hermes/skills/autoresearch/SKILL.md` |
@@ -363,7 +364,10 @@ operator-confirmation wording: `templates/proof-plan.md` ->
 `hermes/templates/agent-task-problems.md`, `templates/agent-task/scratchpad.md` ->
 `hermes/templates/agent-task-scratchpad.md`, `templates/agent-task/README.md` ->
 `hermes/templates/agent-task-overview.md`, and `templates/agent-task/evidence/README.md` ->
-`hermes/templates/agent-task-evidence.md`. The installer copies them only into the isolated
+`hermes/templates/agent-task-evidence.md`, and `templates/agent-task/state.json` ->
+`hermes/templates/agent-task-state.md`. The state template is a markdown-only,
+data-only adaptation of upstream JSON; it records task status without creating state
+or activating a workflow. The installer copies them only into the isolated
 `<hermes-home>/templates/config-kit/` namespace and the remover deletes only that
 namespace. The remaining template categories stay out of MVP:
 
@@ -385,8 +389,9 @@ namespace. The remaining template categories stay out of MVP:
     template, `templates/agent-task/fix-log.md` as a data-only corrective-change
     record, and `templates/agent-task/problems.md` as a data-only verifier-finding
     record, `templates/agent-task/scratchpad.md` as concise resumable working
-    notes, and `templates/agent-task/evidence/README.md` as a redacted evidence
-    register; remaining structured state and trace files need separate review.
+    notes, `templates/agent-task/evidence/README.md` as a redacted evidence
+    register, and `templates/agent-task/state.json` as a data-only task-state record;
+    remaining trace and verdict files need separate review.
 - Knowledge-base skeleton:
   - `templates/kb-skeleton/*`
 - Long-run project skeleton:
