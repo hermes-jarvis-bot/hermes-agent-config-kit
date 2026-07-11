@@ -4462,8 +4462,16 @@ def convert_supported() -> tuple[list[str], list[str]]:
     return converted, []
 
 
+def requires_manual_reapproval(source_path: str) -> bool:
+    """Return whether a supported source has a source-independent adaptation."""
+    probe = "__hermes_config_kit_source_probe__"
+    return adapt_source_text(source_path, probe) != probe
+
+
 def classify(path: str) -> tuple[str, str]:
     if path in SUPPORTED:
+        if requires_manual_reapproval(path):
+            return "manual-reapproval", "medium"
         return "auto-convert", "low"
     if path.startswith("hooks/") or path.startswith("scripts/"):
         return "manual-review", "high"
@@ -4510,8 +4518,9 @@ def write_report(
         "",
         f"- Commits included: {len(commits)}",
         f"- Files changed/snapshotted: {len(files)}",
-        f"- Auto-converted: {len(converted)}",
+        f"- Generated artefacts: {len(converted)}",
         f"- Missing supported sources: {len(missing_sources)}",
+        f"- Manual re-approval candidates: {len(buckets.get('manual-reapproval', []))}",
         f"- Manual-review candidates: {len(buckets.get('manual-review', []))}",
         f"- Unsupported candidates: {len(buckets.get('unsupported', []))}",
         f"- Risk counts: {json.dumps(risk_counts, sort_keys=True)}",
@@ -4540,6 +4549,7 @@ def write_report(
         "",
         "## Review checklist",
         "",
+        "- [ ] Re-review every `manual-reapproval` source against its existing Hermes adaptation before accepting upstream changes.",
         "- [ ] Review every `manual-review` and `unsupported` item before enabling behaviour.",
         "- [ ] Confirm generated Hermes skills are readable and do not contain live-install instructions.",
         "- [ ] Confirm `upstream.lock.json` advances only after review.",
