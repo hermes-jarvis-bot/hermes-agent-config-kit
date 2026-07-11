@@ -32,9 +32,9 @@ rechecked against the pinned snapshot when this table changes.
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
 | `skills/` | 159 | 1 | 158 |
-| `templates/` | 47 | 10 | 37 |
+| `templates/` | 47 | 11 | 36 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **65** | **329** |
+| **Total** | **394** | **66** | **328** |
 
 ## Ported so far
 
@@ -52,6 +52,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `templates/agent-task/evidence/README.md` | `hermes/templates/agent-task-evidence.md` |
 | `templates/agent-task/state.json` | `hermes/templates/agent-task-state.md` |
 | `templates/agent-task/trace.jsonl` | `hermes/templates/agent-task-trace.md` |
+| `templates/agent-task/verdict.json` | `hermes/templates/agent-task-verdict.md` |
 | `principles/01-harness-design.md` | `hermes/skills/harness-design/SKILL.md` |
 | `principles/02-proof-loop.md` | `hermes/skills/proof-loop/SKILL.md` |
 | `principles/03-autoresearch.md` | `hermes/skills/autoresearch/SKILL.md` |
@@ -393,8 +394,10 @@ namespace. The remaining template categories stay out of MVP:
     notes, `templates/agent-task/evidence/README.md` as a redacted evidence
     register, and `templates/agent-task/state.json` as a data-only task-state record;
     `templates/agent-task/trace.jsonl` has been ported as a markdown-only,
-    data-only timeline record; it does not initialise a task, create state, or
-    activate a workflow. The remaining verdict file needs separate review.
+    data-only timeline record, and `templates/agent-task/verdict.json` as a
+    data-only verdict record; neither initialises a task, creates state, approves
+    a change, or activates a workflow. All current `templates/agent-task/` files
+    are now represented only as reviewed data-only templates.
 - Knowledge-base skeleton:
   - `templates/kb-skeleton/*`
 - Long-run project skeleton:
@@ -404,8 +407,8 @@ Reason: template installation raises path, naming, lifecycle, and overwrite ques
 
 High-value next candidates:
 
-1. `templates/agent-task/` — useful for multi-agent/delegation task handoff.
-2. `templates/long-run-project/` — useful for feature tracking.
+1. `templates/long-run-project/` — useful for feature tracking.
+2. harness-audit reference files — useful, but require narrow data-only review.
 3. `templates/kb-skeleton/` — useful, but includes workflow/script files and must remain reviewed.
 
 ## Workflows not yet ported
@@ -494,7 +497,6 @@ hooks, scripts, or automation were activated.
 
 Candidates:
 
-- `templates/agent-task/*`
 - `templates/long-run-project/*`
 - harness-audit reference files
 

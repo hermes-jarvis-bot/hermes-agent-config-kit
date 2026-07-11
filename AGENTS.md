@@ -198,6 +198,7 @@ Current generated Hermes templates:
 - `agent-task-evidence.md` at `hermes/templates/agent-task-evidence.md`
 - `agent-task-state.md` at `hermes/templates/agent-task-state.md`
 - `agent-task-trace.md` at `hermes/templates/agent-task-trace.md`
+- `agent-task-verdict.md` at `hermes/templates/agent-task-verdict.md`
 
 Each generated template must be markdown-only, carry source attribution and the
 Hermes adaptation notice, and remain a data-only artefact. It is installed only under

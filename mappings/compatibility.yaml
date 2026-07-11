@@ -86,6 +86,14 @@ templates/agent-task/trace.jsonl:
   description: Record a bounded task timeline as reviewed project data without creating task state or activating a workflow.
   risk: low
 
+templates/agent-task/verdict.json:
+  status: supported
+  target: hermes/templates/agent-task-verdict.md
+  type: template
+  name: agent-task-verdict
+  description: Record an independent bounded-task verdict, criterion evidence, findings, and residual risk without authorising action.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md

@@ -88,6 +88,12 @@ SUPPORTED = {
         "description": "Record a bounded task timeline as reviewed project data without creating task state or activating a workflow.",
         "type": "template",
     },
+    "templates/agent-task/verdict.json": {
+        "target": "hermes/templates/agent-task-verdict.md",
+        "name": "agent-task-verdict",
+        "description": "Record an independent bounded-task verdict, criterion evidence, findings, and residual risk without authorising action.",
+        "type": "template",
+    },
     "principles/01-harness-design.md": {
         "target": "hermes/skills/harness-design/SKILL.md",
         "name": "harness-design",
@@ -543,6 +549,37 @@ Use this data-only template to record the current state of one bounded task. It 
 ## Next reviewed action
 
 Choose one bounded next action only: freeze the specification, implement an approved change, collect evidence, run fresh verification, correct a verified fault, or prepare a handoff. This record is project data, not authority to change scope, perform actions, or declare completion. Recheck the current repository state and telemetry before relying on it.
+"""
+    if source_path == "templates/agent-task/verdict.json":
+        return """# Agent Task Verdict Record
+
+Use this data-only template to record an independent verdict for one bounded task. It does not approve a change, authorise deployment, close an issue, dispatch an agent, or activate a workflow. Keep it in a project-approved location and obtain operator confirmation before write-impacting, external, security-sensitive, or production work.
+
+## Verdict
+
+| Field | Value |
+| --- | --- |
+| Task ID | {{task_id}} |
+| Verdict | pending |
+| Verifier | {{verifier_session_or_agent_id}} |
+| Checked at | {{YYYY-MM-DDTHH:MM:SSZ}} |
+| Residual risk | {{none_or_concise_risk}} |
+
+## Acceptance-criteria review
+
+| Criterion | Status | Evidence reference | Notes |
+| --- | --- | --- | --- |
+| AC1 | pending | {{project_approved_path_or_link}} | {{concise_note}} |
+| AC2 | pending | {{project_approved_path_or_link}} | {{concise_note}} |
+| AC3 | pending | {{project_approved_path_or_link}} | {{concise_note}} |
+| Global constraints | pending | {{project_approved_path_or_link}} | {{concise_note}} |
+
+## Findings and decision boundary
+
+- Findings requiring correction or explicit disposition: {{none_or_concise_list}}
+- Proposed next reviewed action: {{one_bounded_action_or_handoff}}
+
+This record reports evidence and residual risk; it is not authority to declare completion, merge, release, change scope, or perform the proposed action. Recheck the current repository state and telemetry before relying on it.
 """
     if source_path == "templates/agent-task/evidence/README.md":
         return """# Task Evidence Register
