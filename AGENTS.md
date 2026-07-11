@@ -72,6 +72,7 @@ upstream.lock.json                         # source-of-truth upstream checkpoint
 mappings/compatibility.yaml                # source path -> support/risk/conversion policy
 scripts/sync_upstream.py                   # upstream check/sync/snapshot/report/conversion routine
 scripts/validate_output.py                 # safety and generated-output validator
+scripts/validate_adapter.py                # complete disposable adapter validation routine
 scripts/install_hermes.py                  # dry-run-first file copier for generated artefacts
 scripts/remove_hermes.py                   # dry-run-first remover for config-kit artefacts
 hermes/skills/*/SKILL.md                   # generated/adapted Hermes skills
@@ -242,6 +243,19 @@ Responsibilities:
 
 This is the canonical local validator for this MVP.
 
+### `scripts/validate_adapter.py`
+
+Responsibilities:
+
+- run Python compilation and the canonical output validator;
+- exercise installer dry-run, apply, remover dry-run, and remover apply against a
+  new disposable `/tmp` Hermes home;
+- assert dry-run non-mutation and narrow removal, then clean up its temporary parent.
+
+Use this routine in every adapter CI entry point. It preserves equivalent validation
+coverage on automated sync PRs even though GitHub does not trigger `pull_request`
+workflows for PRs created with the default workflow token.
+
 ### `scripts/install_hermes.py`
 
 Responsibilities:
@@ -352,9 +366,7 @@ See `INSTALL.md` for command-level protocol.
 Use these after repository changes:
 
 ```bash
-python3 -m py_compile scripts/*.py
-python3 scripts/validate_output.py
-python3 scripts/install_hermes.py --dry-run --hermes-home /tmp/hermes-config-kit-test
+python3 scripts/validate_adapter.py
 ```
 
 For dry-run non-mutation, the target path should not exist afterwards. Prefer a unique temp path:
@@ -408,7 +420,10 @@ Going forward, code-review findings are tracked as GitHub Issues labeled
 `review-finding` (`gh issue list --label review-finding`), not in this file or
 `PORTING_BACKLOG.md`; close them with `Fixes #<n>` in the fix commit. The 2026-07-11
 second-pass findings are issues #2–#7 and are closed. The lower-risk forced-resync
-report finding is issue #9; inspect its current state through GitHub before acting.
+report finding is issue #9 and is closed. Issue #12 is confirmed: sync PRs created
+with the default workflow token do not trigger `pull_request` validation. It is
+closed by running `validate_adapter.py` inline before either sync workflow opens or
+updates the PR; inspect its current state through GitHub before acting.
 
 ## Future work
 

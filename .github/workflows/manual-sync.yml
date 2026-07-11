@@ -22,7 +22,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 scripts/sync_upstream.py --sync --target-sha "${{ inputs.target_sha }}"
-          python3 scripts/validate_output.py
+          python3 scripts/validate_adapter.py
       - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           branch: sync/upstream-claude-code-config

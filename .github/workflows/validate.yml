@@ -13,20 +13,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-      - name: Compile adapter scripts
-        run: python3 -m py_compile scripts/*.py
-      - name: Validate generated output and safety policy
-        run: python3 scripts/validate_output.py
-      - name: Installer dry-run against temp Hermes home
-        run: |
-          python3 scripts/install_hermes.py --dry-run --hermes-home "$RUNNER_TEMP/hermes-home-test"
-          test ! -e "$RUNNER_TEMP/hermes-home-test"
-      - name: Install and remove against temp Hermes home
-        run: |
-          python3 scripts/install_hermes.py --apply --hermes-home "$RUNNER_TEMP/hermes-home-test"
-          test -d "$RUNNER_TEMP/hermes-home-test/skills/config-kit"
-          python3 scripts/remove_hermes.py --dry-run --hermes-home "$RUNNER_TEMP/hermes-home-test"
-          test -d "$RUNNER_TEMP/hermes-home-test/skills/config-kit"
-          python3 scripts/remove_hermes.py --apply --hermes-home "$RUNNER_TEMP/hermes-home-test"
-          test ! -e "$RUNNER_TEMP/hermes-home-test/skills/config-kit"
-          test ! -e "$RUNNER_TEMP/hermes-home-test/templates/config-kit"
+      - name: Run complete adapter validation
+        run: python3 scripts/validate_adapter.py
