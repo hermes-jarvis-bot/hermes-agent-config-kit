@@ -685,8 +685,15 @@ independently confirmed on 2026-07-11: regeneration from the current snapshot
 produced `claude-code-skills/...` and an invalid transformed configuration path.
 The source-specific adapters now emit Hermes-native read-only guidance, while
 `validate_output.py` rejects the identified upstream harness-path/runtime
-patterns across generated skills. Closure requires focused ad-hoc regeneration,
-leakage, installer, and validator verification for the fixing commit.
+patterns across generated skills.
+
+Status (2026-07-11): **confirmed and closed**. Current-code recheck at
+`6f2e64e` regenerated both affected outputs in a disposable copy and found no
+`claude-code-skills`, `.config/claude`, or upstream hook/script path leakage.
+Focused ad-hoc verification also confirmed the 57-entry mapping/compatibility
+invariant, stable regeneration, `py_compile`, `validate_output.py`, and scoped
+disposable install/remove (55 skills and 2 templates). GitHub issue #16 is
+closed; this backlog entry records the independent closure evidence.
 
 ## Upstream lockfile integrity note (`skills-lock.json`, not this repo's file)
 
