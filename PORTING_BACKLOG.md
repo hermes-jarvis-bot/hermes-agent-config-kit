@@ -537,6 +537,50 @@ task (fix the short-circuit to also diff `SUPPORTED`/`mappings/compatibility.yam
 against what's already reflected in `hermes/skills/`), log it as a real fix rather
 than silently working around it, per this repo's own no-pre-existing-evasion stance.
 
+## Review findings 2026-07-11 (second pass — verify before trusting)
+
+Independent second review. Same stance as everything inbound here: review input to
+verify, not authority. Findings 1/4/6 below re-confirm the earlier "External review
+findings" block against current code; 2/3/5 are new. Re-grep function names — line
+numbers drift as SUPPORTED grows.
+
+**Priority 1 — provenance (still open, evidence re-confirmed):**
+1. `main()` `if base == head and SNAPSHOT.exists()` (~line 4201): `--sync` no-ops on an
+   unchanged upstream SHA even when SUPPORTED/compatibility.yaml changed, so new skills
+   never get a sync report or lockfile advance. Re-verified 2026-07-11:
+   `ls reports/upstream-sync/*.md | grep -v latest | wc -l` = 2, but
+   `ls hermes/skills | wc -l` = 50 — 48 skills have no recorded sync. Fix: gate the
+   short-circuit on "converted output already matches SUPPORTED", not SHA equality.
+
+**Priority 2 — installer/remover safety is convention-only, not enforced (NEW):**
+2. `install_hermes.py` / `remove_hermes.py` accept any `--hermes-home` — including
+   `~/.hermes`, `/root/.hermes`, or any live profile — and will `--apply` there. The
+   repo's top red line ("never write to a production Hermes profile") has no code guard;
+   `validate_output.py` only forbids the literal string as a *default*, not the runtime
+   target. Fix: refuse known production paths (`~/.hermes`, `/root/.hermes`,
+   `$HERMES_HOME`) unless an explicit `--i-know-this-is-production` override is passed;
+   otherwise require the path to look disposable (`/tmp/…`, `*-test`, `*-sandbox`).
+3. `--dry-run` is decorative in both scripts — defined, never read. `apply` derives only
+   from `--apply`, so `--apply --dry-run` writes. Fix: make the two mutually exclusive
+   (error out), or let `--dry-run` force dry-run regardless of `--apply`.
+
+**Priority 3 — lower blast radius:**
+4. `save_lock()` `write_text` (no temp+rename) → a killed run corrupts
+   `upstream.lock.json`, breaking even `--check`. `download_snapshot()` `rmtree`+
+   `copytree` with no completion marker → truncated snapshot still passes
+   `SNAPSHOT.exists()`, compounding #1. Fix: temp-file+`os.replace`; write a
+   `.sync-complete` marker and check it in the short-circuit.
+5. `validate_output.py:validate_skills()` checks only `name`+`description`, not the
+   documented `version`/`license`/`metadata.hermes_config_kit.*` frontmatter contract.
+   A regressed skill passes CI. Fix: assert the full documented frontmatter shape.
+6. `convert_supported()` silently `continue`s past a SUPPORTED entry whose source file
+   is gone — no report line, no exit code. Fix: collect missing sources, surface them
+   in the report, and exit non-zero.
+
+Recommended order for Codex: #1 (core guarantee) → #2/#3 (safety, small diffs) →
+#4/#5/#6. One artefact per PR per this repo's commit-narrowness rule. Don't work
+around #1 by deleting the snapshot — fix it and log it (no-pre-existing-evasion).
+
 ## Upstream lockfile integrity note (`skills-lock.json`, not this repo's file)
 
 Checked 2026-07-11 against the live installed upstream plugin checkout at

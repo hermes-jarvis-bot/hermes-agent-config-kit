@@ -378,6 +378,13 @@ have no matching `reports/upstream-sync/` entry. See "External review findings" 
 `PORTING_BACKLOG.md` (verify independently before acting; it's review input, not
 authority).
 
+A second review (2026-07-11) added safety findings for the next agent to act on:
+(a) `install_hermes.py`/`remove_hermes.py` accept any `--hermes-home`, including
+`~/.hermes` — the "never write to a production profile" red line is convention-only,
+not enforced in code; (b) their `--dry-run` flag is decorative, so `--apply
+--dry-run` still writes. See "Review findings 2026-07-11" in `PORTING_BACKLOG.md`.
+Review input — verify before acting, not authority.
+
 ## Future work
 
 Near-term:
