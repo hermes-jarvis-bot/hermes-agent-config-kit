@@ -616,6 +616,13 @@ metadata-mapping rejection path, then validates the unchanged generated set.
    is gone — no report line, no exit code. Fix: collect missing sources, surface them
    in the report, and exit non-zero.
 
+Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
+the silent skip. Conversion now preflights every supported source before writing any
+generated target; a missing source is listed in the sync report and makes `--sync`
+return non-zero without advancing the lockfile. Focused ad-hoc verification injects
+a missing source in a disposable copy and checks the non-zero result, report entry,
+unchanged lockfile, and unchanged generated output.
+
 Recommended order for Codex: #1 (core guarantee) → #2/#3 (safety, small diffs) →
 #4/#5/#6. One artefact per PR per this repo's commit-narrowness rule. Don't work
 around #1 by deleting the snapshot — fix it and log it (no-pre-existing-evasion).

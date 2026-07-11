@@ -4417,17 +4417,18 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
     return prefix + body.rstrip() + "\n"
 
 
-def convert_supported() -> list[str]:
+def convert_supported() -> tuple[list[str], list[str]]:
+    missing = [source for source in SUPPORTED if not (SNAPSHOT / source).is_file()]
+    if missing:
+        return [], missing
     converted: list[str] = []
     for source, meta in SUPPORTED.items():
         src = SNAPSHOT / source
-        if not src.exists():
-            continue
         target = ROOT / meta["target"]
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(make_skill(source, meta, src.read_text(encoding="utf-8", errors="replace")), encoding="utf-8")
         converted.append(source)
-    return converted
+    return converted, []
 
 
 def classify(path: str) -> tuple[str, str]:
@@ -4444,7 +4445,13 @@ def classify(path: str) -> tuple[str, str]:
     return "review", "medium"
 
 
-def write_report(base: str | None, head: str, cmp: dict[str, Any], converted: list[str]) -> Path:
+def write_report(
+    base: str | None,
+    head: str,
+    cmp: dict[str, Any],
+    converted: list[str],
+    missing_sources: list[str],
+) -> Path:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d-%H%M%S")
     report = REPORT_DIR / f"{stamp}-{head[:7]}.md"
@@ -4472,6 +4479,7 @@ def write_report(base: str | None, head: str, cmp: dict[str, Any], converted: li
         f"- Commits included: {len(commits)}",
         f"- Files changed/snapshotted: {len(files)}",
         f"- Auto-converted: {len(converted)}",
+        f"- Missing supported sources: {len(missing_sources)}",
         f"- Manual-review candidates: {len(buckets.get('manual-review', []))}",
         f"- Unsupported candidates: {len(buckets.get('unsupported', []))}",
         f"- Risk counts: {json.dumps(risk_counts, sort_keys=True)}",
@@ -4492,7 +4500,9 @@ def write_report(base: str | None, head: str, cmp: dict[str, Any], converted: li
         if len(buckets[bucket]) > 300:
             lines.append(f"- ... {len(buckets[bucket]) - 300} more")
         lines.append("")
-    lines += ["## Converted artefacts", ""]
+    lines += ["## Missing supported sources", ""]
+    lines.extend([f"- `{name}`" for name in missing_sources] or ["- None"])
+    lines += ["", "## Converted artefacts", ""]
     lines.extend([f"- `{name}`" for name in converted] or ["- None"])
     lines += [
         "",
@@ -4549,8 +4559,22 @@ def main() -> int:
         print(f"Already synced at {head}")
         return 0
     download_snapshot(head)
-    converted = convert_supported()
-    report = write_report(base, head, cmp, converted)
+    converted, missing_sources = convert_supported()
+    report = write_report(base, head, cmp, converted, missing_sources)
+    if missing_sources:
+        print(
+            json.dumps(
+                {
+                    "synced": False,
+                    "base": base,
+                    "head": head,
+                    "missing_supported_sources": missing_sources,
+                    "report": str(report.relative_to(ROOT)),
+                },
+                indent=2,
+            )
+        )
+        return 1
     save_lock(lock, head)
     print(json.dumps({"synced": True, "base": base, "head": head, "converted": converted, "report": str(report.relative_to(ROOT))}, indent=2))
     return 0
