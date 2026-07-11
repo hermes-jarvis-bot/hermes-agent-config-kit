@@ -14,7 +14,8 @@ It is the planning and handoff companion to:
 
 Current baseline is the upstream snapshot pinned in `upstream.lock.json`.
 
-Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
+Inventory from the current `upstream/claude-code-config/snapshot/`. Counts are
+rechecked against the pinned snapshot when this table changes.
 
 | Area | Files in snapshot | Auto-ported in MVP | Left out |
 | --- | ---: | ---: | ---: |
@@ -23,17 +24,17 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `.github/` | 1 | 0 | 1 |
 | `agents/` | 6 | 0 | 6 |
 | `alternatives/` | 19 | 0 | 19 |
-| `docs/` | 3 | 0 | 3 |
+| `docs/` | 4 | 0 | 4 |
 | `evals/` | 2 | 0 | 2 |
-| `hooks/` | 42 | 0 | 42 |
-| `principles/` | 29 | 29 | 0 |
+| `hooks/` | 44 | 0 | 44 |
+| `principles/` | 30 | 29 | 1 |
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
-| `scripts/` | 26 | 0 | 26 |
+| `scripts/` | 35 | 0 | 35 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 3 | 44 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **58** | **324** |
+| **Total** | **394** | **58** | **336** |
 
 ## Ported so far
 
@@ -723,6 +724,20 @@ Current recheck (2026-07-11): the current `adapt_text()` retains the project-loc
 path mapping and guard-name normalisation, while `validate_output.py` retains the
 corresponding forbidden-pattern checks. The focused ad-hoc verification for the next
 port confirms the same no-leakage invariant across 58 generated artefacts.
+
+## Follow-up review finding: stale upstream inventory (GitHub issue #19)
+
+GitHub review finding **#19** reported conflicting hard-coded upstream inventory
+counts after the snapshot advanced. It was independently confirmed on 2026-07-11:
+the current pinned snapshot contains 394 files, while the generated set contains
+55 skills and 3 templates (58 total). The prior total of 382 and remaining count
+of 324 were stale; the corrected remaining count is 336. `CLAUDE.md` now avoids a
+second hand-maintained inventory total. This close-out is documentation-only and
+does not alter conversion, installation, or runtime behaviour.
+
+Status (2026-07-11): **confirmed and closed** by this commit after focused
+ad-hoc verification recomputed the snapshot, mapping, generated-artifact, and
+backlog invariants. Original finding text remains in GitHub issue #19.
 
 ## Upstream lockfile integrity note (`skills-lock.json`, not this repo's file)
 

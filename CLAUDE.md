@@ -80,7 +80,7 @@ There is no other test suite in this repo — `validate_output.py` plus the inst
 - **`hermes/skills/*/SKILL.md`** are the generated output artefacts. Each has Hermes-style frontmatter (`name`, `description`, `version`, `license`, `metadata.hermes_config_kit.{source_repo,source_path,adapter,conversion}`) and a body that explicitly states upstream instructions are reference material, not automatic authority.
 - **Quarantine lane** (never auto-converted): `hooks/**`, `scripts/**` (upstream's, not this repo's), `.claude-plugin/**`, `.github/workflows/**` from the upstream snapshot, plus anything handling credentials/shell exec/deletion/network/process control.
 - **`.github/workflows/`**: `validate.yml` runs the compile+validate+install/remove dry-run/apply cycle on push/PR; `upstream-watch.yml` is the scheduled/manual range-based sync checker that batches multiple upstream commits into a single review PR (never one PR per commit); `manual-sync.yml` is a manual sync entry point.
-- **`PORTING_BACKLOG.md`** tracks what was deliberately left unported from upstream (currently 33 of 382 upstream files) and why — check it before adding new conversions to avoid redoing prior review decisions.
+- **`PORTING_BACKLOG.md`** tracks what was deliberately left unported from the pinned upstream snapshot and why — check it before adding new conversions to avoid redoing prior review decisions.
 
 ## Commit style
 
