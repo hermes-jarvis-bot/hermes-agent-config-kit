@@ -677,6 +677,17 @@ Recommended order for Codex: #1 (core guarantee) → #2/#3 (safety, small diffs)
 #4/#5/#6. One artefact per PR per this repo's commit-narrowness rule. Don't work
 around #1 by deleting the snapshot — fix it and log it (no-pre-existing-evasion).
 
+## Follow-up review finding: generated harness leakage (GitHub issue #16)
+
+GitHub review finding **#16** reported upstream-specific paths and active-runtime
+language in generated `harness-audit` and `agent-security` modules. It was
+independently confirmed on 2026-07-11: regeneration from the current snapshot
+produced `claude-code-skills/...` and an invalid transformed configuration path.
+The source-specific adapters now emit Hermes-native read-only guidance, while
+`validate_output.py` rejects the identified upstream harness-path/runtime
+patterns across generated skills. Closure requires focused ad-hoc regeneration,
+leakage, installer, and validator verification for the fixing commit.
+
 ## Upstream lockfile integrity note (`skills-lock.json`, not this repo's file)
 
 Checked 2026-07-11 against the live installed upstream plugin checkout at

@@ -25,6 +25,11 @@ SENSITIVE_PATTERNS = (
     r"xox[baprs]-[A-Za-z0-9-]{20,}",
     r"sk-[A-Za-z0-9]{20,}",
 )
+FORBIDDEN_GENERATED_HARNESS_PATTERNS = (
+    r"claude-code-skills",
+    r"\.config/claude",
+    r"claude-code-config/(?:hooks|scripts)/",
+)
 
 
 def fail(msg: str) -> None:
@@ -86,6 +91,9 @@ def validate_skills() -> None:
             fail(f"{path} missing metadata.hermes_config_kit mapping")
         if "~/.hermes" in text and "--apply" in text:
             fail(f"{path} appears to encourage live Hermes writes")
+        for pattern in FORBIDDEN_GENERATED_HARNESS_PATTERNS:
+            if re.search(pattern, text, re.IGNORECASE):
+                fail(f"{path} retains an upstream harness path or runtime reference")
 
 
 def validate_templates() -> None:
