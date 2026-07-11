@@ -350,6 +350,14 @@ rules/file-organization-cohesion.md:
   description: Keep durable project artefacts in the established hierarchy, group related work together, and separate disposable scratch output from retained state.
   risk: low
 
+rules/memory-maintenance.md:
+  status: supported
+  target: hermes/skills/durable-context-maintenance/SKILL.md
+  type: rule_skill
+  name: durable-context-maintenance
+  description: Maintain durable project guidance and archive records with meaningful links, claim provenance, and targeted reviewable updates.
+  risk: low
+
 hooks/*:
   status: review
   type: hook

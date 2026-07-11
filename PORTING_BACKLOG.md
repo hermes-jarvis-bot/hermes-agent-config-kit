@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 29 | 1 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 14 | 16 |
+| `rules/` | 30 | 15 | 15 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **44** | **338** |
+| **Total** | **382** | **45** | **337** |
 
 ## Ported so far
 
@@ -74,6 +74,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/activity-journal-and-state-registry.md` | `hermes/skills/activity-journal-and-state-registry/SKILL.md` |
 | `rules/folder-lifecycle-labels.md` | `hermes/skills/folder-lifecycle-classification/SKILL.md` |
 | `rules/file-organization-cohesion.md` | `hermes/skills/file-organization-cohesion/SKILL.md` |
+| `rules/memory-maintenance.md` | `hermes/skills/durable-context-maintenance/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
 | `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
@@ -230,7 +231,6 @@ The following rules stayed out of MVP:
 - `rules/cross-harness-agents-md.md`
 - `rules/edit-formats-and-tiering.md`
 - `rules/long-run-harness.md`
-- `rules/memory-maintenance.md`
 - `rules/moa-gemini-delegation-eval.md`
 - `rules/no-claude-attribution.md`
 - `rules/no-pre-existing-evasion.md`
