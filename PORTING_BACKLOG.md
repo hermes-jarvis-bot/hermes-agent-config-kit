@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 30 | 0 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 18 | 12 |
+| `rules/` | 30 | 19 | 11 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **48** | **334** |
+| **Total** | **382** | **49** | **333** |
 
 ## Ported so far
 
@@ -78,6 +78,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/edit-formats-and-tiering.md` | `hermes/skills/edit-formats-and-tiering/SKILL.md` |
 | `rules/app-prelaunch-security-checklist.md` | `hermes/skills/app-prelaunch-security/SKILL.md` |
 | `rules/autonomy-risk-tiers.md` | `hermes/skills/risk-tiered-autonomy/SKILL.md` |
+| `rules/cross-harness-agents-md.md` | `hermes/skills/portable-project-context/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
 | `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
@@ -223,7 +224,6 @@ The following rules stayed out of MVP:
 
 - `rules/agent-docs-freshness.md`
 - `rules/api-utf8-posting.md`
-- `rules/cross-harness-agents-md.md`
 - `rules/long-run-harness.md`
 - `rules/moa-gemini-delegation-eval.md`
 - `rules/no-claude-attribution.md`
@@ -236,7 +236,7 @@ The following rules stayed out of MVP:
 
 High-value next candidate:
 
-1. `rules/cross-harness-agents-md.md` — low-risk markdown guidance for a portable `AGENTS.md` project context, subject to deduplication against existing Hermes documentation modules.
+1. `rules/agent-docs-freshness.md` — low-risk markdown guidance for checking instruction-file freshness, subject to deduplication against `documentation-integrity`.
 
 ## Skill packages not yet ported
 

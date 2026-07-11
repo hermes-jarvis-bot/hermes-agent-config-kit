@@ -151,6 +151,7 @@ Current generated Hermes skills:
 - `mvp-agent-blueprint`
 - `no-guessing`
 - `no-pre-existing-evasion`
+- `portable-project-context`
 - `proof-loop`
 - `project-chronicles`
 - `research-intake`

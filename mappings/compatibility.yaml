@@ -246,6 +246,14 @@ rules/no-guessing.md:
   description: Avoid guessing missing configuration; inspect, retrieve, or ask for exact values.
   risk: low
 
+rules/cross-harness-agents-md.md:
+  status: supported
+  target: hermes/skills/portable-project-context/SKILL.md
+  type: rule_skill
+  name: portable-project-context
+  description: Maintain concise, harness-neutral project guidance that multiple agent interfaces can read without duplicating policy or exposing secrets.
+  risk: low
+
 rules/finish-the-task.md:
   status: supported
   target: hermes/skills/finish-the-task/SKILL.md
