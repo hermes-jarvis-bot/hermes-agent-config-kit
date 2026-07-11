@@ -8,9 +8,11 @@ extra dependencies.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -112,6 +114,7 @@ class HandoffMemoryLoopTests(unittest.TestCase):
         handoffs = root / ".claude" / "handoffs" / "sample-project"
         handoffs.mkdir(parents=True)
         (handoffs / "2026-06-24_19-00_test.md").write_text(handoff_text, encoding="utf-8")
+        (handoffs / "PROBLEMS.md").write_text("# Problems\n", encoding="utf-8")
         index = root / ".claude" / "handoffs" / "INDEX.md"
         index.write_text(
             "2026-06-24 19:00 | test-session | sample-project | validator fixture | ACTIVE\n",
@@ -222,6 +225,51 @@ class HandoffMemoryLoopTests(unittest.TestCase):
         strict_result = self.run_validator(root, hooks, memory, "--strict-legacy")
         self.assertNotEqual(strict_result.returncode, 0, strict_result.stdout + strict_result.stderr)
         self.assertIn('"fail": 1', strict_result.stdout)
+
+    def test_precanonical_index_records_are_accepted(self) -> None:
+        root, hooks, memory = self.make_fixture(GOOD_HANDOFF)
+        index = root / ".claude" / "handoffs" / "INDEX.md"
+        with index.open("a", encoding="utf-8") as handle:
+            handle.write("- 2026-06-07 17:52 | e5d1fa70 | historical summary | ACTIVE\n")
+            handle.write("| 2026-06-19 | 00:35 | car-classifier-base | 019edc8e | historical summary |\n")
+        result = self.run_validator(root, hooks, memory, "--strict-legacy")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('"warn": 0', result.stdout)
+
+    def test_post_cutoff_noncanonical_index_record_is_reported(self) -> None:
+        root, hooks, memory = self.make_fixture(GOOD_HANDOFF)
+        index = root / ".claude" / "handoffs" / "INDEX.md"
+        with index.open("a", encoding="utf-8") as handle:
+            handle.write("- 2026-07-01 10:00 | new-session | noncanonical summary | ACTIVE\n")
+        result = self.run_validator(root, hooks, memory)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("unparseable INDEX line", result.stdout)
+
+    def test_latest_handoff_uses_filename_timestamp_not_checkout_mtime(self) -> None:
+        root, hooks, memory = self.make_fixture(GOOD_HANDOFF)
+        older = root / ".claude" / "handoffs" / "sample-project" / "2026-06-23_23-59_old.md"
+        older.write_text(BAD_HANDOFF, encoding="utf-8")
+        future = time.time() + 3600
+        os.utime(older, (future, future))
+
+        result = self.run_validator(root, hooks, memory, "--strict-legacy")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('"pass": true', result.stdout)
+
+    def test_explicit_runtime_report_dir_does_not_dirty_project_root(self) -> None:
+        root, hooks, memory = self.make_fixture(GOOD_HANDOFF)
+        runtime_reports = root.parent / "runtime-reports"
+        result = self.run_validator(
+            root,
+            hooks,
+            memory,
+            "--write-report",
+            "--report-dir",
+            str(runtime_reports),
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue((runtime_reports / "latest.json").exists())
+        self.assertFalse((root / "reports" / "handoff-memory-loop").exists())
 
     def test_missing_memory_note_fails(self) -> None:
         root, hooks, memory = self.make_fixture(GOOD_HANDOFF, include_memory_notes=False)

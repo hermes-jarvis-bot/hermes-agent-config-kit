@@ -27,6 +27,7 @@ REQUIRED_HANDOFF_SECTIONS = (
     "## Key decisions",
     "## Single next step",
 )
+HANDOFF_FILENAME_RE = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}_.+\.md$")
 
 REQUIRED_HOOK_KEYWORDS = (
     "session-handoff-check.py",
@@ -121,7 +122,7 @@ def rel(path: Path, root: Path) -> str:
 
 
 def read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8", errors="replace")
+    return path.read_text(encoding="utf-8-sig", errors="replace")
 
 
 def normalize_heading(value: str) -> str:
@@ -169,6 +170,25 @@ def check_hooks(hooks_path: Path, findings: list[Finding]) -> dict:
     return result
 
 
+LEGACY_INDEX_CUTOFF = "2026-06-20"
+
+
+def is_accepted_legacy_index_line(line: str) -> bool:
+    """Accept known pre-canonical index formats without weakening new records.
+
+    The hub used several pipe-delimited layouts before the canonical
+    ``date time | session | project | summary | status`` record was adopted.
+    Old history remains useful and should not create permanent health warnings,
+    while records on or after the cutoff must use the modern parser below.
+    """
+    candidate = line.strip().lstrip("-").strip().strip("|").strip()
+    parts = [part.strip() for part in candidate.split("|")]
+    if len(parts) < 4:
+        return False
+    date_match = re.match(r"(?P<date>\d{4}-\d{2}-\d{2})(?:\s+[^|]+)?$", parts[0])
+    return bool(date_match and date_match.group("date") < LEGACY_INDEX_CUTOFF)
+
+
 def parse_index(index_path: Path, findings: list[Finding]) -> list[dict]:
     entries: list[dict] = []
     if not index_path.exists():
@@ -185,6 +205,8 @@ def parse_index(index_path: Path, findings: list[Finding]) -> list[dict]:
             continue
         match = pattern.match(stripped)
         if not match:
+            if is_accepted_legacy_index_line(stripped):
+                continue
             findings.append(Finding("warn", "handoffs", f"unparseable INDEX line {lineno}: {stripped}", str(index_path)))
             continue
         entry = match.groupdict()
@@ -197,12 +219,18 @@ def check_handoff_files(root: Path, findings: list[Finding], strict_legacy: bool
     handoff_root = root / ".claude" / "handoffs"
     index_path = handoff_root / "INDEX.md"
     entries = parse_index(index_path, findings)
-    files = sorted(p for p in handoff_root.glob("*/*.md") if p.name.upper() != "INDEX.MD")
+    files = sorted(
+        p
+        for p in handoff_root.glob("*/*.md")
+        if HANDOFF_FILENAME_RE.fullmatch(p.name)
+    )
     latest_by_project: dict[str, Path] = {}
     for path in files:
         project = path.parent.name
         current = latest_by_project.get(project)
-        if current is None or path.stat().st_mtime > current.stat().st_mtime:
+        # Git checkout time is not handoff time. The canonical filename begins
+        # with an ISO date/time, so lexical order is stable across clones.
+        if current is None or path.name > current.name:
             latest_by_project[project] = path
 
     checked_latest: dict[str, dict] = {}
@@ -290,8 +318,7 @@ def check_memory(memory_base: Path, root: Path, findings: list[Finding]) -> dict
     return result
 
 
-def write_report(root: Path, payload: dict) -> Path:
-    reports_dir = root / "reports" / "handoff-memory-loop"
+def write_report(reports_dir: Path, payload: dict) -> Path:
     reports_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     report_path = reports_dir / f"{stamp}.json"
@@ -307,6 +334,12 @@ def main() -> int:
     parser.add_argument("--memory-base", default=str(Path.home() / ".codex" / "memories"))
     parser.add_argument("--hooks", default=str(Path.home() / ".codex" / "hooks.json"))
     parser.add_argument("--write-report", action="store_true")
+    parser.add_argument(
+        "--report-dir",
+        type=Path,
+        default=None,
+        help="Runtime report directory (default: <root>/reports/handoff-memory-loop).",
+    )
     parser.add_argument(
         "--strict-legacy",
         action="store_true",
@@ -334,7 +367,8 @@ def main() -> int:
     }
 
     if args.write_report:
-        payload["report_path"] = str(write_report(root, payload))
+        reports_dir = args.report_dir or (root / "reports" / "handoff-memory-loop")
+        payload["report_path"] = str(write_report(reports_dir, payload))
 
     print(json.dumps(payload["summary"], ensure_ascii=False, indent=2))
     if findings:
