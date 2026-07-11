@@ -31,9 +31,9 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
-| `templates/` | 47 | 2 | 45 |
+| `templates/` | 47 | 3 | 44 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **57** | **325** |
+| **Total** | **382** | **58** | **324** |
 
 ## Ported so far
 
@@ -43,6 +43,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | --- | --- |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
 | `templates/proof-plan.md` | `hermes/templates/proof-plan.md` |
+| `templates/agent-task/handoff.md` | `hermes/templates/agent-task-handoff.md` |
 | `principles/01-harness-design.md` | `hermes/skills/harness-design/SKILL.md` |
 | `principles/02-proof-loop.md` | `hermes/skills/proof-loop/SKILL.md` |
 | `principles/03-autoresearch.md` | `hermes/skills/autoresearch/SKILL.md` |
@@ -347,9 +348,11 @@ Reason: many are design notes or competing patterns rather than ready modules. T
 
 ## Templates not yet ported
 
-One low-risk upstream template has been adapted with Hermes-native provenance and
+Three low-risk upstream templates have been adapted with Hermes-native provenance and
 operator-confirmation wording: `templates/proof-plan.md` ->
-`hermes/templates/proof-plan.md`. The installer copies it only into the isolated
+`hermes/templates/proof-plan.md`, `templates/agent-task/spec.md` ->
+`hermes/templates/agent-task-spec.md`, and `templates/agent-task/handoff.md` ->
+`hermes/templates/agent-task-handoff.md`. The installer copies them only into the isolated
 `<hermes-home>/templates/config-kit/` namespace and the remover deletes only that
 namespace. The remaining template categories stay out of MVP:
 
@@ -366,7 +369,8 @@ namespace. The remaining template categories stay out of MVP:
   - `templates/memory-project.md`
   - `templates/memory-reference.md`
 - Agent task structure:
-  - remaining `templates/agent-task/*` artefacts after separate review
+  - `templates/agent-task/handoff.md` has been ported as a data-only task transfer
+    template; remaining `templates/agent-task/*` artefacts need separate review.
 - Knowledge-base skeleton:
   - `templates/kb-skeleton/*`
 - Long-run project skeleton:
@@ -714,6 +718,11 @@ asserts the 57-entry mapping/compatibility invariant, zero generated occurrences
 both patterns, stable regeneration, `py_compile`, `validate_output.py`, and scoped
 disposable install/remove (55 skills and 2 templates). GitHub issue #18 is closed
 by `Fixes #18` in that commit.
+
+Current recheck (2026-07-11): the current `adapt_text()` retains the project-local
+path mapping and guard-name normalisation, while `validate_output.py` retains the
+corresponding forbidden-pattern checks. The focused ad-hoc verification for the next
+port confirms the same no-leakage invariant across 58 generated artefacts.
 
 ## Upstream lockfile integrity note (`skills-lock.json`, not this repo's file)
 

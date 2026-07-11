@@ -22,6 +22,14 @@ templates/agent-task/spec.md:
   description: Define a bounded agent task with explicit scope, constraints, acceptance criteria, and verification evidence.
   risk: low
 
+templates/agent-task/handoff.md:
+  status: supported
+  target: hermes/templates/agent-task-handoff.md
+  type: template
+  name: agent-task-handoff
+  description: Record a concise task handoff with verified state, decisions, evidence, and the exact next step.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md

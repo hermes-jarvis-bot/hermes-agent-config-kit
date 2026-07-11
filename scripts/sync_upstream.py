@@ -40,6 +40,12 @@ SUPPORTED = {
         "description": "Define a bounded agent task with explicit scope, constraints, acceptance criteria, and verification evidence.",
         "type": "template",
     },
+    "templates/agent-task/handoff.md": {
+        "target": "hermes/templates/agent-task-handoff.md",
+        "name": "agent-task-handoff",
+        "description": "Record a concise task handoff with verified state, decisions, evidence, and the exact next step.",
+        "type": "template",
+    },
     "principles/01-harness-design.md": {
         "target": "hermes/skills/harness-design/SKILL.md",
         "name": "harness-design",
