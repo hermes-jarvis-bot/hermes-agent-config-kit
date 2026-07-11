@@ -140,6 +140,7 @@ Current generated Hermes skills:
 - `independent-verification`
 - `inter-agent-communication`
 - `documentation-integrity`
+- `documentation-freshness`
 - `knowledge-base-enforcement`
 - `learning-from-corrections`
 - `low-signal-residual-training`

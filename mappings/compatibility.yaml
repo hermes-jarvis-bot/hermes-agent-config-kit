@@ -390,6 +390,14 @@ rules/autonomy-risk-tiers.md:
   description: Classify agent actions by reversibility and impact so routine low-risk work can proceed while destructive, external, billing, or production changes remain approval-gated.
   risk: medium
 
+rules/agent-docs-freshness.md:
+  status: supported
+  target: hermes/skills/documentation-freshness/SKILL.md
+  type: rule_skill
+  name: documentation-freshness
+  description: Assess whether agent-facing project guidance remains current using bounded Git evidence, explicit adoption signals, and reviewable refresh decisions.
+  risk: low
+
 hooks/*:
   status: review
   type: hook

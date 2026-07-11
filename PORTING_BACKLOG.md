@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 30 | 0 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 19 | 11 |
+| `rules/` | 30 | 20 | 10 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **49** | **333** |
+| **Total** | **382** | **50** | **332** |
 
 ## Ported so far
 
@@ -79,6 +79,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/app-prelaunch-security-checklist.md` | `hermes/skills/app-prelaunch-security/SKILL.md` |
 | `rules/autonomy-risk-tiers.md` | `hermes/skills/risk-tiered-autonomy/SKILL.md` |
 | `rules/cross-harness-agents-md.md` | `hermes/skills/portable-project-context/SKILL.md` |
+| `rules/agent-docs-freshness.md` | `hermes/skills/documentation-freshness/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
 | `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
@@ -222,7 +223,6 @@ All upstream principles in the pinned snapshot have now been reviewed and ported
 The following rules stayed out of MVP:
 
 
-- `rules/agent-docs-freshness.md`
 - `rules/api-utf8-posting.md`
 - `rules/long-run-harness.md`
 - `rules/moa-gemini-delegation-eval.md`
@@ -236,7 +236,7 @@ The following rules stayed out of MVP:
 
 High-value next candidate:
 
-1. `rules/agent-docs-freshness.md` — low-risk markdown guidance for checking instruction-file freshness, subject to deduplication against `documentation-integrity`.
+1. `rules/api-utf8-posting.md` — narrowly scoped guidance for safe non-ASCII API writes and receiver-side read-back, subject to cross-platform and communications-channel review.
 
 ## Skill packages not yet ported
 
@@ -407,7 +407,7 @@ Goal: expand useful Hermes guidance without executable code.
 
 Candidates:
 
-No specific Wave 1 rule candidate is singled out at this point; inspect remaining rules one by one before porting.
+Recommended next candidate: `rules/api-utf8-posting.md`, after confirming that its guidance stays data-only and does not embed active access credentials or platform-specific command paths.
 
 Acceptance criteria:
 
