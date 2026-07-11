@@ -241,6 +241,10 @@ Responsibilities:
 - preview or copy generated adapter artefacts into a selected Hermes home/profile;
 - default to dry-run/non-mutating mode;
 - require explicit `--apply` for writes;
+- reject live and non-disposable target paths unless `--i-know-this-is-production` is
+  explicitly supplied after operator confirmation; use `/tmp`, `*-test`, or `*-sandbox`
+  paths for disposable targets;
+- reject the contradictory `--apply --dry-run` combination;
 - copy generated skills into `<hermes-home>/skills/config-kit/`;
 - copy generated templates into `<hermes-home>/templates/config-kit/` if templates exist.
 
@@ -258,6 +262,10 @@ Responsibilities:
 - preview or remove adapter artefacts from a selected Hermes home/profile;
 - default to dry-run/non-mutating mode;
 - require explicit `--apply` for deletes;
+- reject live and non-disposable target paths unless `--i-know-this-is-production` is
+  explicitly supplied after operator confirmation; use `/tmp`, `*-test`, or `*-sandbox`
+  paths for disposable targets;
+- reject the contradictory `--apply --dry-run` combination;
 - remove only `<hermes-home>/skills/config-kit/` and `<hermes-home>/templates/config-kit/`.
 
 Important invariants:

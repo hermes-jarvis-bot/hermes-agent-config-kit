@@ -572,6 +572,13 @@ ad-hoc stale-output sync verification described above.
    from `--apply`, so `--apply --dry-run` writes. Fix: make the two mutually exclusive
    (error out), or let `--dry-run` force dry-run regardless of `--apply`.
 
+Status (2026-07-11): **confirmed and closed**. Independent pre-change probes accepted
+`/root/.hermes` and showed that `--apply --dry-run` wrote into a disposable target.
+Both installer interfaces now reject production and non-disposable targets unless the
+explicit production override is supplied, and make `--apply` and `--dry-run` mutually
+exclusive. Focused ad-hoc verification covers refusal, conflict rejection, disposable
+dry-run/apply/remove, and the unchanged generated-output contract.
+
 **Priority 3 — lower blast radius:**
 4. `save_lock()` `write_text` (no temp+rename) → a killed run corrupts
    `upstream.lock.json`, breaking even `--check`. `download_snapshot()` `rmtree`+

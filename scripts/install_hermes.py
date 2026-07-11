@@ -5,6 +5,8 @@ import argparse
 import shutil
 from pathlib import Path
 
+from hermes_home_safety import validate_hermes_home
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -24,10 +26,16 @@ def copy_tree(src: Path, dst: Path, apply: bool) -> list[str]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--hermes-home", required=True, help="Target Hermes home/profile directory. Use a temp dir for tests.")
-    ap.add_argument("--apply", action="store_true", help="Actually write files. Without this, dry-run only.")
-    ap.add_argument("--dry-run", action="store_true", help="Explicit dry-run flag for readability.")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--apply", action="store_true", help="Actually write files. Without this, dry-run only.")
+    mode.add_argument("--dry-run", action="store_true", help="Explicit dry-run flag for readability.")
+    ap.add_argument("--i-know-this-is-production", action="store_true", help="Override target safety checks after operator confirmation.")
     args = ap.parse_args()
     hermes_home = Path(args.hermes_home).expanduser().resolve()
+    try:
+        validate_hermes_home(hermes_home, args.i_know_this_is_production)
+    except ValueError as exc:
+        ap.error(str(exc))
     apply = bool(args.apply)
     print(("APPLY" if apply else "DRY RUN") + f": target {hermes_home}")
     actions: list[str] = []

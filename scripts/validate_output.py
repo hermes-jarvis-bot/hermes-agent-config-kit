@@ -96,8 +96,12 @@ def validate_no_live_writes_default() -> None:
 
 def validate_installer_contract() -> None:
     text = read_text(ROOT / "scripts" / "install_hermes.py")
-    if 'ap.add_argument("--apply", action="store_true"' not in text:
+    if 'mode.add_argument("--apply", action="store_true"' not in text:
         fail("installer must require explicit --apply for writes")
+    if 'mode.add_argument("--dry-run", action="store_true"' not in text:
+        fail("installer must make apply and dry-run mutually exclusive")
+    if 'validate_hermes_home(hermes_home, args.i_know_this_is_production)' not in text:
+        fail("installer must validate the Hermes home target")
     if 'apply = bool(args.apply)' not in text:
         fail("installer must derive write mode only from --apply")
     if 'if apply:' not in text:
@@ -108,8 +112,12 @@ def validate_installer_contract() -> None:
 
 def validate_remover_contract() -> None:
     text = read_text(ROOT / "scripts" / "remove_hermes.py")
-    if 'ap.add_argument("--apply", action="store_true"' not in text:
+    if 'mode.add_argument("--apply", action="store_true"' not in text:
         fail("remover must require explicit --apply for deletes")
+    if 'mode.add_argument("--dry-run", action="store_true"' not in text:
+        fail("remover must make apply and dry-run mutually exclusive")
+    if 'validate_hermes_home(hermes_home, args.i_know_this_is_production)' not in text:
+        fail("remover must validate the Hermes home target")
     if 'apply = bool(args.apply)' not in text:
         fail("remover must derive delete mode only from --apply")
     if 'Path("skills") / "config-kit"' not in text:
