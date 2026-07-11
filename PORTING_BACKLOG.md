@@ -520,6 +520,13 @@ commits) — re-grep the function names rather than trusting the numbers.
 5. `gh_api()`: runs `gh` with `stderr=subprocess.STDOUT`, so a stderr warning can
    corrupt the JSON it parses; currently masked by a broad `except Exception` fallback
    to the unauthenticated, 60-req/hr GitHub REST API path.
+
+Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
+`run(..., stderr=subprocess.STDOUT)` and the broad fallback. The transport now captures
+stdout and stderr separately, parses stdout only, falls back only after a missing or
+failed `gh` invocation, and raises a labelled fault for malformed `gh` JSON. Focused
+ad-hoc verification covers stderr isolation, valid authenticated JSON, failed-command
+fallback, and malformed-JSON non-fallback (`Fixes #8`).
 6. `convert_supported()`: silently skips (`if not src.exists(): continue`) a
    `SUPPORTED` entry whose upstream source file no longer exists — no warning in the
    report or exit code, so a generated skill can go stale with zero signal.

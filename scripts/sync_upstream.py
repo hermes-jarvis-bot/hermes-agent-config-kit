@@ -302,17 +302,28 @@ SUPPORTED = {
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> str:
-    return subprocess.check_output(cmd, cwd=str(cwd or ROOT), text=True, stderr=subprocess.STDOUT)
+    result = subprocess.run(
+        cmd,
+        cwd=str(cwd or ROOT),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+    return result.stdout
 
 
 def gh_api(path: str) -> Any:
     try:
         out = run(["gh", "api", path])
-        return json.loads(out)
-    except Exception:
+    except (FileNotFoundError, subprocess.CalledProcessError):
         url = f"https://api.github.com/{path}"
         with urllib.request.urlopen(url, timeout=60) as resp:
             return json.loads(resp.read().decode("utf-8"))
+    try:
+        return json.loads(out)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"gh api returned invalid JSON for {path}") from exc
 
 
 def latest_sha() -> str:
