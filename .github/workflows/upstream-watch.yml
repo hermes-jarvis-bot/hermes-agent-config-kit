@@ -20,7 +20,7 @@ jobs:
     env:
       TARGET_SHA: ${{ github.event.inputs.target_sha || '' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Check upstream status
         id: check
         env:
@@ -42,7 +42,7 @@ jobs:
           python3 scripts/validate_output.py
       - name: Create or update sync PR
         if: steps.check.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v8.1.1
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           branch: sync/upstream-claude-code-config
           delete-branch: true
