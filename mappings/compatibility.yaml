@@ -38,6 +38,14 @@ templates/agent-task/fix-log.md:
   description: Record a concise corrective change, its verification evidence, and any remaining risk.
   risk: low
 
+templates/agent-task/problems.md:
+  status: supported
+  target: hermes/templates/agent-task-problems.md
+  type: template
+  name: agent-task-problems
+  description: Record open verifier findings, evidence, required fixes, and resolved findings for a bounded task.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md

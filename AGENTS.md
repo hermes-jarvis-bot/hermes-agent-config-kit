@@ -192,6 +192,7 @@ Current generated Hermes templates:
 - `agent-task-spec.md` at `hermes/templates/agent-task-spec.md`
 - `agent-task-handoff.md` at `hermes/templates/agent-task-handoff.md`
 - `agent-task-fix-log.md` at `hermes/templates/agent-task-fix-log.md`
+- `agent-task-problems.md` at `hermes/templates/agent-task-problems.md`
 
 Each generated template must be markdown-only, carry source attribution and the
 Hermes adaptation notice, and remain a data-only artefact. It is installed only under
