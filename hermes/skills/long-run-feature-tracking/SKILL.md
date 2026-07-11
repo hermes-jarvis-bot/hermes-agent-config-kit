@@ -44,8 +44,8 @@ These are independent. A feature can be `blocked` because of a `PROBLEMS.md` ent
 This sits **alongside** existing per-project conventions, not in place of them:
 
 - **AGENTS.md or project guidance / AGENTS.md** — how to work here (rules and routing)
-- **`.hermes-compatible project artefacts/handoffs/`** — tactical "what to do next" between sessions
-- **`.hermes-compatible project artefacts/chronicles/`** — strategic "how we got here" across months
+- **`.hermes/handoffs/`** — tactical "what to do next" between sessions
+- **`.hermes/chronicles/`** — strategic "how we got here" across months
 
 Features and incidents and health checks were the missing layer.
 
@@ -201,7 +201,7 @@ For skipped projects, free-form notes in handoffs are fine. The overhead of main
 A session-finish routine concept can verify the invariants automatically:
 
 ```python
-# scripts/stop-feature-list-check.py (pseudocode)
+# scripts/a reviewed guard candidate (pseudocode)
 def check_feature_list(repo_root):
     fl_path = repo_root / "feature_list.json"
     if not fl_path.exists():

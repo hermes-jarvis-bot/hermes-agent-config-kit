@@ -46,10 +46,10 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
   копия на месте).
 
 ## Hermes adaptation — guard candidates, not active hooks
-- `human-confirmation-guard.py` (pre-action guard concept) — требует подтверждения для destructive intent.
-- `destructive-command-guard.py` / `git-destructive-guard.py` — блок катастрофических удалений.
-- `db-snapshot-guard.py` — снапшот БД перед destructive SQL.
-- `verify-deleted-guard.py` (post-action verification concept) — проверяет, что destructive-операция реально завершилась.
+- `a reviewed guard candidate` (pre-action guard concept) — требует подтверждения для destructive intent.
+- `a reviewed guard candidate` / `a reviewed guard candidate` — блок катастрофических удалений.
+- `a reviewed guard candidate` — снапшот БД перед destructive SQL.
+- `a reviewed guard candidate` (post-action verification concept) — проверяет, что destructive-операция реально завершилась.
 
 Related upstream references, review before porting: AGENTS.md or project guidance «Anti-Fabrication» («Deletion = re-verification»),
 `system-verification-independent.md`, `safety-hooks.md`.

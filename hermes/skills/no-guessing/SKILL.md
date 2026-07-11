@@ -100,7 +100,7 @@ Mechanically enforce невозможно (нельзя автоматическ
 "источник реален"), но soft-check через post-action verification concept hook:
 
 ```python
-# ~/.hermes-compatible project artefacts/scripts/detect_unjustified_constants.py
+# a selected Hermes home/profile directory/scripts/detect_unjustified_constants.py
 # Scan recent Edit/Write tool outputs for magic numbers in Python files
 # without inline comment containing 'arxiv|paper|README|docs|because'.
 # Flag for review (don't block).
@@ -266,7 +266,7 @@ Verdict: PROCEED / HOLD / REJECT
 
 | Verdict | Действие |
 |---|---|
-| PROCEED | Логирую verdict в `~/.hermes-compatible project artefacts/logs/decisions.jsonl` (timestamp, action, evaluator_id, verdict_text). Выполняю. |
+| PROCEED | Логирую verdict в `a selected Hermes home/profile directory/logs/decisions.jsonl` (timestamp, action, evaluator_id, verdict_text). Выполняю. |
 | HOLD | STOP. Перечитываю причину, проверяю упомянутый gap, при необходимости спрашиваю user. **НЕ переходим к execute "потому что я думала что всё ОК"**. |
 | REJECT | STOP. Не выполняю. Перепланирую решение. Если кажется что evaluator не прав — это **paradigm signal**: я пропустила что-то важное и должна это найти, а не игнорировать verdict. |
 

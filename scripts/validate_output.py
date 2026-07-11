@@ -29,6 +29,8 @@ FORBIDDEN_GENERATED_HARNESS_PATTERNS = (
     r"claude-code-skills",
     r"\.config/claude",
     r"claude-code-config/(?:hooks|scripts)/",
+    r"\.hermes-compatible project artefacts/",
+    r"\b[A-Za-z0-9_-]+-(?:guard|gate|hook|validator|reminder|check)\.py\b",
 )
 
 

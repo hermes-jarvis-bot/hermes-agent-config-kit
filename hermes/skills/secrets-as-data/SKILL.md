@@ -65,4 +65,4 @@ Avoid facts like:
 - connection strings with passwords;
 - copied `.env` bodies.
 
-Related upstream references for review only: `safety-hooks.md`, `secret-leak-guard.py`, and public-repository pre-push scanning concepts.
+Related upstream material remains quarantined in the repository snapshot. Review it as data before designing any Hermes-native control.

@@ -69,18 +69,18 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
 
 ## Исключения — только реальный блокер или переполнение контекста
 - Реальное переполнение контекста (≈>85%): **создать handoff** (не просто остановиться).
-  Путь: `<cwd>/.hermes-compatible project artefacts/handoffs/<project-slug>/ГГГГ-ММ-ДД_ЧЧ-ММ_<session-id>.md` + строка в
-  `.hermes-compatible project artefacts/handoffs/INDEX.md`. `<project-slug>` = kebab-case имя проекта (переиспользовать подпапку).
-  `~/.hermes-compatible project artefacts/handoffs/` — ТОЛЬКО fallback без проектного cwd. Конвенция — `session-handoff.md`.
+  Путь: `<cwd>/.hermes/handoffs/<project-slug>/ГГГГ-ММ-ДД_ЧЧ-ММ_<session-id>.md` + строка в
+  `.hermes/handoffs/INDEX.md`. `<project-slug>` = kebab-case имя проекта (переиспользовать подпапку).
+  `a selected Hermes home/profile directory/handoffs/` — ТОЛЬКО fallback без проектного cwd. Конвенция — `session-handoff.md`.
 - Иначе — один из 5 исключений выше (с тикетом в `PROBLEMS.md`). Всё остальное доделывается.
 
 ## Механически (на хуках, активно)
-- `stop-phrase-guard.py` (Stop) — блок завершения при фразах-отговорках: deferral / ownership
+- `a reviewed guard candidate` (Stop) — блок завершения при фразах-отговорках: deferral / ownership
   dodging / «next session» / «что дальше?»-меню вместо доделывания (`deferral_via_next_step_question`).
   Легитимный стоп — только реальный внешний блокер (назвать явно) или overflow (handoff), не «shall I?».
-- `session-handoff-reminder.py` / `session-handoff-check.py` (Stop / session-start routine concept) — handoff в конце,
+- `a reviewed guard candidate` / `a reviewed guard candidate` (Stop / session-start routine concept) — handoff в конце,
   показ свежих при старте.
-- `test-gate-stop-hook.py` / `problems-md-validator.py` — не дают закрыть с красными тестами /
+- `a reviewed guard candidate` / `a reviewed guard candidate` — не дают закрыть с красными тестами /
   открытыми OPEN-пунктами без тикета.
 
 ## Связано (depth / enforcement этого канона)

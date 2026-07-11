@@ -414,8 +414,9 @@ def adapt_text(text: str) -> str:
         "Claude Code": "Hermes Agent",
         "Claude": "Hermes",
         "CLAUDE.md": "AGENTS.md or project guidance",
-        ".claude/": ".hermes-compatible project artefacts/",
+        "~/.claude/": "a selected Hermes home/profile directory/",
         "~/.claude": "a selected Hermes home/profile directory",
+        ".claude/": ".hermes/",
         "AskUserQuestion": "clarify/operator confirmation",
         "PreToolUse": "pre-action guard concept",
         "PostToolUse": "post-action verification concept",
@@ -430,6 +431,11 @@ def adapt_text(text: str) -> str:
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
+    text = re.sub(
+        r"\b[A-Za-z0-9_-]+-(?:guard|gate|hook|validator|reminder|check)\.py\b",
+        "a reviewed guard candidate",
+        text,
+    )
     return text
 
 
@@ -3198,7 +3204,7 @@ Avoid facts like:
 - connection strings with passwords;
 - copied `.env` bodies.
 
-Related upstream references for review only: `safety-hooks.md`, `secret-leak-guard.py`, and public-repository pre-push scanning concepts.
+Related upstream material remains quarantined in the repository snapshot. Review it as data before designing any Hermes-native control.
 """
     if source_path == "rules/no-claude-attribution.md":
         return """# Repository Attribution Hygiene

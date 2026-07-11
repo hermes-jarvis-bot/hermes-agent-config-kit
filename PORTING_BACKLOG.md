@@ -695,6 +695,26 @@ invariant, stable regeneration, `py_compile`, `validate_output.py`, and scoped
 disposable install/remove (55 skills and 2 templates). GitHub issue #16 is
 closed; this backlog entry records the independent closure evidence.
 
+## Follow-up review finding: generated path and guard-name leakage (GitHub issue #18)
+
+GitHub review finding **#18** reported that generic adaptation changed `.claude/`
+into the invalid, space-containing `.hermes-compatible project artefacts/` path
+in five generated modules. It also reported upstream `*-guard.py` names in
+generated guidance, including a source-specific `secrets-as-data` adaptation;
+the existing validator did not reject either pattern.
+
+Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
+seven invalid paths across `finish-the-task`, `long-run-feature-tracking`, and
+`no-guessing`, plus guard-name leakage in `safe-deletion`, `finish-the-task`, and
+`secrets-as-data`. The generic adapter now maps project-local paths to `.hermes/`,
+normalises guard/gate/hook/validator/reminder/check filenames to a review-only category, and the
+source-specific secrets adaptation no longer names an upstream guard. The validator
+rejects both regression classes. Focused ad-hoc verification for the fixing commit
+asserts the 57-entry mapping/compatibility invariant, zero generated occurrences of
+both patterns, stable regeneration, `py_compile`, `validate_output.py`, and scoped
+disposable install/remove (55 skills and 2 templates). GitHub issue #18 is closed
+by `Fixes #18` in that commit.
+
 ## Upstream lockfile integrity note (`skills-lock.json`, not this repo's file)
 
 Checked 2026-07-11 against the live installed upstream plugin checkout at
