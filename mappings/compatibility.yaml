@@ -334,6 +334,14 @@ rules/verify-at-consumer.md:
   description: Verify integrations at the receiving side; sender logs, specs, and HTTP acknowledgements are not enough.
   risk: medium
 
+rules/api-utf8-posting.md:
+  status: supported
+  target: hermes/skills/api-utf8-posting/SKILL.md
+  type: rule_skill
+  name: api-utf8-posting
+  description: Prepare non-ASCII API payloads deliberately and verify stored receiver-side text after an authorised external write.
+  risk: medium
+
 rules/activity-journal-and-state-registry.md:
   status: supported
   target: hermes/skills/activity-journal-and-state-registry/SKILL.md

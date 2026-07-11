@@ -28,12 +28,12 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `hooks/` | 42 | 0 | 42 |
 | `principles/` | 30 | 30 | 0 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 20 | 10 |
+| `rules/` | 30 | 21 | 9 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
 | `templates/` | 47 | 0 | 47 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **50** | **332** |
+| **Total** | **382** | **51** | **331** |
 
 ## Ported so far
 
@@ -91,6 +91,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/learn-from-corrections.md` | `hermes/skills/learning-from-corrections/SKILL.md` |
 | `rules/system-verification-independent.md` | `hermes/skills/independent-verification/SKILL.md` |
 | `rules/verify-at-consumer.md` | `hermes/skills/verify-at-consumer/SKILL.md` |
+| `rules/api-utf8-posting.md` | `hermes/skills/api-utf8-posting/SKILL.md` |
 
 These were chosen because they are broadly useful, markdown-centric, and can be adapted without executing upstream code or assuming Claude Code hook APIs.
 
@@ -223,7 +224,6 @@ All upstream principles in the pinned snapshot have now been reviewed and ported
 The following rules stayed out of MVP:
 
 
-- `rules/api-utf8-posting.md`
 - `rules/long-run-harness.md`
 - `rules/moa-gemini-delegation-eval.md`
 - `rules/no-claude-attribution.md`
@@ -234,9 +234,9 @@ The following rules stayed out of MVP:
 - `rules/safety-billing.md`
 - `rules/safety-hooks.md`
 
-High-value next candidate:
+Next candidate requiring fresh overlap and threat review:
 
-1. `rules/api-utf8-posting.md` — narrowly scoped guidance for safe non-ASCII API writes and receiver-side read-back, subject to cross-platform and communications-channel review.
+1. `rules/long-run-harness.md` — evaluate only as non-activating Hermes guidance; do not introduce orchestration routines, hooks, or external-provider coupling.
 
 ## Skill packages not yet ported
 
@@ -407,7 +407,7 @@ Goal: expand useful Hermes guidance without executable code.
 
 Candidates:
 
-Recommended next candidate: `rules/api-utf8-posting.md`, after confirming that its guidance stays data-only and does not embed active access credentials or platform-specific command paths.
+Most recently ported: `rules/api-utf8-posting.md` as data-only Unicode payload and receiver-side read-back guidance. Next candidate: `rules/long-run-harness.md`, only after fresh overlap and threat review.
 
 Acceptance criteria:
 
