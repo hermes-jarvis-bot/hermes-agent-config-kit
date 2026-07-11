@@ -597,6 +597,14 @@ install/remove.
 5. `validate_output.py:validate_skills()` checks only `name`+`description`, not the
    documented `version`/`license`/`metadata.hermes_config_kit.*` frontmatter contract.
    A regressed skill passes CI. Fix: assert the full documented frontmatter shape.
+
+Status (2026-07-11): **confirmed and closed**. A disposable current-code probe removed
+`version` from a generated skill and the validator still returned success. The validator
+now requires non-empty `name`, `description`, `version`, and `license`, plus the
+`metadata.hermes_config_kit` mapping and its `source_repo`, `source_path`, `adapter`,
+and `conversion` entries. Focused ad-hoc verification exercises each required-field and
+metadata-mapping rejection path, then validates the unchanged generated set.
+
 6. `convert_supported()` silently `continue`s past a SUPPORTED entry whose source file
    is gone — no report line, no exit code. Fix: collect missing sources, surface them
    in the report, and exit non-zero.

@@ -75,9 +75,15 @@ def validate_skills() -> None:
     for path in skills:
         text = read_text(path)
         fm = parse_frontmatter(text, path)
-        for field in ["name", "description"]:
+        for field in ["name", "description", "version", "license"]:
             if not fm.get(field):
                 fail(f"{path} missing {field}")
+        for field in ["source_repo", "source_path", "adapter", "conversion"]:
+            pattern = rf"^    {re.escape(field)}:\s*\S+"
+            if not re.search(pattern, text.split("\n---\n", 1)[0], re.MULTILINE):
+                fail(f"{path} missing metadata.hermes_config_kit.{field}")
+        if not re.search(r"^metadata:\n  hermes_config_kit:\n", text, re.MULTILINE):
+            fail(f"{path} missing metadata.hermes_config_kit mapping")
         if "~/.hermes" in text and "--apply" in text:
             fail(f"{path} appears to encourage live Hermes writes")
 
