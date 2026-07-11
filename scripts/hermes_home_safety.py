@@ -7,6 +7,10 @@ from pathlib import Path
 
 def validate_hermes_home(path: Path, allow_production: bool) -> None:
     """Reject production and non-disposable targets unless explicitly overridden."""
+    disposable = path.is_relative_to(Path("/tmp")) or path.name.endswith(("-test", "-sandbox"))
+    if disposable:
+        return
+
     production_paths = {Path.home() / ".hermes"}
     if configured_home := os.environ.get("HERMES_HOME"):
         production_paths.add(Path(configured_home).expanduser().resolve())
@@ -19,7 +23,6 @@ def validate_hermes_home(path: Path, allow_production: bool) -> None:
             )
         return
 
-    disposable = path.is_relative_to(Path("/tmp")) or path.name.endswith(("-test", "-sandbox"))
     if not disposable and not allow_production:
         raise ValueError(
             f"refusing non-disposable Hermes home {path}; use /tmp, a *-test or "

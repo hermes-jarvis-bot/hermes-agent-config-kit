@@ -26,14 +26,14 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `docs/` | 3 | 0 | 3 |
 | `evals/` | 2 | 0 | 2 |
 | `hooks/` | 42 | 0 | 42 |
-| `principles/` | 30 | 30 | 0 |
+| `principles/` | 29 | 29 | 0 |
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
-| `templates/` | 47 | 1 | 46 |
+| `templates/` | 47 | 2 | 45 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **56** | **326** |
+| **Total** | **382** | **57** | **325** |
 
 ## Ported so far
 
