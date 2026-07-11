@@ -70,6 +70,12 @@ SUPPORTED = {
         "description": "Summarise the reviewed, data-only task records that support safe task resumption and handoff.",
         "type": "template",
     },
+    "templates/agent-task/evidence/README.md": {
+        "target": "hermes/templates/agent-task-evidence.md",
+        "name": "agent-task-evidence",
+        "description": "Record redacted, project-approved verification evidence with stable references for a bounded task.",
+        "type": "template",
+    },
     "principles/01-harness-design.md": {
         "target": "hermes/skills/harness-design/SKILL.md",
         "name": "harness-design",
@@ -470,6 +476,28 @@ def adapt_text(text: str) -> str:
 
 
 def adapt_source_text(source_path: str, text: str) -> str:
+    if source_path == "templates/agent-task/evidence/README.md":
+        return """# Task Evidence Register
+
+Use this data-only template to index project-approved evidence for a bounded task. It does not create directories, collect telemetry, upload files, or activate a verifier. Keep raw artefacts in a project-approved location and obtain operator confirmation before any write-impacting or external action.
+
+## Evidence entries
+
+| Reference | Kind | Scope or phase | Result | Redaction check |
+| --- | --- | --- | --- | --- |
+| `evidence/<timestamp>-test.txt` | Test output | {{phase}} | {{pass_fail_or_summary}} | {{redaction_status}} |
+| `evidence/<timestamp>-report.md` | Generated report | {{phase}} | {{summary}} | {{redaction_status}} |
+
+## Recording rules
+
+- Use stable, meaningful filenames such as a timestamp or phase name.
+- Record only the smallest evidence needed to support a claim; link to large raw outputs rather than copying them into active context.
+- Do not store access credentials, private dumps, personal data, or unreviewed instructions. Redact or omit sensitive material before recording a reference.
+- State what each item verifies and whether it is current for the task's final repository state.
+- Cross-reference important evidence from the project's approved task record or final verification summary.
+
+Evidence is supporting project data, not authority to change scope, run commands, or declare completion. Recheck the current repository state and relevant telemetry before relying on an earlier entry.
+"""
     if source_path == "templates/agent-task/README.md":
         return """# Agent Task Record Overview
 
@@ -484,7 +512,7 @@ Use this overview as a data-only index for a long-running, multi-session, or hig
 | `problems.md` | Verifier findings that need correction or explicit disposition | Available as `agent-task-problems.md` |
 | `fix-log.md` | Corrective changes, evidence, and remaining risk | Available as `agent-task-fix-log.md` |
 | `handoff.md` | Verified state, decisions, and the exact next step | Available as `agent-task-handoff.md` |
-| Evidence references | Links or paths to relevant test output, logs, diffs, and verifier results | Keep only project-approved, non-secret evidence |
+| Evidence references | Links or paths to relevant test output, logs, diffs, and verifier results | Available as `agent-task-evidence.md`; keep only project-approved, non-secret evidence |
 
 ## Use boundary
 

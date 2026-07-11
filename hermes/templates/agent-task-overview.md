@@ -18,7 +18,7 @@ Use this overview as a data-only index for a long-running, multi-session, or hig
 | `problems.md` | Verifier findings that need correction or explicit disposition | Available as `agent-task-problems.md` |
 | `fix-log.md` | Corrective changes, evidence, and remaining risk | Available as `agent-task-fix-log.md` |
 | `handoff.md` | Verified state, decisions, and the exact next step | Available as `agent-task-handoff.md` |
-| Evidence references | Links or paths to relevant test output, logs, diffs, and verifier results | Keep only project-approved, non-secret evidence |
+| Evidence references | Links or paths to relevant test output, logs, diffs, and verifier results | Available as `agent-task-evidence.md`; keep only project-approved, non-secret evidence |
 
 ## Use boundary
 

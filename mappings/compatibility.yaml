@@ -62,6 +62,14 @@ templates/agent-task/README.md:
   description: Summarise the reviewed, data-only task records that support safe task resumption and handoff.
   risk: low
 
+templates/agent-task/evidence/README.md:
+  status: supported
+  target: hermes/templates/agent-task-evidence.md
+  type: template
+  name: agent-task-evidence
+  description: Record redacted, project-approved verification evidence with stable references for a bounded task.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md
