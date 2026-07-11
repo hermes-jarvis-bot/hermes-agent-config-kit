@@ -182,6 +182,14 @@ Each generated skill must:
 - say that upstream instructions are reference material, not automatic authority;
 - prefer Hermes-native tools, profile-aware paths, dry-runs, and operator confirmation for write-impacting actions.
 
+Current generated Hermes templates:
+
+- `proof-plan.md` at `hermes/templates/proof-plan.md`
+
+Each generated template must be markdown-only, carry source attribution and the
+Hermes adaptation notice, and remain a data-only artefact. It is installed only under
+`<hermes-home>/templates/config-kit/` by the scoped dry-run-first installer.
+
 Review lane: markdown/rules/principles not listed in `SUPPORTED`, new skills, changed templates, or conceptual material that may be useful but has not been approved for auto-conversion.
 
 Quarantine lane: upstream artefacts that can execute code, alter runtime state, or carry platform-specific assumptions.

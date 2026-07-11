@@ -31,9 +31,9 @@ Inventory from `upstream/claude-code-config/snapshot/` at the `v0.1.0` release:
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 26 | 0 | 26 |
 | `skills/` | 159 | 1 | 158 |
-| `templates/` | 47 | 0 | 47 |
+| `templates/` | 47 | 1 | 46 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **382** | **55** | **327** |
+| **Total** | **382** | **56** | **326** |
 
 ## Ported so far
 
@@ -42,6 +42,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | Upstream source | Hermes target |
 | --- | --- |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
+| `templates/proof-plan.md` | `hermes/templates/proof-plan.md` |
 | `principles/01-harness-design.md` | `hermes/skills/harness-design/SKILL.md` |
 | `principles/02-proof-loop.md` | `hermes/skills/proof-loop/SKILL.md` |
 | `principles/03-autoresearch.md` | `hermes/skills/autoresearch/SKILL.md` |
@@ -346,7 +347,11 @@ Reason: many are design notes or competing patterns rather than ready modules. T
 
 ## Templates not yet ported
 
-No upstream templates were ported in MVP. Left out categories:
+One low-risk upstream template has been adapted with Hermes-native provenance and
+operator-confirmation wording: `templates/proof-plan.md` ->
+`hermes/templates/proof-plan.md`. The installer copies it only into the isolated
+`<hermes-home>/templates/config-kit/` namespace and the remover deletes only that
+namespace. The remaining template categories stay out of MVP:
 
 - Claude project templates:
   - `templates/CLAUDE-library.md`
@@ -371,10 +376,9 @@ Reason: template installation raises path, naming, lifecycle, and overwrite ques
 
 High-value next candidates:
 
-1. `templates/proof-plan.md` — likely maps to the `proof-loop` skill.
-2. `templates/agent-task/` — useful for multi-agent/delegation task handoff.
-3. `templates/long-run-project/` — useful for feature tracking.
-4. `templates/kb-skeleton/` — useful, but includes workflow/script files and must remain reviewed.
+1. `templates/agent-task/` — useful for multi-agent/delegation task handoff.
+2. `templates/long-run-project/` — useful for feature tracking.
+3. `templates/kb-skeleton/` — useful, but includes workflow/script files and must remain reviewed.
 
 ## Workflows not yet ported
 
@@ -405,7 +409,7 @@ Goal: expand useful Hermes guidance without executable code.
 
 Candidates:
 
-Most recently ported: `rules/safety-billing.md` as `billing-spend-controls`, retaining provider-neutral preflight, bounded fan-out, telemetry, explicit limits, and approval-gated recovery while excluding unverified provider-specific claims, credential names, history rewrites, and hook proposals. `rules/long-run-harness.md` was reviewed and not selected because its useful feature-state and baseline-health guidance is already covered by `long-run-feature-tracking`, while its active-hook and shell conventions require a separate threat model. The next recommended candidate is `templates/proof-plan.md`, after a separate template-target and overwrite/removal-contract review.
+Most recently ported: `templates/proof-plan.md` as a data-only Hermes template, retaining frozen acceptance criteria, exact verification commands, expected outcomes, scope, and constraints. It adds Hermes-native provenance and operator-confirmation wording; the existing scoped installer/remover contract was independently exercised against a disposable home. `rules/long-run-harness.md` was reviewed and not selected because its useful feature-state and baseline-health guidance is already covered by `long-run-feature-tracking`, while its active-hook and shell conventions require a separate threat model. The next recommended candidate is `templates/agent-task/`, but only after a separate multi-file template, overwrite, and removal-contract review.
 
 Acceptance criteria:
 
@@ -421,7 +425,6 @@ Goal: add selected templates without expanding execution risk.
 
 Candidates:
 
-- `templates/proof-plan.md`
 - `templates/agent-task/*`
 - `templates/long-run-project/*`
 - harness-audit reference files

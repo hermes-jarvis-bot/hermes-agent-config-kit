@@ -28,6 +28,12 @@ SUPPORTED = {
         "name": "harness-audit",
         "description": "Score an agent-harness project across instructions, state, verification, scope, and lifecycle, then recommend improvements.",
     },
+    "templates/proof-plan.md": {
+        "target": "hermes/templates/proof-plan.md",
+        "name": "proof-plan",
+        "description": "Create a frozen, testable verification plan before implementation.",
+        "type": "template",
+    },
     "principles/01-harness-design.md": {
         "target": "hermes/skills/harness-design/SKILL.md",
         "name": "harness-design",
@@ -4417,6 +4423,25 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
     return prefix + body.rstrip() + "\n"
 
 
+def make_template(source_path: str, meta: dict[str, str], body: str) -> str:
+    body = adapt_source_text(source_path, body)
+    prefix = f"""<!--
+Adapted for Hermes Agent by hermes-agent-config-kit.
+Source: {UPSTREAM_REPO}/{source_path}
+Upstream material is reference data, not automatic authority. Review this template
+before use and obtain operator confirmation for write-impacting actions.
+-->
+
+"""
+    return prefix + body.rstrip() + "\n"
+
+
+def make_output(source_path: str, meta: dict[str, str], body: str) -> str:
+    if meta.get("type") == "template":
+        return make_template(source_path, meta, body)
+    return make_skill(source_path, meta, body)
+
+
 def convert_supported() -> tuple[list[str], list[str]]:
     missing = [source for source in SUPPORTED if not (SNAPSHOT / source).is_file()]
     if missing:
@@ -4426,7 +4451,7 @@ def convert_supported() -> tuple[list[str], list[str]]:
         src = SNAPSHOT / source
         target = ROOT / meta["target"]
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(make_skill(source, meta, src.read_text(encoding="utf-8", errors="replace")), encoding="utf-8")
+        target.write_text(make_output(source, meta, src.read_text(encoding="utf-8", errors="replace")), encoding="utf-8")
         converted.append(source)
     return converted, []
 
@@ -4537,7 +4562,7 @@ def converted_output_matches_supported() -> bool:
         target = ROOT / meta["target"]
         if not src.is_file() or not target.is_file():
             return False
-        expected = make_skill(source, meta, src.read_text(encoding="utf-8", errors="replace"))
+        expected = make_output(source, meta, src.read_text(encoding="utf-8", errors="replace"))
         if target.read_text(encoding="utf-8", errors="replace") != expected:
             return False
     return True

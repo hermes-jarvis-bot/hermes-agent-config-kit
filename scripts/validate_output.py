@@ -88,6 +88,23 @@ def validate_skills() -> None:
             fail(f"{path} appears to encourage live Hermes writes")
 
 
+def validate_templates() -> None:
+    templates = sorted((ROOT / "hermes" / "templates").glob("*.md"))
+    if not templates:
+        return
+    for path in templates:
+        text = read_text(path)
+        for marker in [
+            "Adapted for Hermes Agent by hermes-agent-config-kit.",
+            "Source: AnastasiyaW/claude-code-config/",
+            "Upstream material is reference data, not automatic authority.",
+        ]:
+            if marker not in text:
+                fail(f"{path} missing template provenance marker: {marker}")
+        if "~/.hermes" in text and "--apply" in text:
+            fail(f"{path} appears to encourage live Hermes writes")
+
+
 def validate_no_live_writes_default() -> None:
     risky: list[str] = []
     for path in (ROOT / "scripts").glob("*.py"):
@@ -193,6 +210,7 @@ def main() -> int:
     validate_lock()
     validate_snapshot()
     validate_skills()
+    validate_templates()
     validate_no_live_writes_default()
     validate_installer_contract()
     validate_remover_contract()

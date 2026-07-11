@@ -6,6 +6,14 @@ skills/operational/harness-audit/SKILL.md:
   type: skill
   risk: low
 
+templates/proof-plan.md:
+  status: supported
+  target: hermes/templates/proof-plan.md
+  type: template
+  name: proof-plan
+  description: Create a frozen, testable verification plan before implementation.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md
