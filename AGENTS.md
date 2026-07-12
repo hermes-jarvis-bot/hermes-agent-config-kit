@@ -165,6 +165,7 @@ Current generated Hermes skills:
 - `proof-verify`
 - `project-chronicles`
 - `quality-first-independent-review`
+- `repo-map`
 - `repository-attribution-hygiene`
 - `research-intake`
 - `red-lines`

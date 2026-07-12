@@ -16,6 +16,14 @@ skills/development/deep-review/SKILL.md:
   description: Plan proportionate, independent competency-based review of a concrete change without automatically dispatching reviewers or applying fixes.
   risk: medium
 
+skills/development/repo-map/SKILL.md:
+  status: supported
+  target: hermes/skills/repo-map/SKILL.md
+  type: skill
+  name: repo-map
+  description: Prepare a bounded, read-only codebase orientation using existing inspection interfaces without importing or activating the upstream mapper routine.
+  risk: medium
+
 skills/operational/harness-audit/SKILL.md:
   status: supported
   target: hermes/skills/harness-audit/SKILL.md

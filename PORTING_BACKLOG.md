@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 5 | 154 |
+| `skills/` | 159 | 6 | 153 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **72** | **322** |
+| **Total** | **394** | **73** | **321** |
 
 ## Ported so far
 
@@ -43,6 +43,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | Upstream source | Hermes target |
 | --- | --- |
 | `skills/development/deep-review/SKILL.md` | `hermes/skills/deep-review/SKILL.md` |
+| `skills/development/repo-map/SKILL.md` | `hermes/skills/repo-map/SKILL.md` |
 | `skills/development/proof-verify/SKILL.md` | `hermes/skills/proof-verify/SKILL.md` |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
 | `skills/operational/harness-audit/references/checklist-per-subsystem.md` | `hermes/skills/harness-audit/references/checklist-per-subsystem.md` |
@@ -255,7 +256,7 @@ No remaining rule is a clear low-risk auto-conversion candidate. `rules/long-run
 
 ## Skill packages not yet ported
 
-Upstream contains 157 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
+Upstream contains 156 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
 
 Top-level skill packages left out:
 
@@ -309,10 +310,9 @@ Recommended future treatment:
 
 High-value next candidates:
 
-1. `skills/development/repo-map/` — possible Hermes codebase-inspection helper if script is reviewed.
-2. `skills/development/workflow-orchestration/` — possible Hermes delegation/kanban module.
-3. `skills/writing/humanize-russian/` — relevant for Russian-language output, but should be reviewed against existing `humanizer`.
-4. `skills/agent-harness-design/` — broad but potentially valuable as reference material.
+1. `skills/development/workflow-orchestration/` — possible Hermes delegation/kanban module.
+2. `skills/writing/humanize-russian/` — relevant for Russian-language output, but should be reviewed against existing `humanizer`.
+3. `skills/agent-harness-design/` — broad but potentially valuable as reference material.
 
 ## Agents not yet ported
 
@@ -518,7 +518,6 @@ Goal: port selected upstream skill packages as Hermes skills.
 
 Candidates:
 
-- `skills/development/repo-map/`
 - `skills/development/workflow-orchestration/`
 - `skills/writing/humanize-russian/`
 - `skills/agent-harness-design/`
