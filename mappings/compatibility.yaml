@@ -24,6 +24,14 @@ skills/development/repo-map/SKILL.md:
   description: Prepare a bounded, read-only codebase orientation using existing inspection interfaces without importing or activating the upstream mapper routine.
   risk: medium
 
+skills/development/workflow-orchestration/SKILL.md:
+  status: supported
+  target: hermes/skills/workflow-orchestration/SKILL.md
+  type: skill
+  name: workflow-orchestration
+  description: Choose a bounded Hermes-native orchestration pattern and prepare a reviewable protocol without importing or activating upstream workflow code.
+  risk: medium
+
 skills/operational/harness-audit/SKILL.md:
   status: supported
   target: hermes/skills/harness-audit/SKILL.md

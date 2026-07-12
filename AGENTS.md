@@ -180,6 +180,7 @@ Current generated Hermes skills:
 - `verify-at-consumer`
 - `vulnerability-detection-pipeline`
 - `visual-context-pattern`
+- `workflow-orchestration`
 
 Each generated skill must:
 

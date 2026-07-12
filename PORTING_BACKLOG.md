@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 6 | 153 |
+| `skills/` | 159 | 7 | 152 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **73** | **321** |
+| **Total** | **394** | **74** | **320** |
 
 ## Ported so far
 
@@ -44,6 +44,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | --- | --- |
 | `skills/development/deep-review/SKILL.md` | `hermes/skills/deep-review/SKILL.md` |
 | `skills/development/repo-map/SKILL.md` | `hermes/skills/repo-map/SKILL.md` |
+| `skills/development/workflow-orchestration/SKILL.md` | `hermes/skills/workflow-orchestration/SKILL.md` |
 | `skills/development/proof-verify/SKILL.md` | `hermes/skills/proof-verify/SKILL.md` |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
 | `skills/operational/harness-audit/references/checklist-per-subsystem.md` | `hermes/skills/harness-audit/references/checklist-per-subsystem.md` |
@@ -256,7 +257,7 @@ No remaining rule is a clear low-risk auto-conversion candidate. `rules/long-run
 
 ## Skill packages not yet ported
 
-Upstream contains 156 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
+Upstream contains 155 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
 
 Top-level skill packages left out:
 
@@ -276,7 +277,7 @@ Top-level skill packages left out:
 - `skills/development/distill-feedback/`
 - `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
 - `skills/development/repo-map/`
-- `skills/development/workflow-orchestration/`
+- `skills/development/workflow-orchestration/` (the markdown `SKILL.md` is ported; references, JavaScript template, and validation script remain unported and quarantined)
 - `skills/frontend/frontend-design/`
 - `skills/ios/ios-development/`
 - `skills/lean-code/`
@@ -310,9 +311,8 @@ Recommended future treatment:
 
 High-value next candidates:
 
-1. `skills/development/workflow-orchestration/` — possible Hermes delegation/kanban module.
-2. `skills/writing/humanize-russian/` — relevant for Russian-language output, but should be reviewed against existing `humanizer`.
-3. `skills/agent-harness-design/` — broad but potentially valuable as reference material.
+1. `skills/writing/humanize-russian/` — relevant for Russian-language output, but should be reviewed against existing `humanizer`.
+2. `skills/agent-harness-design/` — broad but potentially valuable as reference material.
 
 ## Agents not yet ported
 
@@ -518,7 +518,6 @@ Goal: port selected upstream skill packages as Hermes skills.
 
 Candidates:
 
-- `skills/development/workflow-orchestration/`
 - `skills/writing/humanize-russian/`
 - `skills/agent-harness-design/`
 
