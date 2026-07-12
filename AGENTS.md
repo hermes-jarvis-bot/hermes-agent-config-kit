@@ -142,7 +142,7 @@ Current generated Hermes skills:
 - `finish-the-task`
 - `git-source-of-truth`
 - `harness-design`
-- `harness-audit`
+- `harness-audit` (with `references/checklist-per-subsystem.md` as read-only evidence prompts)
 - `independent-verification`
 - `inter-agent-communication`
 - `documentation-integrity`

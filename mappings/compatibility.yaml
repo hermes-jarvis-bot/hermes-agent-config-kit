@@ -6,6 +6,14 @@ skills/operational/harness-audit/SKILL.md:
   type: skill
   risk: low
 
+skills/operational/harness-audit/references/checklist-per-subsystem.md:
+  status: supported
+  target: hermes/skills/harness-audit/references/checklist-per-subsystem.md
+  type: reference
+  name: harness-audit-checklist-per-subsystem
+  description: Provide read-only evidence prompts for a five-subsystem harness audit without activating project tooling.
+  risk: low
+
 templates/proof-plan.md:
   status: supported
   target: hermes/templates/proof-plan.md

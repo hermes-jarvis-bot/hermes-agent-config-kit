@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 1 | 158 |
+| `skills/` | 159 | 2 | 157 |
 | `templates/` | 47 | 12 | 35 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **67** | **327** |
+| **Total** | **394** | **68** | **326** |
 
 ## Ported so far
 
@@ -43,6 +43,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | Upstream source | Hermes target |
 | --- | --- |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
+| `skills/operational/harness-audit/references/checklist-per-subsystem.md` | `hermes/skills/harness-audit/references/checklist-per-subsystem.md` |
 | `templates/proof-plan.md` | `hermes/templates/proof-plan.md` |
 | `templates/agent-task/handoff.md` | `hermes/templates/agent-task-handoff.md` |
 | `templates/agent-task/fix-log.md` | `hermes/templates/agent-task-fix-log.md` |
@@ -287,9 +288,11 @@ Top-level skill packages left out:
 - `skills/writing/humanize-english/`
 - `skills/writing/humanize-russian/`
 
-Special note: `skills/operational/harness-audit/SKILL.md` was ported, but its references were not:
+Special note: `skills/operational/harness-audit/SKILL.md` and its per-subsystem
+evidence checklist are ported as reviewed, data-only guidance. The checklist does
+not create files, run commands, configure integrations, or activate guards. Its
+separate scoring reference remains unported:
 
-- `skills/operational/harness-audit/references/checklist-per-subsystem.md`
 - `skills/operational/harness-audit/references/scoring-rubric.md`
 
 Recommended future treatment:
@@ -403,7 +406,7 @@ Reason: template installation raises path, naming, lifecycle, and overwrite ques
 
 High-value next candidates:
 
-1. harness-audit reference files — useful, but require narrow data-only review.
+1. harness-audit scoring rubric — useful, but requires narrow data-only review.
 2. `templates/long-run-project/README.md` — useful context, but requires a source-specific data-only adaptation.
 3. `templates/kb-skeleton/` — useful, but includes workflow/script files and must remain reviewed.
 
@@ -493,7 +496,7 @@ hooks, scripts, or automation were activated.
 
 Candidates:
 
-- harness-audit reference files
+- harness-audit scoring rubric
 - `templates/long-run-project/README.md`
 
 Acceptance criteria:
@@ -702,6 +705,17 @@ unchanged lockfile, and unchanged generated output.
 Recommended order for Codex: #1 (core guarantee) → #2/#3 (safety, small diffs) →
 #4/#5/#6. One artefact per PR per this repo's commit-narrowness rule. Don't work
 around #1 by deleting the snapshot — fix it and log it (no-pre-existing-evasion).
+
+Current independent recheck (2026-07-12): **all findings above remain closed**.
+The current code requires complete generated output and the matching snapshot marker
+before unchanged-SHA short-circuiting; keeps lock and snapshot replacement atomic;
+separates `gh` stdout from stderr; rejects missing supported sources before writing;
+validates the documented generated-skill frontmatter; and enforces disposable-only,
+mutually exclusive installer/remover modes. Fresh focused ad-hoc verification in
+`/tmp/hermes-verify-fkgb9v6x.py` exercised the output-match stale branch, atomic
+write readability, missing-source fail-closed branch, stable regeneration,
+`py_compile`, `validate_output.py`, and disposable dry-run/apply/remove. The verifier
+was removed after exit 0. These are current-code checks, not a canonical suite.
 
 ## Follow-up review finding: generated harness leakage (GitHub issue #16)
 
