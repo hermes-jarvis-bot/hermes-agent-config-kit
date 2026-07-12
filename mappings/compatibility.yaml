@@ -118,6 +118,14 @@ templates/long-run-project/PRD-BOOTSTRAP.md:
   description: Record a reviewed feature-plan proposal from an approved project brief without activating a workflow or validator.
   risk: low
 
+templates/long-run-project/README.md:
+  status: supported
+  target: hermes/templates/long-run-project-overview.md
+  type: template
+  name: long-run-project-overview
+  description: Assess whether a long-running project needs reviewed feature tracking and health evidence without installing state or automation.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md

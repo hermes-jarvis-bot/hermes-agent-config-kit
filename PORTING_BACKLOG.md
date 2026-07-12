@@ -32,9 +32,9 @@ rechecked against the pinned snapshot when this table changes.
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
 | `skills/` | 159 | 3 | 156 |
-| `templates/` | 47 | 12 | 35 |
+| `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **69** | **325** |
+| **Total** | **394** | **70** | **324** |
 
 ## Ported so far
 
@@ -56,6 +56,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `templates/agent-task/trace.jsonl` | `hermes/templates/agent-task-trace.md` |
 | `templates/agent-task/verdict.json` | `hermes/templates/agent-task-verdict.md` |
 | `templates/long-run-project/PRD-BOOTSTRAP.md` | `hermes/templates/long-run-project-prd-bootstrap.md` |
+| `templates/long-run-project/README.md` | `hermes/templates/long-run-project-overview.md` |
 | `principles/01-harness-design.md` | `hermes/skills/harness-design/SKILL.md` |
 | `principles/02-proof-loop.md` | `hermes/skills/proof-loop/SKILL.md` |
 | `principles/03-autoresearch.md` | `hermes/skills/autoresearch/SKILL.md` |
@@ -361,7 +362,7 @@ Reason: many are design notes or competing patterns rather than ready modules. T
 
 ## Templates not yet ported
 
-Twelve low-risk upstream templates have been adapted with Hermes-native provenance and
+Thirteen low-risk upstream templates have been adapted with Hermes-native provenance and
 operator-confirmation wording, including the complete reviewed `templates/agent-task/`
 record set, `templates/proof-plan.md`, and
 `templates/long-run-project/PRD-BOOTSTRAP.md` ->
@@ -400,14 +401,14 @@ out of MVP:
 - Knowledge-base skeleton:
   - `templates/kb-skeleton/*`
 - Long-run project skeleton:
-  - `templates/long-run-project/README.md`, JSON schema/example data, and executable files
+  - `templates/long-run-project/README.md` has been ported as a data-only review
+    overview; JSON schema/example data and executable files remain unported.
 
 Reason: template installation raises path, naming, lifecycle, and overwrite questions. It needs a Hermes-native template target and removal contract.
 
 High-value next candidates:
 
-1. `templates/long-run-project/README.md` — useful context, but requires a source-specific data-only adaptation.
-2. `templates/kb-skeleton/` — useful, but includes workflow/script files and must remain reviewed.
+1. `templates/kb-skeleton/` — useful, but includes workflow/script files and must remain reviewed.
 
 ## Workflows not yet ported
 
@@ -493,9 +494,9 @@ verified `templates/agent-task/*` artefact: `templates/agent-task/spec.md` ->
 template in the existing scoped installer/remover namespace; no task state,
 hooks, scripts, or automation were activated.
 
-Candidates:
-
-- `templates/long-run-project/README.md`
+Candidates: none. The remaining template material is either executable-adjacent,
+schema/example data needing a separate compatibility decision, or requires a documented
+next-Wave transition before further porting.
 
 Acceptance criteria:
 

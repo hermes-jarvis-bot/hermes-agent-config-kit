@@ -200,6 +200,7 @@ Current generated Hermes templates:
 - `agent-task-trace.md` at `hermes/templates/agent-task-trace.md`
 - `agent-task-verdict.md` at `hermes/templates/agent-task-verdict.md`
 - `long-run-project-prd-bootstrap.md` at `hermes/templates/long-run-project-prd-bootstrap.md`
+- `long-run-project-overview.md` at `hermes/templates/long-run-project-overview.md`
 
 Each generated template must be markdown-only, carry source attribution and the
 Hermes adaptation notice, and remain a data-only artefact. It is installed only under
