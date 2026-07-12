@@ -40,6 +40,14 @@ skills/writing/humanize-russian/SKILL.md:
   description: Review and revise Russian-language prose for clarity, specificity, natural rhythm, and an appropriate human voice without fabricating facts or personal experience.
   risk: low
 
+skills/agent-harness-design/SKILL.md:
+  status: supported
+  target: hermes/skills/agent-harness-design/SKILL.md
+  type: skill
+  name: agent-harness-design
+  description: Triage the design of a new custom agent harness, choosing the smallest Hermes-compatible safety, approval, budget, and evidence controls without activating runtime behaviour.
+  risk: medium
+
 skills/operational/harness-audit/SKILL.md:
   status: supported
   target: hermes/skills/harness-audit/SKILL.md

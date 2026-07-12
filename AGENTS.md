@@ -126,6 +126,7 @@ Current generated Hermes skills:
 - `api-utf8-posting`
 - `app-prelaunch-security`
 - `agent-security`
+- `agent-harness-design` (a read-only new-harness design triage; upstream implementation references remain unported)
 - `anti-pattern-as-config`
 - `autoresearch`
 - `billing-spend-controls`
