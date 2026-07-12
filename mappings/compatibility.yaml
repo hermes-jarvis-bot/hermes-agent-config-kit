@@ -8,6 +8,14 @@ skills/development/proof-verify/SKILL.md:
   description: Prepare a frozen acceptance-criteria record and obtain a fresh, read-only verification verdict without activating task state or delegation.
   risk: medium
 
+skills/development/deep-review/SKILL.md:
+  status: supported
+  target: hermes/skills/deep-review/SKILL.md
+  type: skill
+  name: deep-review
+  description: Plan proportionate, independent competency-based review of a concrete change without automatically dispatching reviewers or applying fixes.
+  risk: medium
+
 skills/operational/harness-audit/SKILL.md:
   status: supported
   target: hermes/skills/harness-audit/SKILL.md

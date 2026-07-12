@@ -132,6 +132,7 @@ Current generated Hermes skills:
 - `code-quality`
 - `codified-context`
 - `coordination-primitives-mapping`
+- `deep-review`
 - `deterministic-orchestration`
 - `durable-context-maintenance`
 - `edit-formats-and-tiering`

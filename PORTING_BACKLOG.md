@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 4 | 155 |
+| `skills/` | 159 | 5 | 154 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **71** | **323** |
+| **Total** | **394** | **72** | **322** |
 
 ## Ported so far
 
@@ -42,6 +42,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 
 | Upstream source | Hermes target |
 | --- | --- |
+| `skills/development/deep-review/SKILL.md` | `hermes/skills/deep-review/SKILL.md` |
 | `skills/development/proof-verify/SKILL.md` | `hermes/skills/proof-verify/SKILL.md` |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
 | `skills/operational/harness-audit/references/checklist-per-subsystem.md` | `hermes/skills/harness-audit/references/checklist-per-subsystem.md` |
@@ -271,7 +272,6 @@ Top-level skill packages left out:
 - `skills/architecture/plan-swarm-review/`
 - `skills/creative/pixel-art-storyboard/`
 - `skills/creative/pixel-art-studio/`
-- `skills/development/deep-review/`
 - `skills/development/distill-feedback/`
 - `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
 - `skills/development/repo-map/`
@@ -310,10 +310,9 @@ Recommended future treatment:
 High-value next candidates:
 
 1. `skills/development/repo-map/` — possible Hermes codebase-inspection helper if script is reviewed.
-2. `skills/development/deep-review/` — possible code-review module after dedupe.
-3. `skills/development/workflow-orchestration/` — possible Hermes delegation/kanban module.
-4. `skills/writing/humanize-russian/` — relevant for Russian-language output, but should be reviewed against existing `humanizer`.
-5. `skills/agent-harness-design/` — broad but potentially valuable as reference material.
+2. `skills/development/workflow-orchestration/` — possible Hermes delegation/kanban module.
+3. `skills/writing/humanize-russian/` — relevant for Russian-language output, but should be reviewed against existing `humanizer`.
+4. `skills/agent-harness-design/` — broad but potentially valuable as reference material.
 
 ## Agents not yet ported
 
@@ -520,7 +519,6 @@ Goal: port selected upstream skill packages as Hermes skills.
 Candidates:
 
 - `skills/development/repo-map/`
-- `skills/development/deep-review/`
 - `skills/development/workflow-orchestration/`
 - `skills/writing/humanize-russian/`
 - `skills/agent-harness-design/`
