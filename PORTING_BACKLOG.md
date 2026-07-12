@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 2 | 157 |
+| `skills/` | 159 | 3 | 156 |
 | `templates/` | 47 | 12 | 35 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **68** | **326** |
+| **Total** | **394** | **69** | **325** |
 
 ## Ported so far
 
@@ -44,6 +44,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | --- | --- |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
 | `skills/operational/harness-audit/references/checklist-per-subsystem.md` | `hermes/skills/harness-audit/references/checklist-per-subsystem.md` |
+| `skills/operational/harness-audit/references/scoring-rubric.md` | `hermes/skills/harness-audit/references/scoring-rubric.md` |
 | `templates/proof-plan.md` | `hermes/templates/proof-plan.md` |
 | `templates/agent-task/handoff.md` | `hermes/templates/agent-task-handoff.md` |
 | `templates/agent-task/fix-log.md` | `hermes/templates/agent-task-fix-log.md` |
@@ -288,12 +289,11 @@ Top-level skill packages left out:
 - `skills/writing/humanize-english/`
 - `skills/writing/humanize-russian/`
 
-Special note: `skills/operational/harness-audit/SKILL.md` and its per-subsystem
-evidence checklist are ported as reviewed, data-only guidance. The checklist does
-not create files, run commands, configure integrations, or activate guards. Its
-separate scoring reference remains unported:
-
-- `skills/operational/harness-audit/references/scoring-rubric.md`
+Special note: `skills/operational/harness-audit/SKILL.md`, its per-subsystem
+evidence checklist, and its scoring rubric are ported as reviewed, data-only
+guidance. They do not create files, run commands, configure integrations, or activate
+guards. The rubric calibrates observed evidence without treating a named policy as
+active enforcement.
 
 Recommended future treatment:
 
@@ -406,9 +406,8 @@ Reason: template installation raises path, naming, lifecycle, and overwrite ques
 
 High-value next candidates:
 
-1. harness-audit scoring rubric — useful, but requires narrow data-only review.
-2. `templates/long-run-project/README.md` — useful context, but requires a source-specific data-only adaptation.
-3. `templates/kb-skeleton/` — useful, but includes workflow/script files and must remain reviewed.
+1. `templates/long-run-project/README.md` — useful context, but requires a source-specific data-only adaptation.
+2. `templates/kb-skeleton/` — useful, but includes workflow/script files and must remain reviewed.
 
 ## Workflows not yet ported
 
@@ -496,7 +495,6 @@ hooks, scripts, or automation were activated.
 
 Candidates:
 
-- harness-audit scoring rubric
 - `templates/long-run-project/README.md`
 
 Acceptance criteria:
