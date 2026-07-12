@@ -32,9 +32,9 @@ rechecked against the pinned snapshot when this table changes.
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
 | `skills/` | 159 | 1 | 158 |
-| `templates/` | 47 | 11 | 36 |
+| `templates/` | 47 | 12 | 35 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **66** | **328** |
+| **Total** | **394** | **67** | **327** |
 
 ## Ported so far
 
@@ -53,6 +53,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `templates/agent-task/state.json` | `hermes/templates/agent-task-state.md` |
 | `templates/agent-task/trace.jsonl` | `hermes/templates/agent-task-trace.md` |
 | `templates/agent-task/verdict.json` | `hermes/templates/agent-task-verdict.md` |
+| `templates/long-run-project/PRD-BOOTSTRAP.md` | `hermes/templates/long-run-project-prd-bootstrap.md` |
 | `principles/01-harness-design.md` | `hermes/skills/harness-design/SKILL.md` |
 | `principles/02-proof-loop.md` | `hermes/skills/proof-loop/SKILL.md` |
 | `principles/03-autoresearch.md` | `hermes/skills/autoresearch/SKILL.md` |
@@ -357,21 +358,16 @@ Reason: many are design notes or competing patterns rather than ready modules. T
 
 ## Templates not yet ported
 
-Eight low-risk upstream templates have been adapted with Hermes-native provenance and
-operator-confirmation wording: `templates/proof-plan.md` ->
-`hermes/templates/proof-plan.md`, `templates/agent-task/spec.md` ->
-`hermes/templates/agent-task-spec.md`, `templates/agent-task/handoff.md` ->
-`hermes/templates/agent-task-handoff.md`, `templates/agent-task/fix-log.md` ->
-`hermes/templates/agent-task-fix-log.md`, and `templates/agent-task/problems.md` ->
-`hermes/templates/agent-task-problems.md`, `templates/agent-task/scratchpad.md` ->
-`hermes/templates/agent-task-scratchpad.md`, `templates/agent-task/README.md` ->
-`hermes/templates/agent-task-overview.md`, and `templates/agent-task/evidence/README.md` ->
-`hermes/templates/agent-task-evidence.md`, and `templates/agent-task/state.json` ->
-`hermes/templates/agent-task-state.md`. The state template is a markdown-only,
-data-only adaptation of upstream JSON; it records task status without creating state
-or activating a workflow. The installer copies them only into the isolated
-`<hermes-home>/templates/config-kit/` namespace and the remover deletes only that
-namespace. The remaining template categories stay out of MVP:
+Twelve low-risk upstream templates have been adapted with Hermes-native provenance and
+operator-confirmation wording, including the complete reviewed `templates/agent-task/`
+record set, `templates/proof-plan.md`, and
+`templates/long-run-project/PRD-BOOTSTRAP.md` ->
+`hermes/templates/long-run-project-prd-bootstrap.md`. The new long-run template is
+markdown-only planning data: it records a feature-plan proposal from an approved brief
+without creating state, calling a validator, or activating a workflow. The installer
+copies templates only into the isolated `<hermes-home>/templates/config-kit/` namespace
+and the remover deletes only that namespace. The remaining template categories stay
+out of MVP:
 
 - Claude project templates:
   - `templates/CLAUDE-library.md`
@@ -401,14 +397,14 @@ namespace. The remaining template categories stay out of MVP:
 - Knowledge-base skeleton:
   - `templates/kb-skeleton/*`
 - Long-run project skeleton:
-  - `templates/long-run-project/*`
+  - `templates/long-run-project/README.md`, JSON schema/example data, and executable files
 
 Reason: template installation raises path, naming, lifecycle, and overwrite questions. It needs a Hermes-native template target and removal contract.
 
 High-value next candidates:
 
-1. `templates/long-run-project/` — useful for feature tracking.
-2. harness-audit reference files — useful, but require narrow data-only review.
+1. harness-audit reference files — useful, but require narrow data-only review.
+2. `templates/long-run-project/README.md` — useful context, but requires a source-specific data-only adaptation.
 3. `templates/kb-skeleton/` — useful, but includes workflow/script files and must remain reviewed.
 
 ## Workflows not yet ported
@@ -497,8 +493,8 @@ hooks, scripts, or automation were activated.
 
 Candidates:
 
-- `templates/long-run-project/*`
 - harness-audit reference files
+- `templates/long-run-project/README.md`
 
 Acceptance criteria:
 

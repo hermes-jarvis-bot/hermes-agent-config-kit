@@ -94,6 +94,14 @@ templates/agent-task/verdict.json:
   description: Record an independent bounded-task verdict, criterion evidence, findings, and residual risk without authorising action.
   risk: low
 
+templates/long-run-project/PRD-BOOTSTRAP.md:
+  status: supported
+  target: hermes/templates/long-run-project-prd-bootstrap.md
+  type: template
+  name: long-run-project-prd-bootstrap
+  description: Record a reviewed feature-plan proposal from an approved project brief without activating a workflow or validator.
+  risk: low
+
 principles/01-harness-design.md:
   status: supported
   target: hermes/skills/harness-design/SKILL.md
