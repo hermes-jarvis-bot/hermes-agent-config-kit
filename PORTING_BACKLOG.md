@@ -439,13 +439,17 @@ number; do not infer a Wave transition from an artefact's category alone.
 
 | Field | Current value |
 | --- | --- |
-| Active Wave | Wave 2 — support files and templates |
+| Active Wave | Wave 2 — support files and templates (close-out) |
 | Active release line | `0.2` |
-| Latest released tag | `v0.2.0` (created for this accepted artefact) |
+| Latest released tag | `v0.2.20` |
 | `upstream.lock.json` `adapter.version` | `0.2.0` (Wave 2 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
 | First Wave 2 version | `v0.2.0`, with `adapter.version` updated to `0.2.0` in that same commit |
+| Prepared next Wave | Wave 3 — skill package review |
+| Prepared release line | `0.3` (pending the exact Wave 3 trigger) |
+| Exact Wave 3 trigger | First accepted and verified markdown-only `skills/development/proof-verify/SKILL.md` adaptation to `hermes/skills/proof-verify/SKILL.md`; its reference remains separately reviewed and unported unless included in a later explicit artefact decision. |
+| First Wave 3 version | `v0.3.0`, with `adapter.version` updated to `0.3.0` in that same trigger commit |
 
 Release decision rules:
 
@@ -459,6 +463,11 @@ Release decision rules:
 4. Before any later Wave transition, add its exact trigger and release line to
    this ledger in the transition commit. If the ledger is absent or ambiguous,
    report `BLOCKED` rather than choosing a version by inference.
+5. A close-out commit that only prepares the next Wave remains on the active
+   release line, increments only that line's patch tag, and does not change
+   `adapter.version` or activate the prepared Wave.
+6. The trigger commit activates the prepared Wave, changes `adapter.version` to
+   its documented baseline, and receives that Wave's documented first version.
 
 ## Recommended next porting waves
 
