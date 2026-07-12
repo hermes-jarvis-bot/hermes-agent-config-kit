@@ -100,7 +100,7 @@ reports/upstream-sync/*.md                 # generated sync reports; latest.md m
     "latest_seen_sha": "..."
   },
   "adapter": {
-    "version": "0.1.0",
+    "version": "0.3.0",
     "schema": 1
   }
 }
@@ -161,6 +161,7 @@ Current generated Hermes skills:
 - `portable-project-context`
 - `post-ui-change-review`
 - `proof-loop`
+- `proof-verify`
 - `project-chronicles`
 - `quality-first-independent-review`
 - `repository-attribution-hygiene`

@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 3 | 156 |
+| `skills/` | 159 | 4 | 155 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **70** | **324** |
+| **Total** | **394** | **71** | **323** |
 
 ## Ported so far
 
@@ -42,6 +42,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 
 | Upstream source | Hermes target |
 | --- | --- |
+| `skills/development/proof-verify/SKILL.md` | `hermes/skills/proof-verify/SKILL.md` |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
 | `skills/operational/harness-audit/references/checklist-per-subsystem.md` | `hermes/skills/harness-audit/references/checklist-per-subsystem.md` |
 | `skills/operational/harness-audit/references/scoring-rubric.md` | `hermes/skills/harness-audit/references/scoring-rubric.md` |
@@ -253,7 +254,7 @@ No remaining rule is a clear low-risk auto-conversion candidate. `rules/long-run
 
 ## Skill packages not yet ported
 
-Upstream contains 158 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
+Upstream contains 157 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
 
 Top-level skill packages left out:
 
@@ -272,7 +273,7 @@ Top-level skill packages left out:
 - `skills/creative/pixel-art-studio/`
 - `skills/development/deep-review/`
 - `skills/development/distill-feedback/`
-- `skills/development/proof-verify/`
+- `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
 - `skills/development/repo-map/`
 - `skills/development/workflow-orchestration/`
 - `skills/frontend/frontend-design/`
@@ -308,12 +309,11 @@ Recommended future treatment:
 
 High-value next candidates:
 
-1. `skills/development/proof-verify/` — likely complements `proof-loop`.
-2. `skills/development/repo-map/` — possible Hermes codebase-inspection helper if script is reviewed.
-3. `skills/development/deep-review/` — possible code-review module after dedupe.
-4. `skills/development/workflow-orchestration/` — possible Hermes delegation/kanban module.
-5. `skills/writing/humanize-russian/` — relevant for Russian-language output, but should be reviewed against existing `humanizer`.
-6. `skills/agent-harness-design/` — broad but potentially valuable as reference material.
+1. `skills/development/repo-map/` — possible Hermes codebase-inspection helper if script is reviewed.
+2. `skills/development/deep-review/` — possible code-review module after dedupe.
+3. `skills/development/workflow-orchestration/` — possible Hermes delegation/kanban module.
+4. `skills/writing/humanize-russian/` — relevant for Russian-language output, but should be reviewed against existing `humanizer`.
+5. `skills/agent-harness-design/` — broad but potentially valuable as reference material.
 
 ## Agents not yet ported
 
@@ -439,17 +439,16 @@ number; do not infer a Wave transition from an artefact's category alone.
 
 | Field | Current value |
 | --- | --- |
-| Active Wave | Wave 2 — support files and templates (close-out) |
-| Active release line | `0.2` |
-| Latest released tag | `v0.2.20` |
-| `upstream.lock.json` `adapter.version` | `0.2.0` (Wave 2 baseline, not a patch-release counter) |
+| Active Wave | Wave 3 — skill package review |
+| Active release line | `0.3` |
+| Latest released tag | `v0.3.0` |
+| `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
 | First Wave 2 version | `v0.2.0`, with `adapter.version` updated to `0.2.0` in that same commit |
-| Prepared next Wave | Wave 3 — skill package review |
-| Prepared release line | `0.3` (pending the exact Wave 3 trigger) |
-| Exact Wave 3 trigger | First accepted and verified markdown-only `skills/development/proof-verify/SKILL.md` adaptation to `hermes/skills/proof-verify/SKILL.md`; its reference remains separately reviewed and unported unless included in a later explicit artefact decision. |
-| First Wave 3 version | `v0.3.0`, with `adapter.version` updated to `0.3.0` in that same trigger commit |
+| Wave 3 trigger | Satisfied by the accepted and verified markdown-only `skills/development/proof-verify/SKILL.md` adaptation to `hermes/skills/proof-verify/SKILL.md`; its reference remains separately reviewed and unported. |
+| Wave 3 first version | `v0.3.0`, with `adapter.version` updated to `0.3.0` in this trigger commit |
+| Next Wave | Not prepared; a later transition commit must add its exact trigger and release line before any minor-version change. |
 
 Release decision rules:
 
@@ -497,7 +496,7 @@ Acceptance criteria:
 
 Goal: add selected templates without expanding execution risk.
 
-Status: active. The exact Wave 2 trigger was satisfied by the first accepted,
+Status: closed. The exact Wave 2 trigger was satisfied by the first accepted,
 verified `templates/agent-task/*` artefact: `templates/agent-task/spec.md` ->
 `hermes/templates/agent-task-spec.md`. It remains a markdown-only, data-only
 template in the existing scoped installer/remover namespace; no task state,
@@ -520,7 +519,6 @@ Goal: port selected upstream skill packages as Hermes skills.
 
 Candidates:
 
-- `skills/development/proof-verify/`
 - `skills/development/repo-map/`
 - `skills/development/deep-review/`
 - `skills/development/workflow-orchestration/`

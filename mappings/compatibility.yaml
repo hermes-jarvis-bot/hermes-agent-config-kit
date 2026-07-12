@@ -1,5 +1,13 @@
 # Conversion policy for upstream claude-code-config artefacts.
 
+skills/development/proof-verify/SKILL.md:
+  status: supported
+  target: hermes/skills/proof-verify/SKILL.md
+  type: skill
+  name: proof-verify
+  description: Prepare a frozen acceptance-criteria record and obtain a fresh, read-only verification verdict without activating task state or delegation.
+  risk: medium
+
 skills/operational/harness-audit/SKILL.md:
   status: supported
   target: hermes/skills/harness-audit/SKILL.md
