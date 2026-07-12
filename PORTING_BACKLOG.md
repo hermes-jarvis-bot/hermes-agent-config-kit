@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 7 | 152 |
+| `skills/` | 159 | 8 | 151 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **74** | **320** |
+| **Total** | **394** | **75** | **319** |
 
 ## Ported so far
 
@@ -45,6 +45,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/development/deep-review/SKILL.md` | `hermes/skills/deep-review/SKILL.md` |
 | `skills/development/repo-map/SKILL.md` | `hermes/skills/repo-map/SKILL.md` |
 | `skills/development/workflow-orchestration/SKILL.md` | `hermes/skills/workflow-orchestration/SKILL.md` |
+| `skills/writing/humanize-russian/SKILL.md` | `hermes/skills/humanize-russian/SKILL.md` |
 | `skills/development/proof-verify/SKILL.md` | `hermes/skills/proof-verify/SKILL.md` |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
 | `skills/operational/harness-audit/references/checklist-per-subsystem.md` | `hermes/skills/harness-audit/references/checklist-per-subsystem.md` |
@@ -311,8 +312,7 @@ Recommended future treatment:
 
 High-value next candidates:
 
-1. `skills/writing/humanize-russian/` — relevant for Russian-language output, but should be reviewed against existing `humanizer`.
-2. `skills/agent-harness-design/` — broad but potentially valuable as reference material.
+1. `skills/agent-harness-design/` — broad but potentially valuable as reference material.
 
 ## Agents not yet ported
 
@@ -440,7 +440,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.0` |
+| Latest released tag | `v0.3.3` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
@@ -518,7 +518,6 @@ Goal: port selected upstream skill packages as Hermes skills.
 
 Candidates:
 
-- `skills/writing/humanize-russian/`
 - `skills/agent-harness-design/`
 
 Acceptance criteria:
@@ -553,9 +552,8 @@ Acceptance criteria:
 1. Should the adapter eventually ship templates, or only skills?
 2. Should support files from upstream skill packages be copied under generated skills, or kept as references in this repository only?
 3. Should any upstream hook become a Hermes plugin, or should hooks stay as design references?
-4. Should `humanize-russian` become part of this kit, or remain out because Hermes already has a `humanizer` skill?
-5. Should workflow JS become Hermes scripts, scheduled protocols, or merely documented patterns?
-6. Should `PORTING_BACKLOG.md` be regenerated on every upstream sync, or maintained manually as a human-curated roadmap?
+4. Should workflow JS become Hermes scripts, scheduled protocols, or merely documented patterns?
+5. Should `PORTING_BACKLOG.md` be regenerated on every upstream sync, or maintained manually as a human-curated roadmap?
 
 ## External review findings (as of commit `f10d655`, verify before trusting)
 

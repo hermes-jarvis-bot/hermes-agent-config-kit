@@ -32,6 +32,14 @@ skills/development/workflow-orchestration/SKILL.md:
   description: Choose a bounded Hermes-native orchestration pattern and prepare a reviewable protocol without importing or activating upstream workflow code.
   risk: medium
 
+skills/writing/humanize-russian/SKILL.md:
+  status: supported
+  target: hermes/skills/humanize-russian/SKILL.md
+  type: skill
+  name: humanize-russian
+  description: Review and revise Russian-language prose for clarity, specificity, natural rhythm, and an appropriate human voice without fabricating facts or personal experience.
+  risk: low
+
 skills/operational/harness-audit/SKILL.md:
   status: supported
   target: hermes/skills/harness-audit/SKILL.md
