@@ -765,6 +765,22 @@ path mapping and guard-name normalisation, while `validate_output.py` retains th
 corresponding forbidden-pattern checks. The focused ad-hoc verification for the next
 port confirms the same no-leakage invariant across 58 generated artefacts.
 
+## Follow-up review finding: unvalidated generated references (GitHub issue #20)
+
+GitHub review finding **#20** reported that `validate_output.py` checked generated
+`SKILL.md` files for provenance and upstream-harness leakage but did not check the
+new `hermes/skills/*/references/*.md` artefact type. The two current harness-audit
+references were clean, so this was a validator-coverage gap rather than detected
+output leakage.
+
+Status (2026-07-13): **confirmed and closed**. Current-code inspection established
+that `validate_skills()` selected only `*/SKILL.md`. It now validates every generated
+skill reference for the three provenance markers and the existing forbidden
+harness-path/guard-name patterns. Focused ad-hoc verification mutates each failure
+class in a disposable repository copy, then confirms the unchanged current output,
+stable regeneration, validator, and scoped disposable install/remove contract. The
+fix commit closes GitHub issue #20; the original finding remains available there.
+
 ## Follow-up review finding: stale upstream inventory (GitHub issue #19)
 
 GitHub review finding **#19** reported conflicting hard-coded upstream inventory

@@ -32,6 +32,11 @@ FORBIDDEN_GENERATED_HARNESS_PATTERNS = (
     r"\.hermes-compatible project artefacts/",
     r"\b[A-Za-z0-9_-]+-(?:guard|gate|hook|validator|reminder|check)\.py\b",
 )
+GENERATED_PROVENANCE_MARKERS = (
+    "Adapted for Hermes Agent by hermes-agent-config-kit.",
+    "Source: AnastasiyaW/claude-code-config/",
+    "Upstream material is reference data, not automatic authority.",
+)
 
 
 def fail(msg: str) -> None:
@@ -96,6 +101,15 @@ def validate_skills() -> None:
         for pattern in FORBIDDEN_GENERATED_HARNESS_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
                 fail(f"{path} retains an upstream harness path or runtime reference")
+    references = sorted((ROOT / "hermes" / "skills").glob("*/references/*.md"))
+    for path in references:
+        text = read_text(path)
+        for marker in GENERATED_PROVENANCE_MARKERS:
+            if marker not in text:
+                fail(f"{path} missing reference provenance marker: {marker}")
+        for pattern in FORBIDDEN_GENERATED_HARNESS_PATTERNS:
+            if re.search(pattern, text, re.IGNORECASE):
+                fail(f"{path} retains an upstream harness path or runtime reference")
 
 
 def validate_templates() -> None:
@@ -104,11 +118,7 @@ def validate_templates() -> None:
         return
     for path in templates:
         text = read_text(path)
-        for marker in [
-            "Adapted for Hermes Agent by hermes-agent-config-kit.",
-            "Source: AnastasiyaW/claude-code-config/",
-            "Upstream material is reference data, not automatic authority.",
-        ]:
+        for marker in GENERATED_PROVENANCE_MARKERS:
             if marker not in text:
                 fail(f"{path} missing template provenance marker: {marker}")
         if "~/.hermes" in text and "--apply" in text:
