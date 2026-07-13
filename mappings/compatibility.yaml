@@ -56,6 +56,14 @@ skills/lean-code/SKILL.md:
   description: Apply on-demand minimalism to select the smallest complete, verified code change without weakening safety, accessibility, or required behaviour.
   risk: low
 
+skills/plan-to-tickets/SKILL.md:
+  status: supported
+  target: hermes/skills/plan-to-tickets/SKILL.md
+  type: skill
+  name: plan-to-tickets
+  description: Turn a large approved plan into small, independently verifiable agent-ready tickets with concrete acceptance criteria, verification evidence, blockers, and vertical tracer-bullet slices.
+  risk: low
+
 skills/agent-harness-design/SKILL.md:
   status: supported
   target: hermes/skills/agent-harness-design/SKILL.md

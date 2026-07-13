@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 11 | 148 |
+| `skills/` | 159 | 12 | 147 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **78** | **316** |
+| **Total** | **394** | **79** | **315** |
 
 ## Ported so far
 
@@ -48,6 +48,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/writing/humanize-russian/SKILL.md` | `hermes/skills/humanize-russian/SKILL.md` |
 | `skills/writing/article-structure-review/SKILL.md` | `hermes/skills/article-structure-review/SKILL.md` |
 | `skills/lean-code/SKILL.md` | `hermes/skills/lean-code/SKILL.md` |
+| `skills/plan-to-tickets/SKILL.md` | `hermes/skills/plan-to-tickets/SKILL.md` |
 | `skills/agent-harness-design/SKILL.md` | `hermes/skills/agent-harness-design/SKILL.md` |
 | `skills/development/proof-verify/SKILL.md` | `hermes/skills/proof-verify/SKILL.md` |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
@@ -261,7 +262,7 @@ No remaining rule is a clear low-risk auto-conversion candidate. `rules/long-run
 
 ## Skill packages not yet ported
 
-Upstream contains 155 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
+Upstream contains 154 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
 
 Top-level skill packages left out:
 
@@ -286,7 +287,6 @@ Top-level skill packages left out:
 - `skills/ios/ios-development/`
 - `skills/operational/desktop-sessions-discovery/`
 - `skills/operational/gemini-delegate/`
-- `skills/plan-to-tickets/`
 - `skills/video-production/product-meaning-extractor/`
 - `skills/video-production/remotion-production-guide/`
 - `skills/video-production/script-evaluator/`
@@ -314,9 +314,9 @@ Recommended future treatment:
 Next-candidate selection is governed by the **operator matrix in the autopilot run
 prompt**, not by this list — do not designate a fast-lane "next" here that the matrix
 has not blessed (doing so contradicts the matrix and blocks the autopilot). As of
-2026-07-13 `skills/lean-code/` is ported and `skills/plan-to-tickets/` is the
-operator-approved preferred next (see the matrix). The other candidates below require
-an operator decision and are not eligible for automatic porting.
+2026-07-13 `skills/lean-code/` and `skills/plan-to-tickets/SKILL.md` are ported. No
+remaining candidate below is eligible for automatic porting without a new operator
+matrix decision.
 
 - `skills/lean-code/SKILL.md` → `hermes/skills/lean-code/SKILL.md` — ported as the
   operator-approved Wave 3 markdown-only module. The Hermes adaptation retains the
@@ -327,11 +327,10 @@ an operator decision and are not eligible for automatic porting.
   `humanizer`. Product/policy decision required; not auto-port. (Mechanically it is a
   clean single-md conversion, but the framing is the blocker.)
 - `skills/plan-to-tickets/SKILL.md` → `hermes/skills/plan-to-tickets/SKILL.md` —
-  **operator-approved preferred next (2026-07-13)**. Vetted: mechanically single-md,
-  but the port MUST neutralize its `.claude\…\validate_agent_tickets.py` reference,
-  which the validator does not yet catch (see issue #21); policy-clean; a distinct
-  ticket-decomposition function (agent-ready tickets with acceptance criteria,
-  verification, blockers, tracer-bullet slices), complementary to builtin `plan` /
+  ported as the operator-approved Wave 3 markdown-only module. The Hermes adaptation
+  retains project-relative ticket output and ticket-contract guidance, replaces the
+  harness-specific validation command with project-applicable checks or an explicit
+  manual-review gate, and positions the module as complementary to builtin `plan` /
   local `writing-plans`, not a duplicate.
 - `skills/architecture/feature-new/`, `skills/architecture/layer-new/` — single
   markdown, no scripts, but may duplicate `feature-layer-architecture`; overlap review

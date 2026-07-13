@@ -165,6 +165,7 @@ Current generated Hermes skills:
 - `no-pre-existing-evasion`
 - `portable-project-context`
 - `post-ui-change-review`
+- `plan-to-tickets`
 - `proof-loop`
 - `proof-verify`
 - `project-chronicles`
