@@ -357,8 +357,19 @@ below is eligible for automatic porting without a new operator matrix decision.
   Assumption / Quality) and the same `name: harness-design` as the already-ported
   `harness-design` (principle 01). Its unique operational bits are a manual merge
   decision, not an auto-port.
-- Other clean domain skills (`ios/ios-development`, `video-production/*`, `ai-ml/*`)
-  remain available for future operator-picked domain waves.
+- **Domain queue (operator-approved 2026-07-13, all vetted clean on 4 axes; port in
+  order, one per run, keep the `hermes/skills/<domain>/<skill>/` folder):**
+  1. `skills/ai-ml/ml-research-lab/SKILL.md` → `hermes/skills/ai-ml/ml-research-lab/SKILL.md`
+     — single file; CUDA/ML mentions are domain reference content, not tooling policy.
+  2. `skills/video-production/script-evaluator/SKILL.md` →
+     `hermes/skills/video-production/script-evaluator/SKILL.md` — single file; Remotion
+     mention is domain content.
+  3. `skills/ios/ios-development/` → `hermes/skills/ios/ios-development/` — 9-file package
+     (`SKILL.md` + 8 `references/`: architecture, data, metal-graphics, navigation,
+     networking, performance, swiftui, uikit); clean (Swift/Xcode are domain content;
+     `kSecReturnData`/keychain constants are NOT secrets).
+- Other clean domain skills (`video-production/*` and `ai-ml/*` beyond the queue) remain
+  available for future operator-picked domain waves.
 - `skills/development/distill-feedback/`,
   `skills/operational/desktop-sessions-discovery/` — carry `.py` scripts; quarantined,
   manual-review-only.
