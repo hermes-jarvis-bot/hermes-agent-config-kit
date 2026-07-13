@@ -10,3 +10,4 @@ dist/
 # Interrupted upstream snapshot transactions are disposable and must never be staged.
 /upstream/claude-code-config/.snapshot-previous/
 /upstream/claude-code-config/.snapshot-staging-*/
+graphify-out/
