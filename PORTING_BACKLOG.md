@@ -332,9 +332,23 @@ matrix decision.
   harness-specific validation command with project-applicable checks or an explicit
   manual-review gate, and positions the module as complementary to builtin `plan` /
   local `writing-plans`, not a duplicate.
-- `skills/architecture/feature-new/`, `skills/architecture/layer-new/` — single
-  markdown, no scripts, but may duplicate `feature-layer-architecture`; overlap review
-  required before fast-lane approval.
+- `skills/architecture/feature-new/`, `skills/architecture/layer-new/` — **not
+  portable to Hermes (review-lane, not auto-port)**. Their substance depends on
+  upstream-specific KB infrastructure Hermes does not have and cannot reproduce by
+  adaptation: `docs/layers/<layer>/features/`, `feature_list.json`,
+  `templates/kb-skeleton/`, `build_kb_graph.py`/`validate_kb_links.py`, ULTRAPACK, and
+  `<claude-code-skills>` checkout paths (a pure conversion also fails the validator on
+  the `claude-code-skills` reference). **General rule (2026-07-13):** any skill whose
+  mechanics depend on concrete upstream artefacts/paths/tooling (kb-skeleton,
+  docs/layers, feature_list.json, claude-code-skills/config checkout, kb-graph scripts)
+  is not portable to Hermes-specifics — classify review-lane, do not auto-port.
+- **Fast-lane status (2026-07-13):** the agent-harness skill pool is exhausted (ported,
+  infra-coupled, or overlapping). The only remaining clean markdown-only skills are
+  domain-specific (`frontend/frontend-design`, `ios/ios-development`,
+  `video-production/*`, `ai-ml/*`) plus `architecture/harness-design` (overlaps the
+  ported `harness-design`). Domain skills are outside the adapter's stated scope
+  ("proven agent-harness patterns") and need an explicit operator scope decision before
+  any port.
 - `skills/development/distill-feedback/`,
   `skills/operational/desktop-sessions-discovery/` — carry `.py` scripts; quarantined,
   manual-review-only.
