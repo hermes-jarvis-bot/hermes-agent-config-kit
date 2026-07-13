@@ -425,26 +425,11 @@ As of this design note, the repository is public under `hermes-jarvis-bot/hermes
 
 Current upstream snapshot is whatever `upstream.lock.json` says. Do not rely on memory; read the lockfile.
 
-External-review findings are tracked in `PORTING_BACKLOG.md` as untrusted review
-input and must be independently rechecked before action. The previously reported
-unchanged-SHA provenance, installer/remover target-safety, and dry-run conflict gaps
-are closed. Snapshot/lock persistence now uses staged replacement and a
-SHA-matching completion marker; the exact invariant and focused ad-hoc verification
-evidence are recorded beside the original finding in `PORTING_BACKLOG.md`.
-
-The frontmatter-contract and missing-supported-source findings are closed; the latter
-is fixed by `c6795b4`. Do not infer future review-finding status from this summary:
-inspect current code, then record evidence without deleting the original review
-wording.
-
-Going forward, code-review findings are tracked as GitHub Issues labeled
-`review-finding` (`gh issue list --label review-finding`), not in this file or
-`PORTING_BACKLOG.md`; close them with `Fixes #<n>` in the fix commit. The 2026-07-11
-second-pass findings are issues #2–#7 and are closed. The lower-risk forced-resync
-report finding is issue #9 and is closed. Issue #12 is confirmed: sync PRs created
-with the default workflow token do not trigger `pull_request` validation. It is
-closed by running `validate_adapter.py` inline before either sync workflow opens or
-updates the PR; inspect its current state through GitHub before acting.
+Code-review findings are tracked as GitHub Issues labeled `review-finding`, not in
+this file or `PORTING_BACKLOG.md`; the autopilot closes them with `Fixes #<n>` in the
+fix commit and records closure evidence as an issue comment. Do not infer finding
+status from this file — check the live state with
+`gh issue list --state all --label review-finding`.
 Issue #15 confirmed that PR #13 bypassed the manual-review boundary. Both sync
 workflows now create draft PRs, so a later ready-for-review/approval/merge transition
 requires an operator action; the fix commit closes the issue only after focused
