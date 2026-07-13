@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 28 | 131 |
+| `skills/` | 159 | 29 | 130 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **95** | **299** |
+| **Total** | **394** | **96** | **298** |
 
 ## Ported so far
 
@@ -44,6 +44,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | --- | --- |
 | `skills/ai-ml/ml-research-lab/SKILL.md` | `hermes/skills/ai-ml/ml-research-lab/SKILL.md` |
 | `skills/video-production/script-evaluator/SKILL.md` | `hermes/skills/video-production/script-evaluator/SKILL.md` |
+| `skills/video-production/video-narrative-arc/SKILL.md` | `hermes/skills/video-production/video-narrative-arc/SKILL.md` |
 | `skills/ios/ios-development/SKILL.md` | `hermes/skills/ios/ios-development/SKILL.md` |
 | `skills/ios/ios-development/references/architecture.md` | `hermes/skills/ios/ios-development/references/architecture.md` |
 | `skills/ios/ios-development/references/data.md` | `hermes/skills/ios/ios-development/references/data.md` |
@@ -383,8 +384,9 @@ below is eligible for automatic porting without a new operator matrix decision.
 - **Domain queue #2 (operator-approved 2026-07-13, all vetted clean on 4 axes + leak
   sweep; port in order, one per run, keep the `hermes/skills/<domain>/<skill>/` folder):**
   1. `skills/video-production/video-narrative-arc/SKILL.md` →
-     `hermes/skills/video-production/video-narrative-arc/SKILL.md` — single file; beat-by-beat
-     narrative templates; Remotion mention is domain content.
+     `hermes/skills/video-production/video-narrative-arc/SKILL.md` — ported as a single,
+     data-only beat-planning module. Narrative templates remain adaptable guidance; no
+     rendering, publication, customer contact, or production tooling is activated.
   2. `skills/video-production/product-meaning-extractor/SKILL.md` →
      `hermes/skills/video-production/product-meaning-extractor/SKILL.md` — single file;
      product-brief frameworks (JTBD/StoryBrand).

@@ -16,6 +16,14 @@ skills/video-production/script-evaluator/SKILL.md:
   description: Evaluate an existing video script, storyboard, presentation, or rendered scene for tension, specificity, emotional arc, hook, customer voice, and visual variety without producing, publishing, or rendering video assets.
   risk: low
 
+skills/video-production/video-narrative-arc/SKILL.md:
+  status: supported
+  target: hermes/skills/video-production/video-narrative-arc/SKILL.md
+  type: skill
+  name: video-narrative-arc
+  description: Prepare a product-video narrative arc and timestamped beat plan from an approved product brief without rendering, publishing, or activating production tooling.
+  risk: low
+
 skills/ios/ios-development/SKILL.md:
   status: supported
   target: hermes/skills/ios/ios-development/SKILL.md

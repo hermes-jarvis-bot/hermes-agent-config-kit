@@ -158,6 +158,7 @@ Current generated Hermes skills:
 - `low-signal-residual-training`
 - `ai-ml/ml-research-lab`
 - `video-production/script-evaluator`
+- `video-production/video-narrative-arc`
 - `ios/ios-development` (with reviewed architecture, data, Metal graphics, navigation, networking, performance, SwiftUI, and UIKit references)
 - `long-run-feature-tracking`
 - `managed-execution-boundaries`
