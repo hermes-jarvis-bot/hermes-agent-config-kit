@@ -380,12 +380,20 @@ below is eligible for automatic porting without a new operator matrix decision.
      complete 9-file markdown package (`SKILL.md` + 8 reviewed references); Swift/Xcode,
      Metal, and keychain constants remain domain reference material, and no signing,
      distribution, project-tooling, or runtime action is activated.
-- The approved domain queue is exhausted. Do not select another domain skill automatically;
-  an operator must designate the next candidate.
-- **Vetted-and-pending domain candidates (2026-07-13; mechanically clean and leak-clean,
-  awaiting an operator scope/priority pick):** video-production — `video-narrative-arc`,
-  `product-meaning-extractor`, `remotion-production-guide`, `video-post-production`; ai-ml —
-  `vlm-segmentation` (4-file), `diffusion-engineering` (7-file), `flux2-lora-training`.
+- **Domain queue #2 (operator-approved 2026-07-13, all vetted clean on 4 axes + leak
+  sweep; port in order, one per run, keep the `hermes/skills/<domain>/<skill>/` folder):**
+  1. `skills/video-production/video-narrative-arc/SKILL.md` →
+     `hermes/skills/video-production/video-narrative-arc/SKILL.md` — single file; beat-by-beat
+     narrative templates; Remotion mention is domain content.
+  2. `skills/video-production/product-meaning-extractor/SKILL.md` →
+     `hermes/skills/video-production/product-meaning-extractor/SKILL.md` — single file;
+     product-brief frameworks (JTBD/StoryBrand).
+  3. `skills/ai-ml/vlm-segmentation/` → `hermes/skills/ai-ml/vlm-segmentation/` — 4-file
+     package (`SKILL.md` + 3 `references/`: diffusion-engineering, gpu-deployment,
+     vlm-segmentation); clean.
+- **Lower-priority vetted-clean (await a separate operator pick):** video-production
+  `remotion-production-guide`, `video-post-production`; ai-ml `diffusion-engineering`
+  (7-file), `flux2-lora-training` — portable but tool-heavy how-to guides.
 - **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/forensic-prompt-compiler/`
   — a high-fidelity image→prompt reconstructor (risk of replicating third-party images or a
   specific identity; it carries an "identity-safe" mitigation but the capability is
