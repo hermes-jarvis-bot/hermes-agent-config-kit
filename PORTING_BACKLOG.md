@@ -311,10 +311,24 @@ Recommended future treatment:
   - rejected as duplicate or out-of-scope.
 - Pay special attention to support scripts and binary/media assets inside skill packages.
 
-High-value next candidates (pre-approved, vetted 2026-07-13):
+Next-candidate selection is governed by the **operator matrix in the autopilot run
+prompt**, not by this list — do not designate a fast-lane "next" here that the matrix
+has not blessed (doing so contradicts the matrix and blocks the autopilot). As of
+2026-07-13 the matrix's preferred safe candidate (`article-structure-review`) is
+ported, so the remaining candidates each need an operator decision — they are
+mechanically markdown-only, but every one carries a policy or overlap concern:
 
-1. **`skills/writing/humanize-english/SKILL.md` → `hermes/skills/humanize-english/SKILL.md`** — DESIGNATED NEXT. Single markdown file, 0 non-md files in the package, 0 harness/Claude-isms, risk **low**. Convert via pure `adapt_text` (no hardcoded override needed); sibling `humanize-russian` is already ported. A dry-run conversion was verified valid and leak-free (full frontmatter + provenance, no harness-path leakage). Steps: add the `SUPPORTED` entry in `scripts/sync_upstream.py` and the `compatibility.yaml` entry (`status: supported`, `type: skill`, `risk: low`), generate, then run `validate_output.py` + `validate_adapter.py`.
-2. Runner-ups (also single-md, 0 non-md, low risk): `skills/lean-code/SKILL.md`, `skills/plan-to-tickets/SKILL.md`, `skills/architecture/feature-new/SKILL.md`, `skills/architecture/layer-new/SKILL.md`. Packages carrying `.py` scripts (`development/distill-feedback/`, `operational/desktop-sessions-discovery/`) are NOT in the safe fast lane — their scripts stay quarantined.
+- `skills/writing/humanize-english/` — **manual-review-only**: detector-evasion
+  framing, volatile word-ban lists, and overlap with the installed builtin
+  `humanizer`. Product/policy decision required; not auto-port. (Mechanically it is a
+  clean single-md conversion, but the framing is the blocker.)
+- `skills/lean-code/`, `skills/plan-to-tickets/`, `skills/architecture/feature-new/`,
+  `skills/architecture/layer-new/` — single markdown, no scripts, but each may
+  duplicate existing coverage (`code-quality`; builtin `plan` / local `writing-plans`;
+  `feature-layer-architecture`) — overlap review required before fast-lane approval.
+- `skills/development/distill-feedback/`,
+  `skills/operational/desktop-sessions-discovery/` — carry `.py` scripts; quarantined,
+  manual-review-only.
 
 ## Agents not yet ported
 
