@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 9 | 150 |
+| `skills/` | 159 | 10 | 149 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **76** | **318** |
+| **Total** | **394** | **77** | **317** |
 
 ## Ported so far
 
@@ -46,6 +46,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/development/repo-map/SKILL.md` | `hermes/skills/repo-map/SKILL.md` |
 | `skills/development/workflow-orchestration/SKILL.md` | `hermes/skills/workflow-orchestration/SKILL.md` |
 | `skills/writing/humanize-russian/SKILL.md` | `hermes/skills/humanize-russian/SKILL.md` |
+| `skills/writing/article-structure-review/SKILL.md` | `hermes/skills/article-structure-review/SKILL.md` |
 | `skills/agent-harness-design/SKILL.md` | `hermes/skills/agent-harness-design/SKILL.md` |
 | `skills/development/proof-verify/SKILL.md` | `hermes/skills/proof-verify/SKILL.md` |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
@@ -291,7 +292,6 @@ Top-level skill packages left out:
 - `skills/video-production/script-evaluator/`
 - `skills/video-production/video-narrative-arc/`
 - `skills/video-production/video-post-production/`
-- `skills/writing/article-structure-review/`
 - `skills/writing/humanize-english/`
 - `skills/writing/humanize-russian/`
 
@@ -519,8 +519,13 @@ Goal: port selected upstream skill packages as Hermes skills.
 
 Candidates:
 
-None currently pre-approved. `skills/agent-harness-design/SKILL.md` is ported as
-a bounded, data-only design-triage module. Its ten upstream references remain
+`skills/writing/article-structure-review/SKILL.md` is ported as a markdown-only,
+read-only macro-structure review module. The adaptation retains thesis/support
+balance, genre fit, stated limitations, section load, and visual-versus-prose
+guidance; it deliberately leaves sentence-level style to `humanize-russian` and the
+installed `humanizer` module, and treats upstream numeric heuristics as diagnostic
+signals rather than runtime policy. `skills/agent-harness-design/SKILL.md` is ported
+as a bounded, data-only design-triage module. Its ten upstream references remain
 unported: their provider-specific implementation examples, runtime storage
 conventions, and executable-looking pseudocode require separate overlap and
 threat-model review before any Hermes-native reference is accepted.

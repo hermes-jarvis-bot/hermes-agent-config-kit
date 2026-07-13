@@ -40,6 +40,14 @@ skills/writing/humanize-russian/SKILL.md:
   description: Review and revise Russian-language prose for clarity, specificity, natural rhythm, and an appropriate human voice without fabricating facts or personal experience.
   risk: low
 
+skills/writing/article-structure-review/SKILL.md:
+  status: supported
+  target: hermes/skills/article-structure-review/SKILL.md
+  type: skill
+  name: article-structure-review
+  description: Review a completed article's macro-structure, evidence balance, genre fit, stated limitations, section load, and appropriate use of visuals without rewriting prose or publishing content.
+  risk: low
+
 skills/agent-harness-design/SKILL.md:
   status: supported
   target: hermes/skills/agent-harness-design/SKILL.md
