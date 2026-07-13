@@ -560,240 +560,26 @@ Acceptance criteria:
 4. Should workflow JS become Hermes scripts, scheduled protocols, or merely documented patterns?
 5. Should `PORTING_BACKLOG.md` be regenerated on every upstream sync, or maintained manually as a human-curated roadmap?
 
-## External review findings (as of commit `f10d655`, verify before trusting)
+## Review-finding tracking
 
-An external reviewer (not this repo's own autonomous porting run) audited
-`scripts/sync_upstream.py` at commit `f10d655`. This is *review input to verify
-independently*, in the same spirit as this adapter's own stance on upstream content:
-data to check, not automatic authority. Line numbers below drift every time
-`SUPPORTED` grows (the file has grown from ~3100 to ~4200 lines across recent porting
-commits) — re-grep the function names rather than trusting the numbers.
+Independent review findings are tracked in GitHub Issues with the
+[`review-finding` label](https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/issues?q=is%3Aissue%20label%3Areview-finding).
 
-**Priority — breaks the adapter's core provenance guarantee:**
+- An Issue is the canonical record for the finding, independent verification,
+  triage, commit/CI evidence, and closure decision.
+- Before closing a finding, add a structured Issue comment containing the
+  reproduction or non-reproduction result, fixing commit, and verification
+  evidence. Use `Fixes #<issue>` only when the commit actually resolves it.
+- `PORTING_BACKLOG.md` records only durable roadmap decisions: Waves, release
+  state, candidate scope, and a finding's lasting impact on those decisions.
+  It must not duplicate per-Issue closure reports or dynamic status updates.
+- Historical closure evidence formerly embedded here has been migrated to
+  Issues #2–#9, #16, #18–#20. The Issues retain the original finding text and
+  the migrated evidence comments.
 
-1. `main()` (grep `if base == head and SNAPSHOT.exists()`, near end of file): `--sync`
-   short-circuits whenever the upstream SHA hasn't moved, **without checking whether
-   `SUPPORTED` or `mappings/compatibility.yaml` changed**. Evidence this already bit
-   the repo: most recently-ported skills have no matching `reports/upstream-sync/`
-   entry or lockfile advance — they were hand-authored directly into `hermes/skills/`
-   in the same commits that edited `SUPPORTED`, because an actual `--sync` run at the
-   same upstream SHA would have silently no-op'd. This undermines the "every generated
-   skill traces to a recorded, reviewed sync" property the whole adapter exists to
-   provide. Verify independently: `ls reports/upstream-sync/ | wc -l` vs. `git log
-   --oneline -- hermes/skills | wc -l`.
-
-**Secondary — real but lower blast radius:**
-
-2. `write_report()`: under-reports if `--sync` is forced at an unchanged SHA (e.g. by
-   deleting the snapshot to work around #1) — GitHub's compare API returns empty
-   commits/files, and the empty-fallback branch (`if not files and not base`) doesn't
-   fire because `base` is non-empty, so the report claims 0 changed files despite a
-   full conversion having run.
-
-Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
-the empty compare-data path after a forced snapshot refresh at an unchanged SHA. The
-report now receives an explicit refresh signal and enumerates the refreshed snapshot
-when compare data is empty. Focused ad-hoc verification asserts a non-zero snapshot
-file count and classification for that path (`Fixes #9`).
-3. `download_snapshot()`: `rmtree` + `copytree` with no atomic swap/completion marker
-   — a killed run can leave a truncated snapshot that `SNAPSHOT.exists()` still treats
-   as complete, compounding #1's short-circuit.
-4. `save_lock()`: writes `upstream.lock.json` directly via `write_text`, no
-   temp-file+rename — a kill mid-write can corrupt the lockfile and break every
-   subsequent invocation, including `--check`.
-5. `gh_api()`: runs `gh` with `stderr=subprocess.STDOUT`, so a stderr warning can
-   corrupt the JSON it parses; currently masked by a broad `except Exception` fallback
-   to the unauthenticated, 60-req/hr GitHub REST API path.
-
-Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
-`run(..., stderr=subprocess.STDOUT)` and the broad fallback. The transport now captures
-stdout and stderr separately, parses stdout only, falls back only after a missing or
-failed `gh` invocation, and raises a labelled fault for malformed `gh` JSON. Focused
-ad-hoc verification covers stderr isolation, valid authenticated JSON, failed-command
-fallback, and malformed-JSON non-fallback (`Fixes #8`).
-6. `convert_supported()`: silently skips (`if not src.exists(): continue`) a
-   `SUPPORTED` entry whose upstream source file no longer exists — no warning in the
-   report or exit code, so a generated skill can go stale with zero signal.
-
-Cross-file consistency was re-checked at commit `f10d655` and currently holds: the
-`SUPPORTED` dict, `mappings/compatibility.yaml`'s `status: supported` count,
-`hermes/skills/*` directories, and `AGENTS.md`'s skill list all agree (50 as of this
-commit). This agreement is accidental/hand-maintained, not enforced by any script —
-don't treat it as a guarantee for future commits (see finding 1).
-
-No fix is applied here. Recommended: pick finding 1 as the next single-artefact
-task (fix the short-circuit to also diff `SUPPORTED`/`mappings/compatibility.yaml`
-against what's already reflected in `hermes/skills/`), log it as a real fix rather
-than silently working around it, per this repo's own no-pre-existing-evasion stance.
-
-Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
-the SHA-only short-circuit. The condition now also requires every supported source to
-match its generated target byte-for-byte under the current conversion policy; a
-missing or stale target forces a complete sync/report path. Focused ad-hoc verification
-exercises the stale-output branch before this status is recorded.
-
-## Review findings 2026-07-11 (second pass — verify before trusting)
-
-Independent second review. Same stance as everything inbound here: review input to
-verify, not authority. Findings 1/4/6 below re-confirm the earlier "External review
-findings" block against current code; 2/3/5 are new. Re-grep function names — line
-numbers drift as SUPPORTED grows.
-
-**Priority 1 — provenance (still open, evidence re-confirmed):**
-1. `main()` `if base == head and SNAPSHOT.exists()` (~line 4201): `--sync` no-ops on an
-   unchanged upstream SHA even when SUPPORTED/compatibility.yaml changed, so new skills
-   never get a sync report or lockfile advance. Re-verified 2026-07-11:
-   `ls reports/upstream-sync/*.md | grep -v latest | wc -l` = 2, but
-   `ls hermes/skills | wc -l` = 50 — 48 skills have no recorded sync. Fix: gate the
-   short-circuit on "converted output already matches SUPPORTED", not SHA equality.
-
-Status (2026-07-11): **confirmed and closed**. Reproduced against the current
-SHA-equality branch, then closed by the generated-output invariant and focused
-ad-hoc stale-output sync verification described above.
-
-**Priority 2 — installer/remover safety is convention-only, not enforced (NEW):**
-2. `install_hermes.py` / `remove_hermes.py` accept any `--hermes-home` — including
-   `~/.hermes`, `/root/.hermes`, or any live profile — and will `--apply` there. The
-   repo's top red line ("never write to a production Hermes profile") has no code guard;
-   `validate_output.py` only forbids the literal string as a *default*, not the runtime
-   target. Fix: refuse known production paths (`~/.hermes`, `/root/.hermes`,
-   `$HERMES_HOME`) unless an explicit `--i-know-this-is-production` override is passed;
-   otherwise require the path to look disposable (`/tmp/…`, `*-test`, `*-sandbox`).
-3. `--dry-run` is decorative in both scripts — defined, never read. `apply` derives only
-   from `--apply`, so `--apply --dry-run` writes. Fix: make the two mutually exclusive
-   (error out), or let `--dry-run` force dry-run regardless of `--apply`.
-
-Status (2026-07-11): **confirmed and closed**. Independent pre-change probes accepted
-`/root/.hermes` and showed that `--apply --dry-run` wrote into a disposable target.
-Both installer interfaces now reject production and non-disposable targets unless the
-explicit production override is supplied, and make `--apply` and `--dry-run` mutually
-exclusive. Focused ad-hoc verification covers refusal, conflict rejection, disposable
-dry-run/apply/remove, and the unchanged generated-output contract.
-
-**Priority 3 — lower blast radius:**
-4. `save_lock()` `write_text` (no temp+rename) → a killed run corrupts
-   `upstream.lock.json`, breaking even `--check`. `download_snapshot()` `rmtree`+
-   `copytree` with no completion marker → truncated snapshot still passes
-   `SNAPSHOT.exists()`, compounding #1. Fix: temp-file+`os.replace`; write a
-   `.sync-complete` marker and check it in the short-circuit.
-
-Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
-both direct-write/replace sequences. `atomic_write_text()` now fsyncs a sibling
-staging file before `os.replace`; snapshot refresh stages a complete copy, swaps it
-with rollback to the previous snapshot on in-process failure, and writes a
-SHA-matching `.sync-complete` marker. The unchanged-SHA short-circuit requires that
-marker. Focused ad-hoc verification exercised marker mismatch, atomic snapshot
-replacement, lock JSON readability, conversion stability, and disposable
-install/remove.
-5. `validate_output.py:validate_skills()` checks only `name`+`description`, not the
-   documented `version`/`license`/`metadata.hermes_config_kit.*` frontmatter contract.
-   A regressed skill passes CI. Fix: assert the full documented frontmatter shape.
-
-Status (2026-07-11): **confirmed and closed**. A disposable current-code probe removed
-`version` from a generated skill and the validator still returned success. The validator
-now requires non-empty `name`, `description`, `version`, and `license`, plus the
-`metadata.hermes_config_kit` mapping and its `source_repo`, `source_path`, `adapter`,
-and `conversion` entries. Focused ad-hoc verification exercises each required-field and
-metadata-mapping rejection path, then validates the unchanged generated set.
-
-6. `convert_supported()` silently `continue`s past a SUPPORTED entry whose source file
-   is gone — no report line, no exit code. Fix: collect missing sources, surface them
-   in the report, and exit non-zero.
-
-Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
-the silent skip. Conversion now preflights every supported source before writing any
-generated target; a missing source is listed in the sync report and makes `--sync`
-return non-zero without advancing the lockfile. Focused ad-hoc verification injects
-a missing source in a disposable copy and checks the non-zero result, report entry,
-unchanged lockfile, and unchanged generated output.
-
-Recommended order for Codex: #1 (core guarantee) → #2/#3 (safety, small diffs) →
-#4/#5/#6. One artefact per PR per this repo's commit-narrowness rule. Don't work
-around #1 by deleting the snapshot — fix it and log it (no-pre-existing-evasion).
-
-Current independent recheck (2026-07-12): **all findings above remain closed**.
-The current code requires complete generated output and the matching snapshot marker
-before unchanged-SHA short-circuiting; keeps lock and snapshot replacement atomic;
-separates `gh` stdout from stderr; rejects missing supported sources before writing;
-validates the documented generated-skill frontmatter; and enforces disposable-only,
-mutually exclusive installer/remover modes. Fresh focused ad-hoc verification in
-`/tmp/hermes-verify-fkgb9v6x.py` exercised the output-match stale branch, atomic
-write readability, missing-source fail-closed branch, stable regeneration,
-`py_compile`, `validate_output.py`, and disposable dry-run/apply/remove. The verifier
-was removed after exit 0. These are current-code checks, not a canonical suite.
-
-## Follow-up review finding: generated harness leakage (GitHub issue #16)
-
-GitHub review finding **#16** reported upstream-specific paths and active-runtime
-language in generated `harness-audit` and `agent-security` modules. It was
-independently confirmed on 2026-07-11: regeneration from the current snapshot
-produced `claude-code-skills/...` and an invalid transformed configuration path.
-The source-specific adapters now emit Hermes-native read-only guidance, while
-`validate_output.py` rejects the identified upstream harness-path/runtime
-patterns across generated skills.
-
-Status (2026-07-11): **confirmed and closed**. Current-code recheck at
-`6f2e64e` regenerated both affected outputs in a disposable copy and found no
-`claude-code-skills`, `.config/claude`, or upstream hook/script path leakage.
-Focused ad-hoc verification also confirmed the 57-entry mapping/compatibility
-invariant, stable regeneration, `py_compile`, `validate_output.py`, and scoped
-disposable install/remove (55 skills and 2 templates). GitHub issue #16 is
-closed; this backlog entry records the independent closure evidence.
-
-## Follow-up review finding: generated path and guard-name leakage (GitHub issue #18)
-
-GitHub review finding **#18** reported that generic adaptation changed `.claude/`
-into the invalid, space-containing `.hermes-compatible project artefacts/` path
-in five generated modules. It also reported upstream `*-guard.py` names in
-generated guidance, including a source-specific `secrets-as-data` adaptation;
-the existing validator did not reject either pattern.
-
-Status (2026-07-11): **confirmed and closed**. Current-code inspection reproduced
-seven invalid paths across `finish-the-task`, `long-run-feature-tracking`, and
-`no-guessing`, plus guard-name leakage in `safe-deletion`, `finish-the-task`, and
-`secrets-as-data`. The generic adapter now maps project-local paths to `.hermes/`,
-normalises guard/gate/hook/validator/reminder/check filenames to a review-only category, and the
-source-specific secrets adaptation no longer names an upstream guard. The validator
-rejects both regression classes. Focused ad-hoc verification for the fixing commit
-asserts the 57-entry mapping/compatibility invariant, zero generated occurrences of
-both patterns, stable regeneration, `py_compile`, `validate_output.py`, and scoped
-disposable install/remove (55 skills and 2 templates). GitHub issue #18 is closed
-by `Fixes #18` in that commit.
-
-Current recheck (2026-07-11): the current `adapt_text()` retains the project-local
-path mapping and guard-name normalisation, while `validate_output.py` retains the
-corresponding forbidden-pattern checks. The focused ad-hoc verification for the next
-port confirms the same no-leakage invariant across 58 generated artefacts.
-
-## Follow-up review finding: unvalidated generated references (GitHub issue #20)
-
-GitHub review finding **#20** reported that `validate_output.py` checked generated
-`SKILL.md` files for provenance and upstream-harness leakage but did not check the
-new `hermes/skills/*/references/*.md` artefact type. The two current harness-audit
-references were clean, so this was a validator-coverage gap rather than detected
-output leakage.
-
-Status (2026-07-13): **confirmed and closed**. Current-code inspection established
-that `validate_skills()` selected only `*/SKILL.md`. It now validates every generated
-skill reference for the three provenance markers and the existing forbidden
-harness-path/guard-name patterns. Focused ad-hoc verification mutates each failure
-class in a disposable repository copy, then confirms the unchanged current output,
-stable regeneration, validator, and scoped disposable install/remove contract. The
-fix commit closes GitHub issue #20; the original finding remains available there.
-
-## Follow-up review finding: stale upstream inventory (GitHub issue #19)
-
-GitHub review finding **#19** reported conflicting hard-coded upstream inventory
-counts after the snapshot advanced. It was independently confirmed on 2026-07-11:
-the current pinned snapshot contains 394 files, while the generated set contains
-55 skills and 3 templates (58 total). The prior total of 382 and remaining count
-of 324 were stale; the corrected remaining count is 336. `CLAUDE.md` now avoids a
-second hand-maintained inventory total. This close-out is documentation-only and
-does not alter conversion, installation, or runtime behaviour.
-
-Status (2026-07-11): **confirmed and closed** by this commit after focused
-ad-hoc verification recomputed the snapshot, mapping, generated-artifact, and
-backlog invariants. Original finding text remains in GitHub issue #19.
+The scheduled protocol must triage open `review-finding` Issues first. It must
+not create or close an Issue merely from an upstream report; findings remain
+review input until independently verified against current code.
 
 ## Upstream lockfile integrity note (`skills-lock.json`, not this repo's file)
 
