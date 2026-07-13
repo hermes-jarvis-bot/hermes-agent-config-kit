@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 18 | 141 |
+| `skills/` | 159 | 19 | 140 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **85** | **309** |
+| **Total** | **394** | **86** | **308** |
 
 ## Ported so far
 
@@ -43,6 +43,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | Upstream source | Hermes target |
 | --- | --- |
 | `skills/ai-ml/ml-research-lab/SKILL.md` | `hermes/skills/ai-ml/ml-research-lab/SKILL.md` |
+| `skills/video-production/script-evaluator/SKILL.md` | `hermes/skills/video-production/script-evaluator/SKILL.md` |
 | `skills/development/deep-review/SKILL.md` | `hermes/skills/deep-review/SKILL.md` |
 | `skills/development/repo-map/SKILL.md` | `hermes/skills/repo-map/SKILL.md` |
 | `skills/development/workflow-orchestration/SKILL.md` | `hermes/skills/workflow-orchestration/SKILL.md` |
@@ -363,8 +364,9 @@ below is eligible for automatic porting without a new operator matrix decision.
      — ported as a single-file, data-only ML experiment planning and review module; CUDA/ML
      content remains domain guidance, not tooling policy.
   2. `skills/video-production/script-evaluator/SKILL.md` →
-     `hermes/skills/video-production/script-evaluator/SKILL.md` — single file; Remotion
-     mention is domain content.
+     `hermes/skills/video-production/script-evaluator/SKILL.md` — ported as a single-file,
+     data-only script review module; Remotion remains domain content and no production,
+     rendering, or publication action is activated.
   3. `skills/ios/ios-development/` → `hermes/skills/ios/ios-development/` — 9-file package
      (`SKILL.md` + 8 `references/`: architecture, data, metal-graphics, navigation,
      networking, performance, swiftui, uikit); clean (Swift/Xcode are domain content;
@@ -501,7 +503,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.21` |
+| Latest released tag | `v0.3.23` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |

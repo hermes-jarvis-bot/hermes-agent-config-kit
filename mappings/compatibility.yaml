@@ -8,6 +8,14 @@ skills/ai-ml/ml-research-lab/SKILL.md:
   description: Plan and review reproducible machine-learning experiments across data, baselines, metrics, tracking, and deployment evidence without starting jobs or changing datasets.
   risk: low
 
+skills/video-production/script-evaluator/SKILL.md:
+  status: supported
+  target: hermes/skills/video-production/script-evaluator/SKILL.md
+  type: skill
+  name: script-evaluator
+  description: Evaluate an existing video script, storyboard, presentation, or rendered scene for tension, specificity, emotional arc, hook, customer voice, and visual variety without producing, publishing, or rendering video assets.
+  risk: low
+
 skills/frontend/frontend-design/SKILL.md:
   status: supported
   target: hermes/skills/frontend/frontend-design/SKILL.md
