@@ -311,9 +311,10 @@ Recommended future treatment:
   - rejected as duplicate or out-of-scope.
 - Pay special attention to support scripts and binary/media assets inside skill packages.
 
-High-value next candidates:
+High-value next candidates (pre-approved, vetted 2026-07-13):
 
-1. `skills/agent-harness-design/` — broad but potentially valuable as reference material.
+1. **`skills/writing/humanize-english/SKILL.md` → `hermes/skills/humanize-english/SKILL.md`** — DESIGNATED NEXT. Single markdown file, 0 non-md files in the package, 0 harness/Claude-isms, risk **low**. Convert via pure `adapt_text` (no hardcoded override needed); sibling `humanize-russian` is already ported. A dry-run conversion was verified valid and leak-free (full frontmatter + provenance, no harness-path leakage). Steps: add the `SUPPORTED` entry in `scripts/sync_upstream.py` and the `compatibility.yaml` entry (`status: supported`, `type: skill`, `risk: low`), generate, then run `validate_output.py` + `validate_adapter.py`.
+2. Runner-ups (also single-md, 0 non-md, low risk): `skills/lean-code/SKILL.md`, `skills/plan-to-tickets/SKILL.md`, `skills/architecture/feature-new/SKILL.md`, `skills/architecture/layer-new/SKILL.md`. Packages carrying `.py` scripts (`development/distill-feedback/`, `operational/desktop-sessions-discovery/`) are NOT in the safe fast lane — their scripts stay quarantined.
 
 ## Agents not yet ported
 
