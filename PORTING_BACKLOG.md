@@ -314,9 +314,9 @@ Recommended future treatment:
 Next-candidate selection is governed by the **operator matrix in the autopilot run
 prompt**, not by this list — do not designate a fast-lane "next" here that the matrix
 has not blessed (doing so contradicts the matrix and blocks the autopilot). As of
-2026-07-13 its only approved safe candidate, `skills/lean-code/`, is ported. The
-remaining candidates below require an operator decision and are not eligible for
-automatic porting.
+2026-07-13 `skills/lean-code/` is ported and `skills/plan-to-tickets/` is the
+operator-approved preferred next (see the matrix). The other candidates below require
+an operator decision and are not eligible for automatic porting.
 
 - `skills/lean-code/SKILL.md` → `hermes/skills/lean-code/SKILL.md` — ported as the
   operator-approved Wave 3 markdown-only module. The Hermes adaptation retains the
@@ -326,10 +326,16 @@ automatic porting.
   framing, volatile word-ban lists, and overlap with the installed builtin
   `humanizer`. Product/policy decision required; not auto-port. (Mechanically it is a
   clean single-md conversion, but the framing is the blocker.)
-- `skills/plan-to-tickets/`, `skills/architecture/feature-new/`,
-  `skills/architecture/layer-new/` — single markdown, no scripts, but each may
-  duplicate existing coverage (builtin `plan` / local `writing-plans`;
-  `feature-layer-architecture`) — overlap review required before fast-lane approval.
+- `skills/plan-to-tickets/SKILL.md` → `hermes/skills/plan-to-tickets/SKILL.md` —
+  **operator-approved preferred next (2026-07-13)**. Vetted: mechanically single-md,
+  but the port MUST neutralize its `.claude\…\validate_agent_tickets.py` reference,
+  which the validator does not yet catch (see issue #21); policy-clean; a distinct
+  ticket-decomposition function (agent-ready tickets with acceptance criteria,
+  verification, blockers, tracer-bullet slices), complementary to builtin `plan` /
+  local `writing-plans`, not a duplicate.
+- `skills/architecture/feature-new/`, `skills/architecture/layer-new/` — single
+  markdown, no scripts, but may duplicate `feature-layer-architecture`; overlap review
+  required before fast-lane approval.
 - `skills/development/distill-feedback/`,
   `skills/operational/desktop-sessions-discovery/` — carry `.py` scripts; quarantined,
   manual-review-only.
