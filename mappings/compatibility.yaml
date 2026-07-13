@@ -1,5 +1,13 @@
 # Conversion policy for upstream claude-code-config artefacts.
 
+skills/ai-ml/ml-research-lab/SKILL.md:
+  status: supported
+  target: hermes/skills/ai-ml/ml-research-lab/SKILL.md
+  type: skill
+  name: ml-research-lab
+  description: Plan and review reproducible machine-learning experiments across data, baselines, metrics, tracking, and deployment evidence without starting jobs or changing datasets.
+  risk: low
+
 skills/frontend/frontend-design/SKILL.md:
   status: supported
   target: hermes/skills/frontend/frontend-design/SKILL.md

@@ -156,6 +156,7 @@ Current generated Hermes skills:
 - `lean-code`
 - `learning-from-corrections`
 - `low-signal-residual-training`
+- `ai-ml/ml-research-lab`
 - `long-run-feature-tracking`
 - `managed-execution-boundaries`
 - `merge-conflict-resolution`

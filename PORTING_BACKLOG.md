@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 17 | 142 |
+| `skills/` | 159 | 18 | 141 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **84** | **310** |
+| **Total** | **394** | **85** | **309** |
 
 ## Ported so far
 
@@ -42,6 +42,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 
 | Upstream source | Hermes target |
 | --- | --- |
+| `skills/ai-ml/ml-research-lab/SKILL.md` | `hermes/skills/ai-ml/ml-research-lab/SKILL.md` |
 | `skills/development/deep-review/SKILL.md` | `hermes/skills/deep-review/SKILL.md` |
 | `skills/development/repo-map/SKILL.md` | `hermes/skills/repo-map/SKILL.md` |
 | `skills/development/workflow-orchestration/SKILL.md` | `hermes/skills/workflow-orchestration/SKILL.md` |
@@ -276,7 +277,6 @@ Top-level skill packages left out:
 - `skills/ai-ml/flux2-klein-prompting/`
 - `skills/ai-ml/flux2-lora-training/`
 - `skills/ai-ml/forensic-prompt-compiler/`
-- `skills/ai-ml/ml-research-lab/`
 - `skills/ai-ml/vlm-segmentation/`
 - `skills/architecture/feature-new/`
 - `skills/architecture/harness-design/`
@@ -360,7 +360,8 @@ below is eligible for automatic porting without a new operator matrix decision.
 - **Domain queue (operator-approved 2026-07-13, all vetted clean on 4 axes; port in
   order, one per run, keep the `hermes/skills/<domain>/<skill>/` folder):**
   1. `skills/ai-ml/ml-research-lab/SKILL.md` → `hermes/skills/ai-ml/ml-research-lab/SKILL.md`
-     — single file; CUDA/ML mentions are domain reference content, not tooling policy.
+     — ported as a single-file, data-only ML experiment planning and review module; CUDA/ML
+     content remains domain guidance, not tooling policy.
   2. `skills/video-production/script-evaluator/SKILL.md` →
      `hermes/skills/video-production/script-evaluator/SKILL.md` — single file; Remotion
      mention is domain content.
