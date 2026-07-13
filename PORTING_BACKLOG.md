@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 19 | 140 |
+| `skills/` | 159 | 28 | 131 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **86** | **308** |
+| **Total** | **394** | **95** | **299** |
 
 ## Ported so far
 
@@ -44,6 +44,15 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | --- | --- |
 | `skills/ai-ml/ml-research-lab/SKILL.md` | `hermes/skills/ai-ml/ml-research-lab/SKILL.md` |
 | `skills/video-production/script-evaluator/SKILL.md` | `hermes/skills/video-production/script-evaluator/SKILL.md` |
+| `skills/ios/ios-development/SKILL.md` | `hermes/skills/ios/ios-development/SKILL.md` |
+| `skills/ios/ios-development/references/architecture.md` | `hermes/skills/ios/ios-development/references/architecture.md` |
+| `skills/ios/ios-development/references/data.md` | `hermes/skills/ios/ios-development/references/data.md` |
+| `skills/ios/ios-development/references/metal-graphics.md` | `hermes/skills/ios/ios-development/references/metal-graphics.md` |
+| `skills/ios/ios-development/references/navigation.md` | `hermes/skills/ios/ios-development/references/navigation.md` |
+| `skills/ios/ios-development/references/networking.md` | `hermes/skills/ios/ios-development/references/networking.md` |
+| `skills/ios/ios-development/references/performance.md` | `hermes/skills/ios/ios-development/references/performance.md` |
+| `skills/ios/ios-development/references/swiftui.md` | `hermes/skills/ios/ios-development/references/swiftui.md` |
+| `skills/ios/ios-development/references/uikit.md` | `hermes/skills/ios/ios-development/references/uikit.md` |
 | `skills/development/deep-review/SKILL.md` | `hermes/skills/deep-review/SKILL.md` |
 | `skills/development/repo-map/SKILL.md` | `hermes/skills/repo-map/SKILL.md` |
 | `skills/development/workflow-orchestration/SKILL.md` | `hermes/skills/workflow-orchestration/SKILL.md` |
@@ -269,7 +278,7 @@ No remaining rule is a clear low-risk auto-conversion candidate. `rules/long-run
 
 ## Skill packages not yet ported
 
-Upstream contains 154 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
+Upstream contains 145 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
 
 Top-level skill packages left out:
 
@@ -289,12 +298,12 @@ Top-level skill packages left out:
 - `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
 - `skills/development/repo-map/`
 - `skills/development/workflow-orchestration/` (the markdown `SKILL.md` is ported; references, JavaScript template, and validation script remain unported and quarantined)
-- `skills/ios/ios-development/`
+
 - `skills/operational/desktop-sessions-discovery/`
 - `skills/operational/gemini-delegate/`
 - `skills/video-production/product-meaning-extractor/`
 - `skills/video-production/remotion-production-guide/`
-- `skills/video-production/script-evaluator/`
+
 - `skills/video-production/video-narrative-arc/`
 - `skills/video-production/video-post-production/`
 - `skills/writing/humanize-english/`
@@ -367,12 +376,12 @@ below is eligible for automatic porting without a new operator matrix decision.
      `hermes/skills/video-production/script-evaluator/SKILL.md` — ported as a single-file,
      data-only script review module; Remotion remains domain content and no production,
      rendering, or publication action is activated.
-  3. `skills/ios/ios-development/` → `hermes/skills/ios/ios-development/` — 9-file package
-     (`SKILL.md` + 8 `references/`: architecture, data, metal-graphics, navigation,
-     networking, performance, swiftui, uikit); clean (Swift/Xcode are domain content;
-     `kSecReturnData`/keychain constants are NOT secrets).
-- Other clean domain skills (`video-production/*` and `ai-ml/*` beyond the queue) remain
-  available for future operator-picked domain waves.
+  3. `skills/ios/ios-development/` → `hermes/skills/ios/ios-development/` — ported as the
+     complete 9-file markdown package (`SKILL.md` + 8 reviewed references); Swift/Xcode,
+     Metal, and keychain constants remain domain reference material, and no signing,
+     distribution, project-tooling, or runtime action is activated.
+- The approved domain queue is exhausted. Do not select another domain skill automatically;
+  an operator must designate the next candidate.
 - `skills/development/distill-feedback/`,
   `skills/operational/desktop-sessions-discovery/` — carry `.py` scripts; quarantined,
   manual-review-only.

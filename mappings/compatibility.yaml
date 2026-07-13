@@ -16,6 +16,78 @@ skills/video-production/script-evaluator/SKILL.md:
   description: Evaluate an existing video script, storyboard, presentation, or rendered scene for tension, specificity, emotional arc, hook, customer voice, and visual variety without producing, publishing, or rendering video assets.
   risk: low
 
+skills/ios/ios-development/SKILL.md:
+  status: supported
+  target: hermes/skills/ios/ios-development/SKILL.md
+  type: skill
+  name: ios-development
+  description: Plan, review, and implement native iOS application work across SwiftUI, UIKit, architecture, networking, data, navigation, performance, and Metal graphics without activating project tooling, signing, distribution, or publication.
+  risk: low
+
+skills/ios/ios-development/references/architecture.md:
+  status: supported
+  target: hermes/skills/ios/ios-development/references/architecture.md
+  type: reference
+  name: ios-development-architecture
+  description: Reference architecture patterns and testability boundaries for a reviewed native iOS implementation.
+  risk: low
+
+skills/ios/ios-development/references/data.md:
+  status: supported
+  target: hermes/skills/ios/ios-development/references/data.md
+  type: reference
+  name: ios-development-data
+  description: Reference persistence, Keychain, and file-storage patterns for a reviewed native iOS implementation.
+  risk: low
+
+skills/ios/ios-development/references/metal-graphics.md:
+  status: supported
+  target: hermes/skills/ios/ios-development/references/metal-graphics.md
+  type: reference
+  name: ios-development-metal-graphics
+  description: Reference Metal graphics, profiling, memory, and thermal-management patterns for a reviewed native iOS implementation.
+  risk: low
+
+skills/ios/ios-development/references/navigation.md:
+  status: supported
+  target: hermes/skills/ios/ios-development/references/navigation.md
+  type: reference
+  name: ios-development-navigation
+  description: Reference SwiftUI and UIKit navigation, coordinator, and deep-link patterns for a reviewed native iOS implementation.
+  risk: low
+
+skills/ios/ios-development/references/networking.md:
+  status: supported
+  target: hermes/skills/ios/ios-development/references/networking.md
+  type: reference
+  name: ios-development-networking
+  description: Reference URLSession, authentication, retry, caching, and WebSocket patterns for a reviewed native iOS implementation.
+  risk: low
+
+skills/ios/ios-development/references/performance.md:
+  status: supported
+  target: hermes/skills/ios/ios-development/references/performance.md
+  type: reference
+  name: ios-development-performance
+  description: Reference UI, memory, launch, scrolling, image, and Instruments performance checks for a reviewed native iOS implementation.
+  risk: low
+
+skills/ios/ios-development/references/swiftui.md:
+  status: supported
+  target: hermes/skills/ios/ios-development/references/swiftui.md
+  type: reference
+  name: ios-development-swiftui
+  description: Reference SwiftUI lifecycle, state, layout, animation, collection, input, and environment patterns for a reviewed native iOS implementation.
+  risk: low
+
+skills/ios/ios-development/references/uikit.md:
+  status: supported
+  target: hermes/skills/ios/ios-development/references/uikit.md
+  type: reference
+  name: ios-development-uikit
+  description: Reference UIKit lifecycle, layout, components, collection, delegation, and SwiftUI interoperability patterns for a reviewed native iOS implementation.
+  risk: low
+
 skills/frontend/frontend-design/SKILL.md:
   status: supported
   target: hermes/skills/frontend/frontend-design/SKILL.md
