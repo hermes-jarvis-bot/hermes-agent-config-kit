@@ -78,7 +78,7 @@ scripts/validate_output.py                 # safety and generated-output validat
 scripts/validate_adapter.py                # complete disposable adapter validation routine
 scripts/install_hermes.py                  # dry-run-first file copier for generated artefacts
 scripts/remove_hermes.py                   # dry-run-first remover for config-kit artefacts
-hermes/skills/*/SKILL.md                   # generated/adapted Hermes skills
+hermes/skills/**/SKILL.md                  # generated/adapted Hermes skills (including domain/skill nesting)
 upstream/claude-code-config/snapshot/      # pinned upstream source snapshot for review
 reports/upstream-sync/*.md                 # generated sync reports; latest.md mirrors newest
 .github/workflows/validate.yml             # CI validator and dry-run non-write assertion
@@ -141,6 +141,7 @@ Current generated Hermes skills:
 - `feature-layer-architecture`
 - `file-organization-cohesion`
 - `folder-lifecycle-classification`
+- `frontend/frontend-design` (with reviewed component, layout, performance/accessibility, and visual-style references)
 - `finish-the-task`
 - `git-source-of-truth`
 - `harness-design`

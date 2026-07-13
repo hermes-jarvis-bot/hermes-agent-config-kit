@@ -82,7 +82,7 @@ def parse_frontmatter(text: str, path: Path) -> dict[str, str]:
 
 
 def validate_skills() -> None:
-    skills = sorted((ROOT / "hermes" / "skills").glob("*/SKILL.md"))
+    skills = sorted((ROOT / "hermes" / "skills").glob("**/SKILL.md"))
     if not skills:
         fail("no Hermes skills generated")
     for path in skills:
@@ -102,7 +102,7 @@ def validate_skills() -> None:
         for pattern in FORBIDDEN_GENERATED_HARNESS_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
                 fail(f"{path} retains an upstream harness path or runtime reference")
-    references = sorted((ROOT / "hermes" / "skills").glob("*/references/*.md"))
+    references = sorted((ROOT / "hermes" / "skills").glob("**/references/*.md"))
     for path in references:
         text = read_text(path)
         for marker in GENERATED_PROVENANCE_MARKERS:

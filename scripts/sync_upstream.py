@@ -23,6 +23,35 @@ UPSTREAM_REPO = "AnastasiyaW/claude-code-config"
 BRANCH = "main"
 
 SUPPORTED = {
+    "skills/frontend/frontend-design/SKILL.md": {
+        "target": "hermes/skills/frontend/frontend-design/SKILL.md",
+        "name": "frontend-design",
+        "description": "Design and review web interfaces with an explicit design system, responsive layout, accessibility, performance, and verification boundaries without activating project tooling or publishing changes.",
+    },
+    "skills/frontend/frontend-design/references/components-frameworks.md": {
+        "target": "hermes/skills/frontend/frontend-design/references/components-frameworks.md",
+        "name": "frontend-design-components-frameworks",
+        "description": "Reference component, framework, and interaction patterns for a reviewed web-interface implementation.",
+        "type": "reference",
+    },
+    "skills/frontend/frontend-design/references/layout-css.md": {
+        "target": "hermes/skills/frontend/frontend-design/references/layout-css.md",
+        "name": "frontend-design-layout-css",
+        "description": "Reference responsive layout, CSS token, and typography patterns for a reviewed web-interface implementation.",
+        "type": "reference",
+    },
+    "skills/frontend/frontend-design/references/performance-a11y.md": {
+        "target": "hermes/skills/frontend/frontend-design/references/performance-a11y.md",
+        "name": "frontend-design-performance-a11y",
+        "description": "Reference performance, accessibility, semantic, and localisation checks for a reviewed web-interface implementation.",
+        "type": "reference",
+    },
+    "skills/frontend/frontend-design/references/visual-styles.md": {
+        "target": "hermes/skills/frontend/frontend-design/references/visual-styles.md",
+        "name": "frontend-design-visual-styles",
+        "description": "Reference visual-system, colour, typography, motion, and theme patterns for a reviewed web-interface implementation.",
+        "type": "reference",
+    },
     "skills/development/proof-verify/SKILL.md": {
         "target": "hermes/skills/proof-verify/SKILL.md",
         "name": "proof-verify",

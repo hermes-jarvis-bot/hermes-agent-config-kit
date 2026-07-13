@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 12 | 147 |
+| `skills/` | 159 | 17 | 142 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **79** | **315** |
+| **Total** | **394** | **84** | **310** |
 
 ## Ported so far
 
@@ -50,6 +50,11 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/lean-code/SKILL.md` | `hermes/skills/lean-code/SKILL.md` |
 | `skills/plan-to-tickets/SKILL.md` | `hermes/skills/plan-to-tickets/SKILL.md` |
 | `skills/agent-harness-design/SKILL.md` | `hermes/skills/agent-harness-design/SKILL.md` |
+| `skills/frontend/frontend-design/SKILL.md` | `hermes/skills/frontend/frontend-design/SKILL.md` |
+| `skills/frontend/frontend-design/references/components-frameworks.md` | `hermes/skills/frontend/frontend-design/references/components-frameworks.md` |
+| `skills/frontend/frontend-design/references/layout-css.md` | `hermes/skills/frontend/frontend-design/references/layout-css.md` |
+| `skills/frontend/frontend-design/references/performance-a11y.md` | `hermes/skills/frontend/frontend-design/references/performance-a11y.md` |
+| `skills/frontend/frontend-design/references/visual-styles.md` | `hermes/skills/frontend/frontend-design/references/visual-styles.md` |
 | `skills/development/proof-verify/SKILL.md` | `hermes/skills/proof-verify/SKILL.md` |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
 | `skills/operational/harness-audit/references/checklist-per-subsystem.md` | `hermes/skills/harness-audit/references/checklist-per-subsystem.md` |
@@ -283,7 +288,6 @@ Top-level skill packages left out:
 - `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
 - `skills/development/repo-map/`
 - `skills/development/workflow-orchestration/` (the markdown `SKILL.md` is ported; references, JavaScript template, and validation script remain unported and quarantined)
-- `skills/frontend/frontend-design/`
 - `skills/ios/ios-development/`
 - `skills/operational/desktop-sessions-discovery/`
 - `skills/operational/gemini-delegate/`
@@ -314,9 +318,9 @@ Recommended future treatment:
 Next-candidate selection is governed by the **operator matrix in the autopilot run
 prompt**, not by this list — do not designate a fast-lane "next" here that the matrix
 has not blessed (doing so contradicts the matrix and blocks the autopilot). As of
-2026-07-13 `skills/lean-code/` and `skills/plan-to-tickets/SKILL.md` are ported. No
-remaining candidate below is eligible for automatic porting without a new operator
-matrix decision.
+2026-07-13 `skills/lean-code/`, `skills/plan-to-tickets/SKILL.md`, and the complete
+five-file `skills/frontend/frontend-design/` package are ported. No remaining candidate
+below is eligible for automatic porting without a new operator matrix decision.
 
 - `skills/lean-code/SKILL.md` → `hermes/skills/lean-code/SKILL.md` — ported as the
   operator-approved Wave 3 markdown-only module. The Hermes adaptation retains the
@@ -342,15 +346,12 @@ matrix decision.
   mechanics depend on concrete upstream artefacts/paths/tooling (kb-skeleton,
   docs/layers, feature_list.json, claude-code-skills/config checkout, kb-graph scripts)
   is not portable to Hermes-specifics — classify review-lane, do not auto-port.
-- **Domain-skill scope approved (operator, 2026-07-13):** the agent-harness pool is
-  exhausted; the operator approved porting DOMAIN skills while keeping the domain as a
-  folder. The matrix's designated next candidate is **`skills/frontend/frontend-design/`
-  → `hermes/skills/frontend/frontend-design/`** — a 5-file package (`SKILL.md` + 4
-  `references/*.md`), vetted clean on all axes. Structural requirement: domain skills
-  live at `hermes/skills/<domain>/<skill>/` (2-level nesting), so `validate_output.py`'s
-  one-level globs (`hermes/skills/*/SKILL.md`, `*/references/*.md`, and the leak sweep)
-  must be made recursive first — otherwise nested skills escape validation (the #20
-  class).
+- **Domain-skill scope applied (operator, 2026-07-13):** the agent-harness pool is
+  exhausted; the approved five-file **`skills/frontend/frontend-design/`** package is
+  ported to `hermes/skills/frontend/frontend-design/`, retaining the domain directory.
+  `validate_output.py` now recursively validates nested `SKILL.md` and `references/*.md`
+  paths, including frontmatter and harness-leak sweeps, so this package cannot bypass
+  the validation boundary.
 - `skills/architecture/harness-design/` — **not a candidate (duplicate)**: same
   Anthropic source, same core (Generator-Evaluator / Sprint-Contract / Context /
   Assumption / Quality) and the same `name: harness-design` as the already-ported
@@ -488,7 +489,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.7` |
+| Latest released tag | `v0.3.21` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
@@ -576,6 +577,10 @@ as a bounded, data-only design-triage module. Its ten upstream references remain
 unported: their provider-specific implementation examples, runtime storage
 conventions, and executable-looking pseudocode require separate overlap and
 threat-model review before any Hermes-native reference is accepted.
+`skills/frontend/frontend-design/` is ported as a complete five-file, markdown-only
+domain package under `hermes/skills/frontend/frontend-design/`. Its four references
+remain data-only guidance; no project tooling, service-worker registration, or external
+publication action is activated by this adapter.
 
 Acceptance criteria:
 
