@@ -382,6 +382,15 @@ below is eligible for automatic porting without a new operator matrix decision.
      distribution, project-tooling, or runtime action is activated.
 - The approved domain queue is exhausted. Do not select another domain skill automatically;
   an operator must designate the next candidate.
+- **Vetted-and-pending domain candidates (2026-07-13; mechanically clean and leak-clean,
+  awaiting an operator scope/priority pick):** video-production — `video-narrative-arc`,
+  `product-meaning-extractor`, `remotion-production-guide`, `video-post-production`; ai-ml —
+  `vlm-segmentation` (4-file), `diffusion-engineering` (7-file), `flux2-lora-training`.
+- **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/forensic-prompt-compiler/`
+  — a high-fidelity image→prompt reconstructor (risk of replicating third-party images or a
+  specific identity; it carries an "identity-safe" mitigation but the capability is
+  dual-use), and `skills/ai-ml/flux2-klein-prompting/` (`api_key` policy flag). Both need a
+  product/policy decision before any port.
 - `skills/development/distill-feedback/`,
   `skills/operational/desktop-sessions-discovery/` — carry `.py` scripts; quarantined,
   manual-review-only.
