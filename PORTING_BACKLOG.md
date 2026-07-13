@@ -342,13 +342,22 @@ matrix decision.
   mechanics depend on concrete upstream artefacts/paths/tooling (kb-skeleton,
   docs/layers, feature_list.json, claude-code-skills/config checkout, kb-graph scripts)
   is not portable to Hermes-specifics — classify review-lane, do not auto-port.
-- **Fast-lane status (2026-07-13):** the agent-harness skill pool is exhausted (ported,
-  infra-coupled, or overlapping). The only remaining clean markdown-only skills are
-  domain-specific (`frontend/frontend-design`, `ios/ios-development`,
-  `video-production/*`, `ai-ml/*`) plus `architecture/harness-design` (overlaps the
-  ported `harness-design`). Domain skills are outside the adapter's stated scope
-  ("proven agent-harness patterns") and need an explicit operator scope decision before
-  any port.
+- **Domain-skill scope approved (operator, 2026-07-13):** the agent-harness pool is
+  exhausted; the operator approved porting DOMAIN skills while keeping the domain as a
+  folder. The matrix's designated next candidate is **`skills/frontend/frontend-design/`
+  → `hermes/skills/frontend/frontend-design/`** — a 5-file package (`SKILL.md` + 4
+  `references/*.md`), vetted clean on all axes. Structural requirement: domain skills
+  live at `hermes/skills/<domain>/<skill>/` (2-level nesting), so `validate_output.py`'s
+  one-level globs (`hermes/skills/*/SKILL.md`, `*/references/*.md`, and the leak sweep)
+  must be made recursive first — otherwise nested skills escape validation (the #20
+  class).
+- `skills/architecture/harness-design/` — **not a candidate (duplicate)**: same
+  Anthropic source, same core (Generator-Evaluator / Sprint-Contract / Context /
+  Assumption / Quality) and the same `name: harness-design` as the already-ported
+  `harness-design` (principle 01). Its unique operational bits are a manual merge
+  decision, not an auto-port.
+- Other clean domain skills (`ios/ios-development`, `video-production/*`, `ai-ml/*`)
+  remain available for future operator-picked domain waves.
 - `skills/development/distill-feedback/`,
   `skills/operational/desktop-sessions-discovery/` — carry `.py` scripts; quarantined,
   manual-review-only.
