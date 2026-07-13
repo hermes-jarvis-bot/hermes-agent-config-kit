@@ -152,6 +152,7 @@ Current generated Hermes skills:
 - `documentation-integrity`
 - `documentation-freshness`
 - `knowledge-base-enforcement`
+- `lean-code`
 - `learning-from-corrections`
 - `low-signal-residual-training`
 - `long-run-feature-tracking`

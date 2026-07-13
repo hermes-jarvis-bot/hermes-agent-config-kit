@@ -48,6 +48,14 @@ skills/writing/article-structure-review/SKILL.md:
   description: Review a completed article's macro-structure, evidence balance, genre fit, stated limitations, section load, and appropriate use of visuals without rewriting prose or publishing content.
   risk: low
 
+skills/lean-code/SKILL.md:
+  status: supported
+  target: hermes/skills/lean-code/SKILL.md
+  type: skill
+  name: lean-code
+  description: Apply on-demand minimalism to select the smallest complete, verified code change without weakening safety, accessibility, or required behaviour.
+  risk: low
+
 skills/agent-harness-design/SKILL.md:
   status: supported
   target: hermes/skills/agent-harness-design/SKILL.md

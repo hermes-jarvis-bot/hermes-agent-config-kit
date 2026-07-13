@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 10 | 149 |
+| `skills/` | 159 | 11 | 148 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **77** | **317** |
+| **Total** | **394** | **78** | **316** |
 
 ## Ported so far
 
@@ -47,6 +47,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/development/workflow-orchestration/SKILL.md` | `hermes/skills/workflow-orchestration/SKILL.md` |
 | `skills/writing/humanize-russian/SKILL.md` | `hermes/skills/humanize-russian/SKILL.md` |
 | `skills/writing/article-structure-review/SKILL.md` | `hermes/skills/article-structure-review/SKILL.md` |
+| `skills/lean-code/SKILL.md` | `hermes/skills/lean-code/SKILL.md` |
 | `skills/agent-harness-design/SKILL.md` | `hermes/skills/agent-harness-design/SKILL.md` |
 | `skills/development/proof-verify/SKILL.md` | `hermes/skills/proof-verify/SKILL.md` |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
@@ -283,7 +284,6 @@ Top-level skill packages left out:
 - `skills/development/workflow-orchestration/` (the markdown `SKILL.md` is ported; references, JavaScript template, and validation script remain unported and quarantined)
 - `skills/frontend/frontend-design/`
 - `skills/ios/ios-development/`
-- `skills/lean-code/`
 - `skills/operational/desktop-sessions-discovery/`
 - `skills/operational/gemini-delegate/`
 - `skills/plan-to-tickets/`
@@ -314,20 +314,14 @@ Recommended future treatment:
 Next-candidate selection is governed by the **operator matrix in the autopilot run
 prompt**, not by this list — do not designate a fast-lane "next" here that the matrix
 has not blessed (doing so contradicts the matrix and blocks the autopilot). As of
-2026-07-13 the matrix's preferred safe candidate is `skills/lean-code/` (operator-
-approved on that date); the previous preferred (`article-structure-review`) is ported.
-The others still need an operator decision — mechanically markdown-only, but each
-carries a policy or overlap concern:
+2026-07-13 its only approved safe candidate, `skills/lean-code/`, is ported. The
+remaining candidates below require an operator decision and are not eligible for
+automatic porting.
 
-- `skills/lean-code/SKILL.md` → `hermes/skills/lean-code/SKILL.md` — **operator-approved
-  preferred next (2026-07-13)**, now the matrix's `preferred next safe candidate`.
-  Vetted on all three axes: mechanically clean (validator/adapter pass, no guarded
-  leaks); policy-clean (explicitly preserves input validation, error handling,
-  security, accessibility — "Lean ≠ incomplete"); and **complementary** to the ported
-  `code-quality` (this is the on-demand intensifier to that always-on baseline), not a
-  duplicate. Port with light neutralization of residual upstream tooling references
-  (`rules/quality-code.md`, "advisory hook", `/code-review`) toward Hermes-native
-  `code-quality`.
+- `skills/lean-code/SKILL.md` → `hermes/skills/lean-code/SKILL.md` — ported as the
+  operator-approved Wave 3 markdown-only module. The Hermes adaptation retains the
+  on-demand, complete-and-verified minimalism boundary and directs routine quality work
+  to `code-quality`; no upstream tooling or runtime policy is carried over.
 - `skills/writing/humanize-english/` — **manual-review-only**: detector-evasion
   framing, volatile word-ban lists, and overlap with the installed builtin
   `humanizer`. Product/policy decision required; not auto-port. (Mechanically it is a
