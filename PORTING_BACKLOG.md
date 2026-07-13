@@ -314,17 +314,27 @@ Recommended future treatment:
 Next-candidate selection is governed by the **operator matrix in the autopilot run
 prompt**, not by this list — do not designate a fast-lane "next" here that the matrix
 has not blessed (doing so contradicts the matrix and blocks the autopilot). As of
-2026-07-13 the matrix's preferred safe candidate (`article-structure-review`) is
-ported, so the remaining candidates each need an operator decision — they are
-mechanically markdown-only, but every one carries a policy or overlap concern:
+2026-07-13 the matrix's preferred safe candidate is `skills/lean-code/` (operator-
+approved on that date); the previous preferred (`article-structure-review`) is ported.
+The others still need an operator decision — mechanically markdown-only, but each
+carries a policy or overlap concern:
 
+- `skills/lean-code/SKILL.md` → `hermes/skills/lean-code/SKILL.md` — **operator-approved
+  preferred next (2026-07-13)**, now the matrix's `preferred next safe candidate`.
+  Vetted on all three axes: mechanically clean (validator/adapter pass, no guarded
+  leaks); policy-clean (explicitly preserves input validation, error handling,
+  security, accessibility — "Lean ≠ incomplete"); and **complementary** to the ported
+  `code-quality` (this is the on-demand intensifier to that always-on baseline), not a
+  duplicate. Port with light neutralization of residual upstream tooling references
+  (`rules/quality-code.md`, "advisory hook", `/code-review`) toward Hermes-native
+  `code-quality`.
 - `skills/writing/humanize-english/` — **manual-review-only**: detector-evasion
   framing, volatile word-ban lists, and overlap with the installed builtin
   `humanizer`. Product/policy decision required; not auto-port. (Mechanically it is a
   clean single-md conversion, but the framing is the blocker.)
-- `skills/lean-code/`, `skills/plan-to-tickets/`, `skills/architecture/feature-new/`,
+- `skills/plan-to-tickets/`, `skills/architecture/feature-new/`,
   `skills/architecture/layer-new/` — single markdown, no scripts, but each may
-  duplicate existing coverage (`code-quality`; builtin `plan` / local `writing-plans`;
+  duplicate existing coverage (builtin `plan` / local `writing-plans`;
   `feature-layer-architecture`) — overlap review required before fast-lane approval.
 - `skills/development/distill-feedback/`,
   `skills/operational/desktop-sessions-discovery/` — carry `.py` scripts; quarantined,
