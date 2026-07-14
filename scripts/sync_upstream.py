@@ -28,6 +28,11 @@ SUPPORTED = {
         "name": "ml-research-lab",
         "description": "Plan and review reproducible machine-learning experiments across data, baselines, metrics, tracking, and deployment evidence without starting jobs or changing datasets.",
     },
+    "skills/ai-ml/flux2-lora-training/SKILL.md": {
+        "target": "hermes/skills/ai-ml/flux2-lora-training/SKILL.md",
+        "name": "flux2-lora-training",
+        "description": "Plan and review FLUX.2 and Qwen image-edit LoRA/VAE training with dataset, capacity, licence, and verification gates without starting workloads, downloading models, accepting licences, or changing GPU configuration.",
+    },
     "skills/video-production/script-evaluator/SKILL.md": {
         "target": "hermes/skills/video-production/script-evaluator/SKILL.md",
         "name": "script-evaluator",

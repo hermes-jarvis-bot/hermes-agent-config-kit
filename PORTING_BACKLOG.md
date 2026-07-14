@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 34 | 125 |
+| `skills/` | 159 | 35 | 124 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **101** | **293** |
+| **Total** | **394** | **102** | **292** |
 
 ## Ported so far
 
@@ -43,6 +43,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | Upstream source | Hermes target |
 | --- | --- |
 | `skills/ai-ml/ml-research-lab/SKILL.md` | `hermes/skills/ai-ml/ml-research-lab/SKILL.md` |
+| `skills/ai-ml/flux2-lora-training/SKILL.md` | `hermes/skills/ai-ml/flux2-lora-training/SKILL.md` |
 | `skills/video-production/script-evaluator/SKILL.md` | `hermes/skills/video-production/script-evaluator/SKILL.md` |
 | `skills/video-production/video-narrative-arc/SKILL.md` | `hermes/skills/video-production/video-narrative-arc/SKILL.md` |
 | `skills/video-production/product-meaning-extractor/SKILL.md` | `hermes/skills/video-production/product-meaning-extractor/SKILL.md` |
@@ -291,7 +292,6 @@ Top-level skill packages left out:
 - `skills/agent-harness-design/`
 - `skills/ai-ml/diffusion-engineering/`
 - `skills/ai-ml/flux2-klein-prompting/`
-- `skills/ai-ml/flux2-lora-training/`
 - `skills/ai-ml/forensic-prompt-compiler/`
 - `skills/ai-ml/vlm-segmentation/`
 - `skills/architecture/feature-new/`
@@ -401,8 +401,9 @@ below is eligible for automatic porting without a new operator matrix decision.
 - **Domain queue #3 (operator-approved 2026-07-14; all vetted clean on 4 axes + leak
   sweep, md-only, no policy/infra/duplicate; port in order, one per run, keep the folder):**
   1. `skills/ai-ml/flux2-lora-training/SKILL.md` →
-     `hermes/skills/ai-ml/flux2-lora-training/SKILL.md` — single file; ComfyUI/LoRA how-to
-     (ComfyUI/CUDA mentions are domain content, not credentials/policy).
+     `hermes/skills/ai-ml/flux2-lora-training/SKILL.md` — ported as a single-file,
+     data-only LoRA/VAE training reference; ComfyUI/CUDA examples remain domain guidance
+     and model acquisition, training, GPU changes, and spend require separate approval.
   2. `skills/video-production/remotion-production-guide/SKILL.md` →
      `hermes/skills/video-production/remotion-production-guide/SKILL.md` — single file;
      Remotion/ffmpeg/npm how-to.
