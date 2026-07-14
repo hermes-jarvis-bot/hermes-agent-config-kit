@@ -32,6 +32,38 @@ skills/video-production/product-meaning-extractor/SKILL.md:
   description: Prepare an evidence-bounded product brief from approved product material without browsing, contacting customers, publishing claims, or activating production tooling.
   risk: low
 
+skills/ai-ml/vlm-segmentation/SKILL.md:
+  status: supported
+  target: hermes/skills/ai-ml/vlm-segmentation/SKILL.md
+  type: skill
+  name: vlm-segmentation
+  description: Plan and review VLM, segmentation, diffusion, and GPU-deployment designs using evidence, licence, capacity, and safety gates without downloading models, changing GPU configuration, starting workloads, or deploying services.
+  risk: medium
+
+skills/ai-ml/vlm-segmentation/references/diffusion-engineering.md:
+  status: supported
+  target: hermes/skills/ai-ml/vlm-segmentation/references/diffusion-engineering.md
+  type: reference
+  name: vlm-segmentation-diffusion-engineering
+  description: Reference diffusion architecture, training, memory, evaluation, and licence considerations for a reviewed ML design.
+  risk: medium
+
+skills/ai-ml/vlm-segmentation/references/gpu-deployment.md:
+  status: supported
+  target: hermes/skills/ai-ml/vlm-segmentation/references/gpu-deployment.md
+  type: reference
+  name: vlm-segmentation-gpu-deployment
+  description: Reference GPU isolation, capacity, profiling, and licence considerations for a reviewed segmentation deployment design.
+  risk: medium
+
+skills/ai-ml/vlm-segmentation/references/vlm-segmentation.md:
+  status: supported
+  target: hermes/skills/ai-ml/vlm-segmentation/references/vlm-segmentation.md
+  type: reference
+  name: vlm-segmentation-vlm-segmentation
+  description: Reference VLM and segmentation model-selection, integration, performance, and licence considerations for a reviewed design.
+  risk: medium
+
 skills/ios/ios-development/SKILL.md:
   status: supported
   target: hermes/skills/ios/ios-development/SKILL.md

@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 30 | 129 |
+| `skills/` | 159 | 34 | 125 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **97** | **297** |
+| **Total** | **394** | **101** | **293** |
 
 ## Ported so far
 
@@ -46,6 +46,10 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/video-production/script-evaluator/SKILL.md` | `hermes/skills/video-production/script-evaluator/SKILL.md` |
 | `skills/video-production/video-narrative-arc/SKILL.md` | `hermes/skills/video-production/video-narrative-arc/SKILL.md` |
 | `skills/video-production/product-meaning-extractor/SKILL.md` | `hermes/skills/video-production/product-meaning-extractor/SKILL.md` |
+| `skills/ai-ml/vlm-segmentation/SKILL.md` | `hermes/skills/ai-ml/vlm-segmentation/SKILL.md` |
+| `skills/ai-ml/vlm-segmentation/references/diffusion-engineering.md` | `hermes/skills/ai-ml/vlm-segmentation/references/diffusion-engineering.md` |
+| `skills/ai-ml/vlm-segmentation/references/gpu-deployment.md` | `hermes/skills/ai-ml/vlm-segmentation/references/gpu-deployment.md` |
+| `skills/ai-ml/vlm-segmentation/references/vlm-segmentation.md` | `hermes/skills/ai-ml/vlm-segmentation/references/vlm-segmentation.md` |
 | `skills/ios/ios-development/SKILL.md` | `hermes/skills/ios/ios-development/SKILL.md` |
 | `skills/ios/ios-development/references/architecture.md` | `hermes/skills/ios/ios-development/references/architecture.md` |
 | `skills/ios/ios-development/references/data.md` | `hermes/skills/ios/ios-development/references/data.md` |
@@ -280,7 +284,7 @@ No remaining rule is a clear low-risk auto-conversion candidate. `rules/long-run
 
 ## Skill packages not yet ported
 
-Upstream contains 144 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
+Upstream contains 125 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
 
 Top-level skill packages left out:
 
@@ -389,12 +393,17 @@ below is eligible for automatic porting without a new operator matrix decision.
      `hermes/skills/video-production/product-meaning-extractor/SKILL.md` — ported as a
      single, data-only product-brief analysis module. Frameworks guide analysis only;
      browsing, customer contact, claims, and production actions remain separate approved work.
-  3. `skills/ai-ml/vlm-segmentation/` → `hermes/skills/ai-ml/vlm-segmentation/` — 4-file
-     package (`SKILL.md` + 3 `references/`: diffusion-engineering, gpu-deployment,
-     vlm-segmentation); clean.
+  3. `skills/ai-ml/vlm-segmentation/` → `hermes/skills/ai-ml/vlm-segmentation/` — ported as
+     the complete four-file markdown package (`SKILL.md` + `references/` for diffusion
+     engineering, GPU deployment, and VLM segmentation). The module is data-only design
+     guidance: model acquisition, remote-code acceptance, GPU partitioning, workload launch,
+     deployment, and spend remain separate approved protocols.
 - **Lower-priority vetted-clean (await a separate operator pick):** video-production
   `remotion-production-guide`, `video-post-production`; ai-ml `diffusion-engineering`
   (7-file), `flux2-lora-training` — portable but tool-heavy how-to guides.
+- **Queue status:** the operator-approved Domain queue #2 is exhausted. Do not select a
+  lower-priority or new candidate automatically; await an operator-approved next candidate or
+  queue.
 - **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/forensic-prompt-compiler/`
   — a high-fidelity image→prompt reconstructor (risk of replicating third-party images or a
   specific identity; it carries an "identity-safe" mitigation but the capability is
