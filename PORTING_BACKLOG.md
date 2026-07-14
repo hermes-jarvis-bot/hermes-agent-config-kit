@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 35 | 124 |
+| `skills/` | 159 | 36 | 123 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **102** | **292** |
+| **Total** | **394** | **103** | **291** |
 
 ## Ported so far
 
@@ -44,6 +44,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | --- | --- |
 | `skills/ai-ml/ml-research-lab/SKILL.md` | `hermes/skills/ai-ml/ml-research-lab/SKILL.md` |
 | `skills/ai-ml/flux2-lora-training/SKILL.md` | `hermes/skills/ai-ml/flux2-lora-training/SKILL.md` |
+| `skills/video-production/remotion-production-guide/SKILL.md` | `hermes/skills/video-production/remotion-production-guide/SKILL.md` |
 | `skills/video-production/script-evaluator/SKILL.md` | `hermes/skills/video-production/script-evaluator/SKILL.md` |
 | `skills/video-production/video-narrative-arc/SKILL.md` | `hermes/skills/video-production/video-narrative-arc/SKILL.md` |
 | `skills/video-production/product-meaning-extractor/SKILL.md` | `hermes/skills/video-production/product-meaning-extractor/SKILL.md` |
@@ -285,7 +286,7 @@ No remaining rule is a clear low-risk auto-conversion candidate. `rules/long-run
 
 ## Skill packages not yet ported
 
-Upstream contains 125 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
+Upstream contains 124 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
 
 Top-level skill packages left out:
 
@@ -307,7 +308,6 @@ Top-level skill packages left out:
 
 - `skills/operational/desktop-sessions-discovery/`
 - `skills/operational/gemini-delegate/`
-- `skills/video-production/remotion-production-guide/`
 - `skills/video-production/video-post-production/`
 - `skills/writing/humanize-english/`
 - `skills/writing/humanize-russian/`
@@ -405,8 +405,10 @@ below is eligible for automatic porting without a new operator matrix decision.
      data-only LoRA/VAE training reference; ComfyUI/CUDA examples remain domain guidance
      and model acquisition, training, GPU changes, and spend require separate approval.
   2. `skills/video-production/remotion-production-guide/SKILL.md` →
-     `hermes/skills/video-production/remotion-production-guide/SKILL.md` — single file;
-     Remotion/ffmpeg/npm how-to.
+     `hermes/skills/video-production/remotion-production-guide/SKILL.md` — ported as a
+     single-file, data-only scene-planning and render-review module; Remotion/npm commands
+     remain reference material, and dependency installation, project configuration, rendering,
+     and publication require a separately approved protocol.
   3. `skills/video-production/video-post-production/SKILL.md` →
      `hermes/skills/video-production/video-post-production/SKILL.md` — single file; ffmpeg/npx how-to.
   4. `skills/ai-ml/diffusion-engineering/` → `hermes/skills/ai-ml/diffusion-engineering/` — 7-file
@@ -549,7 +551,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.27` |
+| Latest released tag | `v0.3.30` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |

@@ -159,6 +159,7 @@ Current generated Hermes skills:
 - `ai-ml/ml-research-lab`
 - `ai-ml/flux2-lora-training`
 - `ai-ml/vlm-segmentation` (with reviewed diffusion-engineering, gpu-deployment, and vlm-segmentation references)
+- `video-production/remotion-production-guide`
 - `video-production/script-evaluator`
 - `video-production/video-narrative-arc`
 - `video-production/product-meaning-extractor`

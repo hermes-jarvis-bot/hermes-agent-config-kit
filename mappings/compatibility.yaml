@@ -16,6 +16,14 @@ skills/ai-ml/flux2-lora-training/SKILL.md:
   description: Plan and review FLUX.2 and Qwen image-edit LoRA/VAE training with dataset, capacity, licence, and verification gates without starting workloads, downloading models, accepting licences, or changing GPU configuration.
   risk: low
 
+skills/video-production/remotion-production-guide/SKILL.md:
+  status: supported
+  target: hermes/skills/video-production/remotion-production-guide/SKILL.md
+  type: skill
+  name: remotion-production-guide
+  description: Plan and review Remotion scene architecture, motion, typography, pacing, 3D integration, and render settings without installing dependencies, rendering media, publishing content, or changing project configuration.
+  risk: low
+
 skills/video-production/script-evaluator/SKILL.md:
   status: supported
   target: hermes/skills/video-production/script-evaluator/SKILL.md
