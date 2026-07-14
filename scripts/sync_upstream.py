@@ -33,6 +33,47 @@ SUPPORTED = {
         "name": "flux2-lora-training",
         "description": "Plan and review FLUX.2 and Qwen image-edit LoRA/VAE training with dataset, capacity, licence, and verification gates without starting workloads, downloading models, accepting licences, or changing GPU configuration.",
     },
+    "skills/ai-ml/diffusion-engineering/SKILL.md": {
+        "target": "hermes/skills/ai-ml/diffusion-engineering/SKILL.md",
+        "name": "diffusion-engineering",
+        "description": "Plan and review diffusion-model architecture, sampling, training, memory, text-encoder, data, evaluation, and debugging decisions without downloading models, starting workloads, changing GPU configuration, or deploying services.",
+    },
+    "skills/ai-ml/diffusion-engineering/references/architectures.md": {
+        "target": "hermes/skills/ai-ml/diffusion-engineering/references/architectures.md",
+        "name": "diffusion-engineering-architectures",
+        "description": "Reference diffusion architectures, latent-space design, and pipeline data-flow decisions for a reviewed ML design.",
+        "type": "reference",
+    },
+    "skills/ai-ml/diffusion-engineering/references/encoders-data.md": {
+        "target": "hermes/skills/ai-ml/diffusion-engineering/references/encoders-data.md",
+        "name": "diffusion-engineering-encoders-data",
+        "description": "Reference text encoders, tokenisation, dataset, and data-pipeline decisions for a reviewed diffusion design.",
+        "type": "reference",
+    },
+    "skills/ai-ml/diffusion-engineering/references/eval-debug.md": {
+        "target": "hermes/skills/ai-ml/diffusion-engineering/references/eval-debug.md",
+        "name": "diffusion-engineering-eval-debug",
+        "description": "Reference diffusion evaluation metrics, debugging signals, and licence considerations for a reviewed ML design.",
+        "type": "reference",
+    },
+    "skills/ai-ml/diffusion-engineering/references/memory.md": {
+        "target": "hermes/skills/ai-ml/diffusion-engineering/references/memory.md",
+        "name": "diffusion-engineering-memory",
+        "description": "Reference memory, precision, and distributed-training trade-offs for a reviewed diffusion design.",
+        "type": "reference",
+    },
+    "skills/ai-ml/diffusion-engineering/references/samplers.md": {
+        "target": "hermes/skills/ai-ml/diffusion-engineering/references/samplers.md",
+        "name": "diffusion-engineering-samplers",
+        "description": "Reference schedulers, samplers, and guidance trade-offs for a reviewed diffusion design.",
+        "type": "reference",
+    },
+    "skills/ai-ml/diffusion-engineering/references/training.md": {
+        "target": "hermes/skills/ai-ml/diffusion-engineering/references/training.md",
+        "name": "diffusion-engineering-training",
+        "description": "Reference diffusion training and fine-tuning choices for a reviewed ML design.",
+        "type": "reference",
+    },
     "skills/video-production/remotion-production-guide/SKILL.md": {
         "target": "hermes/skills/video-production/remotion-production-guide/SKILL.md",
         "name": "remotion-production-guide",
@@ -703,6 +744,8 @@ def adapt_text(text: str) -> str:
 
 
 def adapt_source_text(source_path: str, text: str) -> str:
+    if source_path.startswith("skills/ai-ml/diffusion-engineering/"):
+        return "\n".join(line.rstrip() for line in text.splitlines()) + "\n"
     if source_path == "skills/ai-ml/vlm-segmentation/SKILL.md":
         return """# VLM, Segmentation, and Diffusion Engineering
 

@@ -158,6 +158,7 @@ Current generated Hermes skills:
 - `low-signal-residual-training`
 - `ai-ml/ml-research-lab`
 - `ai-ml/flux2-lora-training`
+- `ai-ml/diffusion-engineering` (with reviewed architectures, encoders/data, evaluation/debugging, memory, samplers, and training references)
 - `ai-ml/vlm-segmentation` (with reviewed diffusion-engineering, gpu-deployment, and vlm-segmentation references)
 - `video-production/remotion-production-guide`
 - `video-production/video-post-production`

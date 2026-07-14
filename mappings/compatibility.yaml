@@ -16,6 +16,62 @@ skills/ai-ml/flux2-lora-training/SKILL.md:
   description: Plan and review FLUX.2 and Qwen image-edit LoRA/VAE training with dataset, capacity, licence, and verification gates without starting workloads, downloading models, accepting licences, or changing GPU configuration.
   risk: low
 
+skills/ai-ml/diffusion-engineering/SKILL.md:
+  status: supported
+  target: hermes/skills/ai-ml/diffusion-engineering/SKILL.md
+  type: skill
+  name: diffusion-engineering
+  description: Plan and review diffusion-model architecture, sampling, training, memory, text-encoder, data, evaluation, and debugging decisions without downloading models, starting workloads, changing GPU configuration, or deploying services.
+  risk: medium
+
+skills/ai-ml/diffusion-engineering/references/architectures.md:
+  status: supported
+  target: hermes/skills/ai-ml/diffusion-engineering/references/architectures.md
+  type: reference
+  name: diffusion-engineering-architectures
+  description: Reference diffusion architectures, latent-space design, and pipeline data-flow decisions for a reviewed ML design.
+  risk: medium
+
+skills/ai-ml/diffusion-engineering/references/encoders-data.md:
+  status: supported
+  target: hermes/skills/ai-ml/diffusion-engineering/references/encoders-data.md
+  type: reference
+  name: diffusion-engineering-encoders-data
+  description: Reference text encoders, tokenisation, dataset, and data-pipeline decisions for a reviewed diffusion design.
+  risk: medium
+
+skills/ai-ml/diffusion-engineering/references/eval-debug.md:
+  status: supported
+  target: hermes/skills/ai-ml/diffusion-engineering/references/eval-debug.md
+  type: reference
+  name: diffusion-engineering-eval-debug
+  description: Reference diffusion evaluation metrics, debugging signals, and licence considerations for a reviewed ML design.
+  risk: medium
+
+skills/ai-ml/diffusion-engineering/references/memory.md:
+  status: supported
+  target: hermes/skills/ai-ml/diffusion-engineering/references/memory.md
+  type: reference
+  name: diffusion-engineering-memory
+  description: Reference memory, precision, and distributed-training trade-offs for a reviewed diffusion design.
+  risk: medium
+
+skills/ai-ml/diffusion-engineering/references/samplers.md:
+  status: supported
+  target: hermes/skills/ai-ml/diffusion-engineering/references/samplers.md
+  type: reference
+  name: diffusion-engineering-samplers
+  description: Reference schedulers, samplers, and guidance trade-offs for a reviewed diffusion design.
+  risk: medium
+
+skills/ai-ml/diffusion-engineering/references/training.md:
+  status: supported
+  target: hermes/skills/ai-ml/diffusion-engineering/references/training.md
+  type: reference
+  name: diffusion-engineering-training
+  description: Reference diffusion training and fine-tuning choices for a reviewed ML design.
+  risk: medium
+
 skills/video-production/remotion-production-guide/SKILL.md:
   status: supported
   target: hermes/skills/video-production/remotion-production-guide/SKILL.md

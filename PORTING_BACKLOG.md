@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 37 | 122 |
+| `skills/` | 159 | 44 | 115 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **104** | **290** |
+| **Total** | **394** | **111** | **283** |
 
 ## Ported so far
 
@@ -44,6 +44,13 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | --- | --- |
 | `skills/ai-ml/ml-research-lab/SKILL.md` | `hermes/skills/ai-ml/ml-research-lab/SKILL.md` |
 | `skills/ai-ml/flux2-lora-training/SKILL.md` | `hermes/skills/ai-ml/flux2-lora-training/SKILL.md` |
+| `skills/ai-ml/diffusion-engineering/SKILL.md` | `hermes/skills/ai-ml/diffusion-engineering/SKILL.md` |
+| `skills/ai-ml/diffusion-engineering/references/architectures.md` | `hermes/skills/ai-ml/diffusion-engineering/references/architectures.md` |
+| `skills/ai-ml/diffusion-engineering/references/encoders-data.md` | `hermes/skills/ai-ml/diffusion-engineering/references/encoders-data.md` |
+| `skills/ai-ml/diffusion-engineering/references/eval-debug.md` | `hermes/skills/ai-ml/diffusion-engineering/references/eval-debug.md` |
+| `skills/ai-ml/diffusion-engineering/references/memory.md` | `hermes/skills/ai-ml/diffusion-engineering/references/memory.md` |
+| `skills/ai-ml/diffusion-engineering/references/samplers.md` | `hermes/skills/ai-ml/diffusion-engineering/references/samplers.md` |
+| `skills/ai-ml/diffusion-engineering/references/training.md` | `hermes/skills/ai-ml/diffusion-engineering/references/training.md` |
 | `skills/video-production/remotion-production-guide/SKILL.md` | `hermes/skills/video-production/remotion-production-guide/SKILL.md` |
 | `skills/video-production/video-post-production/SKILL.md` | `hermes/skills/video-production/video-post-production/SKILL.md` |
 | `skills/video-production/script-evaluator/SKILL.md` | `hermes/skills/video-production/script-evaluator/SKILL.md` |
@@ -412,8 +419,9 @@ below is eligible for automatic porting without a new operator matrix decision.
   3. `skills/video-production/video-post-production/SKILL.md` →
      `hermes/skills/video-production/video-post-production/SKILL.md` — single file; ffmpeg/npx how-to.
   4. `skills/ai-ml/diffusion-engineering/` → `hermes/skills/ai-ml/diffusion-engineering/` — 7-file
-     package (`SKILL.md` + 6 `references/`: architectures, encoders-data, eval-debug, memory,
-     samplers, training).
+     package is ported as data-only design guidance (`SKILL.md` + 6 `references/`: architectures,
+     encoders-data, eval-debug, memory, samplers, training). Model downloads, workload launch,
+     GPU changes, deployment, and spend remain separate approved protocols.
 - After queue #3, only Wave-4 script-research (`creative/*`, `desktop-sessions-discovery`,
   `distill-feedback`) and policy manual-review candidates remain — await an operator decision.
 - **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/forensic-prompt-compiler/`
@@ -551,7 +559,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.32` |
+| Latest released tag | `v0.3.33` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
