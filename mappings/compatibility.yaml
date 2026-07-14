@@ -24,6 +24,14 @@ skills/video-production/video-narrative-arc/SKILL.md:
   description: Prepare a product-video narrative arc and timestamped beat plan from an approved product brief without rendering, publishing, or activating production tooling.
   risk: low
 
+skills/video-production/product-meaning-extractor/SKILL.md:
+  status: supported
+  target: hermes/skills/video-production/product-meaning-extractor/SKILL.md
+  type: skill
+  name: product-meaning-extractor
+  description: Prepare an evidence-bounded product brief from approved product material without browsing, contacting customers, publishing claims, or activating production tooling.
+  risk: low
+
 skills/ios/ios-development/SKILL.md:
   status: supported
   target: hermes/skills/ios/ios-development/SKILL.md
