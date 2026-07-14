@@ -398,12 +398,21 @@ below is eligible for automatic porting without a new operator matrix decision.
      engineering, GPU deployment, and VLM segmentation). The module is data-only design
      guidance: model acquisition, remote-code acceptance, GPU partitioning, workload launch,
      deployment, and spend remain separate approved protocols.
-- **Lower-priority vetted-clean (await a separate operator pick):** video-production
-  `remotion-production-guide`, `video-post-production`; ai-ml `diffusion-engineering`
-  (7-file), `flux2-lora-training` — portable but tool-heavy how-to guides.
-- **Queue status:** the operator-approved Domain queue #2 is exhausted. Do not select a
-  lower-priority or new candidate automatically; await an operator-approved next candidate or
-  queue.
+- **Domain queue #3 (operator-approved 2026-07-14; all vetted clean on 4 axes + leak
+  sweep, md-only, no policy/infra/duplicate; port in order, one per run, keep the folder):**
+  1. `skills/ai-ml/flux2-lora-training/SKILL.md` →
+     `hermes/skills/ai-ml/flux2-lora-training/SKILL.md` — single file; ComfyUI/LoRA how-to
+     (ComfyUI/CUDA mentions are domain content, not credentials/policy).
+  2. `skills/video-production/remotion-production-guide/SKILL.md` →
+     `hermes/skills/video-production/remotion-production-guide/SKILL.md` — single file;
+     Remotion/ffmpeg/npm how-to.
+  3. `skills/video-production/video-post-production/SKILL.md` →
+     `hermes/skills/video-production/video-post-production/SKILL.md` — single file; ffmpeg/npx how-to.
+  4. `skills/ai-ml/diffusion-engineering/` → `hermes/skills/ai-ml/diffusion-engineering/` — 7-file
+     package (`SKILL.md` + 6 `references/`: architectures, encoders-data, eval-debug, memory,
+     samplers, training).
+- After queue #3, only Wave-4 script-research (`creative/*`, `desktop-sessions-discovery`,
+  `distill-feedback`) and policy manual-review candidates remain — await an operator decision.
 - **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/forensic-prompt-compiler/`
   — a high-fidelity image→prompt reconstructor (risk of replicating third-party images or a
   specific identity; it carries an "identity-safe" mitigation but the capability is
