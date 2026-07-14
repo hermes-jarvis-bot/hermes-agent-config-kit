@@ -38,6 +38,11 @@ SUPPORTED = {
         "name": "remotion-production-guide",
         "description": "Plan and review Remotion scene architecture, motion, typography, pacing, 3D integration, and render settings without installing dependencies, rendering media, publishing content, or changing project configuration.",
     },
+    "skills/video-production/video-post-production/SKILL.md": {
+        "target": "hermes/skills/video-production/video-post-production/SKILL.md",
+        "name": "video-post-production",
+        "description": "Plan and review audio mastering, captions, colour correction, and platform export settings for an already-rendered video without processing media, installing dependencies, publishing content, or changing project configuration.",
+    },
     "skills/video-production/script-evaluator/SKILL.md": {
         "target": "hermes/skills/video-production/script-evaluator/SKILL.md",
         "name": "script-evaluator",

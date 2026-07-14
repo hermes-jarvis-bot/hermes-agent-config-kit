@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 36 | 123 |
+| `skills/` | 159 | 37 | 122 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **103** | **291** |
+| **Total** | **394** | **104** | **290** |
 
 ## Ported so far
 
@@ -45,6 +45,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/ai-ml/ml-research-lab/SKILL.md` | `hermes/skills/ai-ml/ml-research-lab/SKILL.md` |
 | `skills/ai-ml/flux2-lora-training/SKILL.md` | `hermes/skills/ai-ml/flux2-lora-training/SKILL.md` |
 | `skills/video-production/remotion-production-guide/SKILL.md` | `hermes/skills/video-production/remotion-production-guide/SKILL.md` |
+| `skills/video-production/video-post-production/SKILL.md` | `hermes/skills/video-production/video-post-production/SKILL.md` |
 | `skills/video-production/script-evaluator/SKILL.md` | `hermes/skills/video-production/script-evaluator/SKILL.md` |
 | `skills/video-production/video-narrative-arc/SKILL.md` | `hermes/skills/video-production/video-narrative-arc/SKILL.md` |
 | `skills/video-production/product-meaning-extractor/SKILL.md` | `hermes/skills/video-production/product-meaning-extractor/SKILL.md` |
@@ -286,7 +287,7 @@ No remaining rule is a clear low-risk auto-conversion candidate. `rules/long-run
 
 ## Skill packages not yet ported
 
-Upstream contains 124 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
+Upstream contains 123 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
 
 Top-level skill packages left out:
 
@@ -308,7 +309,6 @@ Top-level skill packages left out:
 
 - `skills/operational/desktop-sessions-discovery/`
 - `skills/operational/gemini-delegate/`
-- `skills/video-production/video-post-production/`
 - `skills/writing/humanize-english/`
 - `skills/writing/humanize-russian/`
 
@@ -551,7 +551,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.30` |
+| Latest released tag | `v0.3.32` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
