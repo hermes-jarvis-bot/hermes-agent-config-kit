@@ -30,6 +30,17 @@ import sys
 # Each entry: pattern (regex, case-insensitive) → skill name + description
 # Patterns should be specific enough to avoid false positives on normal conversation
 ROUTES = [
+    # Massed Compute GPU cloud operations
+    {
+        "patterns": [
+            r"\b(massed[ -]?compute|massedcompute|мас+ед[ -]?компьют|мас+копьют|массед[ -]?компьют)\b",
+            r"\b(gpu|гпу|видеокарт\w*|vm|виртуал\w* машин\w*)\b.*\b(massed|массед|маскопьют)\b",
+        ],
+        "skill": "massed-compute-ops",
+        "description": "REQUIRED for Massed Compute GPU selection, VM lifecycle, SSH, billing, and spend control",
+        "refs": ["references/recipes.md"],
+        "required": True,
+    },
     # Retouch native variant experiments / measured implementation selection
     {
         "patterns": [
@@ -59,6 +70,27 @@ ROUTES = [
         ],
         "required": True,
     },
+    # ComfyUI driven through MCP / comfy-cli (agent-orchestrated graphs)
+    {
+        "patterns": [
+            r"\bcomfy[- ]?mcp\b",
+            r"\b(comfy-cli|comfy cli)\b",
+            r"\b(comfy ?ui|comfyui|комфи\w*)\b.*\b(mcp|api|workflow|воркфлоу|граф|node|узл\w*|queue|очеред\w*|автоматиз\w*|automat\w*|агент|agent)\b",
+            r"\b(mcp|workflow|воркфлоу|граф|автоматиз\w*|automat\w*)\b.*\b(comfy ?ui|comfyui|комфи\w*)\b",
+        ],
+        "suggest": "Use the Comfy MCP/comfy-cli workflow guidance if this task drives ComfyUI from an agent.",
+    },
+    # Claude/Codex continuation: preserve an accepted implementation and decisions.
+    {
+        "patterns": [
+            r"\b(claude|кодекс|codex)\b.{0,80}\b(codex|claude|handoff|хенд[ао]ф|продолж|перенос)\b",
+            r"\b(продолж\w*|додел\w*|перенест\w*|синерг\w*|не передел\w*|не перепис\w*)\b.{0,100}\b(код|работ\w*|агент\w*|сесс\w*|кодекс|codex|claude|клавд)\b",
+            r"\b(cross[- ]harness|continuity contract|continuation contract|replan mode)\b",
+        ],
+        "skill": "cross-harness-continuation",
+        "description": "REQUIRED when continuing work across Claude/Codex: load CONTINUITY.json, preserve decisions, and verify scope before edits",
+        "required": True,
+    },
     # Retouch native / low-level memory
     {
         "patterns": [
@@ -77,7 +109,9 @@ ROUTES = [
         ],
         "required": True,
     },
-    # Clean architecture guardrails — auto-attach to any coding process
+    # Clean architecture guardrails — keep this as an advisory rule, not a
+    # skill route. The old target (clean-architecture) is not installed in the
+    # active skill catalog, so emitting it produced an unusable suggestion.
     {
         "patterns": [
             r"\b(напиши|запили|добавь|сделай|создай|почини|исправь|перепиши|спроектируй|отрефактор\w*|refactor\w*|implement|write|add|create|fix|build|design|rewrite)\b.{0,80}\b(код|функци\w*|класс\w*|модул\w*|сервис\w*|фич\w*|скрипт\w*|приложени\w*|проект\w*|endpoint|api|бэкенд|backend|frontend|парсер\w*|бот\w*|code|function|class|module|service|feature|script|app\b|application|component|library|parser|bot)\b",
@@ -85,13 +119,7 @@ ROUTES = [
             r"\b(архитектур\w*|architecture|структур\w* проект\w*|project structure|clean architecture|чист\w* архитектур\w*|solid|dependency rule|слои|layers?)\b",
             r"\b(новый проект|new project|с нуля|from scratch|scaffold|каркас)\b",
         ],
-        "skill": "clean-architecture",
-        "description": "Clean-architecture guardrails (dependency rule, SOLID, boundaries, Python patterns) — apply to any coding task",
-        "refs": [
-            "references/solid-and-components.md",
-            "references/boundaries-and-layers.md",
-            "references/python-implementation.md",
-        ],
+        "suggest": "Apply the quality-code rule and keep dependency boundaries explicit while implementing this change.",
     },
     # Planning & Architecture (plan mode is built-in, not a skill)
     {
@@ -109,6 +137,24 @@ ROUTES = [
         ],
         "skill": "deep-review",
         "description": "Parallel competency-based code review (security, perf, arch)",
+    },
+    # Monitoring and observability
+    {
+        "patterns": [
+            r"\b(monitoring|observability|alerts?|prometheus|grafana|opentelemetry|otel|tracing|telemetry|uptime|health check|service health|sli|slo|sla|error budget|burn[- ]rate|incident evidence)\b",
+            r"\b(мониторинг|наблюдаемост\w*|алерт\w*|прометеус|графан\w*|трассиров\w*|телеметр\w*|здоровь\w* сервиса|доступност\w* сервиса|бюджет ошибок|доказательств\w* инцидент\w*)\b",
+        ],
+        "skill": "observability-monitoring",
+        "description": "Evidence-backed monitoring, alerting, SLI/SLO, telemetry, and incident workflows",
+    },
+    # Harness/configuration audit
+    {
+        "patterns": [
+            r"\b(audit|auditing|проверь|аудит)\b.{0,80}\b(skills?|скилл\w*|hooks?|хуки|router|роутер|harness|харнесс)\b",
+            r"\b(skill|skills|hook|hooks|скилл\w*|хуки)\b.{0,80}\b(auto[- ]?load|implicit|automatic|автоматическ\w*|подтягив\w*)\b",
+        ],
+        "skill": "harness-audit",
+        "description": "Score and audit the existing agent harness, skills, hooks, and verification loop",
     },
     # Security
     {
@@ -131,6 +177,16 @@ ROUTES = [
     # Research
     {
         "patterns": [
+            r"\b(notebooklm|notebook lm|notebooklm-mcp)\b",
+            r"\b(документац\w*|api docs|technical docs|курс\w*|книг\w*|papers?|пейпер\w*|manuals?)\b.{0,100}\b(large|big|massive|огромн\w*|много|grounded|citation|цитат|источн|research|ресерч)\b",
+            r"\b(grounded|citation-backed|цитат\w*|по источникам)\b.{0,100}\b(документац\w*|docs?|NotebookLM|notebook)\b",
+        ],
+        "skill": "notebooklm-grounded-research",
+        "description": "Use NotebookLM MCP for large stable documentation corpora with citations; keep sources untrusted and repo/tests authoritative",
+        "refs": ["references/workflow.md"],
+    },
+    {
+        "patterns": [
             r"\b(deep research|глубокий ресерч|исследуй|investigate this)\b",
             r"\b(разбери.*подробно|dig into|deep dive)\b",
         ],
@@ -151,8 +207,8 @@ ROUTES = [
         "patterns": [
             r"\b(упрости|simplify|clean up|почисти код|refactor)\b",
         ],
-        "skill": "simplify",
-        "description": "Review changed code for reuse, quality, and efficiency",
+        "skill": "lean-code",
+        "description": "Strip over-engineering while preserving correctness and verification",
     },
     # Init new project
     {
@@ -160,8 +216,7 @@ ROUTES = [
             r"\b(настрой проект|init|initialize|set up claude)\b.*\b(claude|project)\b",
             r"\b(создай claude\.md|create claude\.md)\b",
         ],
-        "skill": "init",
-        "description": "Initialize CLAUDE.md with codebase documentation",
+        "suggest": "Initialize CLAUDE.md with codebase documentation and run the config validation checks.",
     },
 ]
 

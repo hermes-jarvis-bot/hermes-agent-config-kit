@@ -133,6 +133,8 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [over-engineering-advisor](hooks/over-engineering-advisor.py) | `PostToolUse` | Advisory nudge when an edit adds a large code block or a new dependency — "is this the minimal solution?" (never blocks) |
 | [activity-journal-guard](hooks/activity-journal-guard.py) | `PreToolUse` | Enforces the shared activity journal — blocks a mutating command on a tracked shared resource that does not log to its journal |
 | [coord-claim-guard](hooks/coord-claim-guard.py) | `PreToolUse` | Claim-before-edit gate for multi-session / coord-enabled repos (blocks editing a file without an active claim) |
+| [continuity-contract-guard](hooks/continuity-contract-guard.py) | `PreToolUse` | Protects Claude/Codex continuation: no silent whole-file Write, out-of-scope edits, or near-whole-file replacement |
+| [continuity-session-check](hooks/continuity-session-check.py) | `SessionStart` | Surfaces the shared `.claude/continuity/CONTINUITY.json` contract and its preserve/do-not-redo decisions |
 | [cyrillic-bash-guard](hooks/cyrillic-bash-guard.py) | `PreToolUse` | Blocks raw non-ASCII (Cyrillic/CJK) in Windows Bash commands — encoding-corruption guard |
 | [feature-list-validator](hooks/feature-list-validator.py) | `Stop` | Validates feature_list.json discipline (WIP=1; `done` needs evidence) — companion to problems-md-validator |
 | [handoff-resume-gate](hooks/handoff-resume-gate.py) | `SessionStart` | Resume freshness-gate — complements session-handoff-check by gating on stale/unacknowledged handoffs |
@@ -147,11 +149,26 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [task-inbox-show](hooks/task-inbox-show.py) | `SessionStart` | Surfaces pending tasks from `.claude/task-inbox/` |
 | [plan-gate](hooks/plan-gate.py) | `UserPromptSubmit` | Non-blocking nudge: substantive build/refactor ask + no plan artifact in the project -> one-line "freeze acceptance criteria first" reminder (max once/day) |
 
+**Supporting hooks and shared utilities** (wire these when the project needs the corresponding workflow):
+
+| Hook | Event | What It Does |
+|---|---|---|
+| [conversation-history-capture](hooks/conversation-history-capture.py) | `Stop` | Archives the local session transcript for searchable continuation |
+| [directory-creation-guard](hooks/directory-creation-guard.py) | `PreToolUse` | Applies lifecycle labels and placement checks to new directories |
+| [docs-staleness-guard](hooks/docs-staleness-guard.py) | `SessionStart` | Surfaces stale project guidance before work begins |
+| [feedback-pending-show](hooks/feedback-pending-show.py) | `SessionStart` | Shows queued corrections waiting for review |
+| [git-source-gate](hooks/git-source-gate.py) | `Stop` | Checks that durable work is represented in Git before closure |
+| [github-workflow-security](hooks/github-workflow-security.py) | `PreToolUse` | Adds a security checklist before editing GitHub Actions workflows |
+| [kb-validate-gate](hooks/kb-validate-gate.py) | `Stop` | Runs the project knowledge-base validator when opted in |
+| [session-feedback-capture](hooks/session-feedback-capture.py) | `Stop` | Queues durable correction notes without blocking session closure |
+| [safety_common.py](hooks/safety_common.py) | shared | Shared event parsing and decision helpers for opt-in hooks |
 **Starter templates** for common project types: [web-app](templates/CLAUDE-web-app.md), [ML project](templates/CLAUDE-ml-project.md), [library](templates/CLAUDE-library.md), [code review](templates/REVIEW.md), [project chronicle](templates/chronicle.md), [memory files](templates/memory-project.md), [memory reference](templates/memory-reference.md), [proof plan](templates/proof-plan.md), [bug-fix prompt](templates/bug-fix-prompt.md) (anti-"pre-existing" constraints baked in), [long-run project harness pack](templates/long-run-project/) (drop-in `feature_list.schema.json` + `feature_list.template.json` + `init.sh.template` for any project crossing 5+ features and 5+ sessions).
 
 **Dynamic workflow commands** ([workflows/](workflows/)) - ready-to-drop `.js` orchestration scripts for Claude Code dynamic workflows (`/deep-review-flow`, `/research-cn-ru`) plus [EFFECTIVE-AGENTS.md](workflows/EFFECTIVE-AGENTS.md) - measured cost lessons (one `agent()` ≈ 95-150k tokens; resume as the main economy lever).
 
 **Cross-harness setup** ([rules/cross-harness-agents-md.md](rules/cross-harness-agents-md.md)) - share one `AGENTS.md` per project between Claude Code, Gemini CLI, and Codex without symlinks: Claude imports it via `@AGENTS.md`, Gemini reads it via `context.fileName`, Codex natively. Companion skill [gemini-delegate](skills/operational/gemini-delegate/SKILL.md) covers multi-account Gemini CLI delegation (quota ladders, account switcher [scripts/gemini-switch.sh](scripts/gemini-switch.sh), trust boundaries).
+
+For serial Claude/Codex handoff, use the [cross-harness-continuation](skills/operational/cross-harness-continuation/) contract. It records the Git baseline, claimed files, accepted decisions, rejected approaches, and verification. The guard blocks silent rewrites and scope drift; an intentional redesign must use an explicit, reasoned `replan` mode.
 
 **Your agent picks the approach that fits.** The [alternatives/](alternatives/) directory compares 2-5 approaches for each problem, with pros, cons, and "when to choose" guidance:
 
