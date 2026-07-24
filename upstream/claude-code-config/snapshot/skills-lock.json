@@ -1,8 +1,8 @@
 {
   "lockfile_version": 2,
-  "generated_at": "2026-07-13T08:37:23+00:00",
-  "skill_count": 33,
-  "aggregate_hash": "sha256:887957dbdc7f0e1322246154830e209096f881d5eb508567ae9f9ef2be5b4ad2",
+  "generated_at": "2026-07-22T08:47:50+00:00",
+  "skill_count": 37,
+  "aggregate_hash": "sha256:686c58fd775347ade95f3ec1d4cee8f91cba2208123bd2eec787dc3df5e5d2c1",
   "skills": {
     "agent-harness-design": {
       "content_hash": "sha256:747805abf1b6b3025fbd3ce87e23e2476dc3b8626b5c49fb1ab7471f70b063a5",
@@ -67,6 +67,16 @@
       "file_count": 1,
       "files": [
         "SKILL.md"
+      ]
+    },
+    "ai-ml/notebooklm-grounded-research": {
+      "content_hash": "sha256:50d173da9da3b97652c16f27c8b1696d3a395c72a4a97d400afcf915a2db4aa5",
+      "size_bytes": 14948,
+      "file_count": 3,
+      "files": [
+        "SKILL.md",
+        "references/workflow.md",
+        "scripts/verify_notebooklm_setup.py"
       ]
     },
     "ai-ml/vlm-segmentation": {
@@ -269,6 +279,24 @@
         "SKILL.md"
       ]
     },
+    "massed-compute-ops": {
+      "content_hash": "sha256:f0ce7dd843110e2a6c40c6c51c384b993c69e03774817cc136272bd2a879f5b7",
+      "size_bytes": 9466,
+      "file_count": 2,
+      "files": [
+        "SKILL.md",
+        "references/recipes.md"
+      ]
+    },
+    "operational/cross-harness-continuation": {
+      "content_hash": "sha256:324cce6a93311d368fe472df732e9d5a8c72e70075fb54a0806a4dda11d164a6",
+      "size_bytes": 5431,
+      "file_count": 2,
+      "files": [
+        "SKILL.md",
+        "references/CONTINUITY.example.json"
+      ]
+    },
     "operational/desktop-sessions-discovery": {
       "content_hash": "sha256:9bce354da0ba04cc7777b64563ed4eba33eb5cc30636a94bb03ce5eb6fd1e1d8",
       "size_bytes": 47030,
@@ -297,6 +325,15 @@
         "SKILL.md",
         "references/checklist-per-subsystem.md",
         "references/scoring-rubric.md"
+      ]
+    },
+    "operational/observability-monitoring": {
+      "content_hash": "sha256:23a225bcbd9070b0c7158ad16683c152666972b40f5bac1378292e70f10eadc7",
+      "size_bytes": 20270,
+      "file_count": 2,
+      "files": [
+        "SKILL.md",
+        "references/source-notes.md"
       ]
     },
     "plan-to-tickets": {
