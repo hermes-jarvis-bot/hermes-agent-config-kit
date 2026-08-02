@@ -137,6 +137,7 @@ Current generated Hermes skills:
 - `observability-monitoring` (with data-only source notes; its Codex manifest remains unported)
 - `architecture-first` (with reviewed Clean Architecture and domain-driven design references; scope excludes code-complexity, refactoring-safely, and system-and-data-design)
 - `code-complexity` (with reviewed Clean Code, Pragmatic Programmer, and Software Design Philosophy references; scope excludes architecture-first, refactoring-safely, system-and-data-design, and lean-code)
+- `refactoring-safely` (with reviewed refactoring-pattern references; scope is behaviour-preserving transformations with characterization evidence and excludes architecture, local complexity, system design, and scope reduction)
 - `deep-review`
 - `deterministic-orchestration`
 - `durable-context-maintenance`

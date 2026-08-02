@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 26 | 4 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 81 | 78 |
+| `skills/` | 159 | 82 | 77 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **151** | **243** |
+| **Total** | **394** | **160** | **234** |
 
 ## Ported so far
 
@@ -92,6 +92,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/operational/observability-monitoring/references/source-notes.md` | `hermes/skills/observability-monitoring/references/source-notes.md` |
 | `skills/development/architecture-first/` (13 reviewed markdown files) | `hermes/skills/architecture-first/` (flat package with Clean Architecture and domain-driven design references) |
 | `skills/development/code-complexity/` (22 reviewed markdown files) | `hermes/skills/code-complexity/` (flat package with Clean Code, Pragmatic Programmer, and Software Design Philosophy references) |
+| `skills/development/refactoring-safely/` (8 reviewed markdown files) | `hermes/skills/refactoring-safely/` (flat package with behaviour-preserving transformation references) |
 | `templates/proof-plan.md` | `hermes/templates/proof-plan.md` |
 | `templates/agent-task/handoff.md` | `hermes/templates/agent-task-handoff.md` |
 | `templates/agent-task/fix-log.md` | `hermes/templates/agent-task-fix-log.md` |
@@ -458,8 +459,11 @@ below is eligible for automatic porting without a new operator matrix decision.
      FLAT 22-file markdown package (`SKILL.md` + 21 data-only Clean Code, Pragmatic Programmer,
      and Software Design Philosophy references). It decides local comprehensibility and explicitly
      excludes architecture-first, refactoring-safely, system-and-data-design, and lean-code scope.
-  7. `skills/development/refactoring-safely/` → `hermes/skills/refactoring-safely/` — FLAT.
-     8-file package (`SKILL.md` + refactoring-pattern references).
+  7. `skills/development/refactoring-safely/` → `hermes/skills/refactoring-safely/` — ported as
+     a FLAT 8-file package (`SKILL.md` plus seven data-only refactoring-pattern references).
+     It confines work to behaviour-preserving transformations with characterization evidence,
+     one verified step at a time, and explicit exclusions for architecture, local complexity,
+     system design, and scope reduction.
   8. `skills/development/system-and-data-design/` → `hermes/skills/system-and-data-design/`
      — FLAT. 16-file package (`SKILL.md` + DDIA + System Design references).
 
@@ -611,7 +615,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.38` |
+| Latest released tag | `v0.3.42` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |

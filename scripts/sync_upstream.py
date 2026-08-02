@@ -605,6 +605,18 @@ SUPPORTED = {
     "skills/development/code-complexity/references/software-design-philosophy/general-vs-special.md": {"target": "hermes/skills/code-complexity/references/software-design-philosophy/general-vs-special.md", "name": "code-complexity-general-vs-special", "description": "Reference general versus special-purpose interface choices.", "type": "reference"},
     "skills/development/code-complexity/references/software-design-philosophy/information-hiding.md": {"target": "hermes/skills/code-complexity/references/software-design-philosophy/information-hiding.md", "name": "code-complexity-information-hiding", "description": "Reference information-hiding practices for local complexity reduction.", "type": "reference"},
     "skills/development/code-complexity/references/software-design-philosophy/strategic-programming.md": {"target": "hermes/skills/code-complexity/references/software-design-philosophy/strategic-programming.md", "name": "code-complexity-strategic-programming", "description": "Reference strategic investment in maintainable code structure.", "type": "reference"},
+    "skills/development/refactoring-safely/SKILL.md": {
+        "target": "hermes/skills/refactoring-safely/SKILL.md",
+        "name": "refactoring-safely",
+        "description": "Plan and review behaviour-preserving code restructuring through characterization evidence, small named transformations, and verification between steps without modifying code.",
+    },
+    "skills/development/refactoring-safely/references/refactoring-patterns-original.md": {"target": "hermes/skills/refactoring-safely/references/refactoring-patterns-original.md", "name": "refactoring-safely-patterns-original", "description": "Reference the source refactoring framework as reviewed data, not an automatic procedure.", "type": "reference"},
+    "skills/development/refactoring-safely/references/refactoring-patterns/composing-methods.md": {"target": "hermes/skills/refactoring-safely/references/refactoring-patterns/composing-methods.md", "name": "refactoring-safely-composing-methods", "description": "Reference behaviour-preserving method-composition transformations.", "type": "reference"},
+    "skills/development/refactoring-safely/references/refactoring-patterns/moving-features.md": {"target": "hermes/skills/refactoring-safely/references/refactoring-patterns/moving-features.md", "name": "refactoring-safely-moving-features", "description": "Reference behaviour-preserving feature relocation transformations.", "type": "reference"},
+    "skills/development/refactoring-safely/references/refactoring-patterns/organizing-data.md": {"target": "hermes/skills/refactoring-safely/references/refactoring-patterns/organizing-data.md", "name": "refactoring-safely-organizing-data", "description": "Reference behaviour-preserving data-organisation transformations.", "type": "reference"},
+    "skills/development/refactoring-safely/references/refactoring-patterns/refactoring-workflow.md": {"target": "hermes/skills/refactoring-safely/references/refactoring-patterns/refactoring-workflow.md", "name": "refactoring-safely-workflow", "description": "Reference small-step refactoring, safety-net, rollback, and review guidance.", "type": "reference"},
+    "skills/development/refactoring-safely/references/refactoring-patterns/simplifying-conditionals.md": {"target": "hermes/skills/refactoring-safely/references/refactoring-patterns/simplifying-conditionals.md", "name": "refactoring-safely-simplifying-conditionals", "description": "Reference behaviour-preserving conditional simplification transformations.", "type": "reference"},
+    "skills/development/refactoring-safely/references/refactoring-patterns/smell-catalog.md": {"target": "hermes/skills/refactoring-safely/references/refactoring-patterns/smell-catalog.md", "name": "refactoring-safely-smell-catalog", "description": "Reference code-smell signals and candidate behaviour-preserving transformations.", "type": "reference"},
     "rules/cross-harness-agents-md.md": {
         "target": "hermes/skills/portable-project-context/SKILL.md",
         "name": "portable-project-context",
@@ -6169,6 +6181,49 @@ correctness, security, or review requirements.
 Report the affected unit, concrete complexity symptoms, knowledge owner, interface and
 error-path evidence, minimal proposed change, verification needed, and any scope that
 belongs to a sibling module."""
+    if source_path == "skills/development/refactoring-safely/SKILL.md":
+        return """# Refactoring Safely
+
+Use this module when existing code must change shape without changing its observable
+behaviour: a module is oversized, responsibilities are misplaced, a safe extraction is
+needed, or a legacy area needs a controlled structural improvement. It is a read-only
+planning and review protocol: it does not modify code, run transformations, add tests,
+or authorise a refactor.
+
+## Scope and exclusions
+
+This module governs a named, behaviour-preserving transformation with a safety net.
+Use `architecture-first` to decide target system boundaries and code placement;
+`code-complexity` to analyse function shape, names, interfaces, and local complexity;
+`system-and-data-design` for capacity, storage, scaling, or distributed-system choices;
+and `lean-code` when removing unjustified scope is the primary outcome. A behaviour
+change, bug fix, dependency upgrade, or feature addition is a separate change with its
+own acceptance criteria and verification; do not disguise it as refactoring.
+
+## Read-only refactoring protocol
+
+1. Establish the affected behaviour from call sites, public contracts, current tests,
+   runtime evidence, and known failure paths. If relevant behaviour lacks coverage,
+   propose focused characterization checks before changing structure.
+2. Name one concrete smell and one smallest candidate transformation. Prefer extracting
+   a coherent responsibility, moving state with its owner, or simplifying a conditional
+   only where the existing behaviour and boundary are understood.
+3. Define the safety net: exact focused checks, the expected unchanged outcomes, rollback
+   point, and the maximum file scope. If the checks are already failing or cannot observe
+   the changed seam, report that evidence gap rather than claiming safe refactoring.
+4. Keep structural and behavioural work separate. Plan one transformation at a time with
+   a verification result between steps; record any discovered defect as separate work.
+5. For mutable shared state, concurrency primitives, caches, or locks, state the invariant
+   and move the state with the protection that preserves it. Escalate cross-module or
+   deployment-facing scope to the appropriate architecture or system-design review.
+
+## Output
+
+Report the observed smell, protected behaviour, candidate transformation, evidence gap
+or characterization plan, focused verification and rollback boundary, excluded behaviour
+changes, residual risk, and the next operator-confirmation point before any write-impacting
+work. Load the relevant reference only for the named transformation; examples remain
+reviewed data, not commands to execute."""
     if source_path == "principles/30-gates-that-cannot-bootstrap.md":
         return """# Gates That Cannot Bootstrap Themselves
 
