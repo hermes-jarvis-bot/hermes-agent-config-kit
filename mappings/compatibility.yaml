@@ -702,6 +702,14 @@ rules/no-guessing.md:
   description: Avoid guessing missing configuration; inspect, retrieve, or ask for exact values.
   risk: low
 
+rules/verify-git-currency-first.md:
+  status: supported
+  target: hermes/skills/verify-git-currency-first/SKILL.md
+  type: rule_skill
+  name: verify-git-currency-first
+  description: Establish current remote, local, and deployed Git state before diagnosing, editing, synchronising, deploying, or copying project trees.
+  risk: low
+
 rules/cross-harness-agents-md.md:
   status: supported
   target: hermes/skills/portable-project-context/SKILL.md

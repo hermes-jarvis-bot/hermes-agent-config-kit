@@ -175,6 +175,7 @@ Current generated Hermes skills:
 - `gates-that-cannot-bootstrap`
 - `no-guessing`
 - `no-pre-existing-evasion`
+- `verify-git-currency-first`
 - `portable-project-context`
 - `post-ui-change-review`
 - `plan-to-tickets`

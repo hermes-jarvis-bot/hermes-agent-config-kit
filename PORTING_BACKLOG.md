@@ -29,12 +29,12 @@ rechecked against the pinned snapshot when this table changes.
 | `hooks/` | 44 | 0 | 44 |
 | `principles/` | 30 | 30 | 0 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 25 | 5 |
+| `rules/` | 30 | 26 | 4 |
 | `scripts/` | 35 | 0 | 35 |
 | `skills/` | 159 | 44 | 115 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **112** | **282** |
+| **Total** | **394** | **113** | **281** |
 
 ## Ported so far
 
@@ -139,6 +139,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/cross-harness-agents-md.md` | `hermes/skills/portable-project-context/SKILL.md` |
 | `rules/agent-docs-freshness.md` | `hermes/skills/documentation-freshness/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
+| `rules/verify-git-currency-first.md` | `hermes/skills/verify-git-currency-first/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
 | `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
 | `rules/quality-code.md` | `hermes/skills/code-quality/SKILL.md` |
@@ -432,8 +433,9 @@ below is eligible for automatic porting without a new operator matrix decision.
      — ported as a single-file, Hermes-native design and verification module for opt-in gates
      that would otherwise stay silent where adoption is missing; it does not activate controls.
   2. `rules/verify-git-currency-first.md` → `hermes/skills/verify-git-currency-first/SKILL.md`
-     — single file; an explicit specialization of the already-ported `no-guessing` (complementary,
-     not a duplicate).
+     — ported as a single-file, read-only Git-currency preflight module; it is an explicit
+     specialization of the already-ported `no-guessing` (complementary, not a duplicate) and
+     does not fetch, stash, reset, pull, deploy, or copy project trees automatically.
   3. `skills/operational/cross-harness-continuation/` → `hermes/skills/cross-harness-continuation/`
      — FLAT (the `operational` domain is already flat-ported, e.g. `harness-audit`; do not
      introduce `hermes/skills/operational/`). 2-file package: `SKILL.md` +
