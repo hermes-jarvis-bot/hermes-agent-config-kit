@@ -579,6 +579,32 @@ SUPPORTED = {
         "target": "hermes/skills/architecture-first/references/domain-driven-design/ubiquitous-language.md",
         "name": "architecture-first-ubiquitous-language", "description": "Reference ubiquitous-language practices for consistent domain terminology.", "type": "reference",
     },
+    "skills/development/code-complexity/SKILL.md": {
+        "target": "hermes/skills/code-complexity/SKILL.md",
+        "name": "code-complexity",
+        "description": "Keep functions, interfaces, and modules comprehensible through information hiding, clear names, bounded responsibilities, and explicit error handling.",
+    },
+    "skills/development/code-complexity/references/clean-code-original.md": {"target": "hermes/skills/code-complexity/references/clean-code-original.md", "name": "code-complexity-clean-code-original", "description": "Reference Clean Code framework prose for reviewed local code quality decisions.", "type": "reference"},
+    "skills/development/code-complexity/references/clean-code/code-smells.md": {"target": "hermes/skills/code-complexity/references/clean-code/code-smells.md", "name": "code-complexity-code-smells", "description": "Reference code-smell signals for reviewed local complexity decisions.", "type": "reference"},
+    "skills/development/code-complexity/references/clean-code/comments-formatting.md": {"target": "hermes/skills/code-complexity/references/clean-code/comments-formatting.md", "name": "code-complexity-comments-formatting", "description": "Reference comment and formatting practices for readable code.", "type": "reference"},
+    "skills/development/code-complexity/references/clean-code/error-handling.md": {"target": "hermes/skills/code-complexity/references/clean-code/error-handling.md", "name": "code-complexity-error-handling", "description": "Reference explicit error-handling practices for reviewed code.", "type": "reference"},
+    "skills/development/code-complexity/references/clean-code/functions-and-methods.md": {"target": "hermes/skills/code-complexity/references/clean-code/functions-and-methods.md", "name": "code-complexity-functions-methods", "description": "Reference function and method responsibility guidance.", "type": "reference"},
+    "skills/development/code-complexity/references/clean-code/naming-conventions.md": {"target": "hermes/skills/code-complexity/references/clean-code/naming-conventions.md", "name": "code-complexity-naming-conventions", "description": "Reference naming conventions for comprehensible code.", "type": "reference"},
+    "skills/development/code-complexity/references/clean-code/testing-principles.md": {"target": "hermes/skills/code-complexity/references/clean-code/testing-principles.md", "name": "code-complexity-testing-principles", "description": "Reference testing principles for readable behavioural checks.", "type": "reference"},
+    "skills/development/code-complexity/references/pragmatic-programmer-original.md": {"target": "hermes/skills/code-complexity/references/pragmatic-programmer-original.md", "name": "code-complexity-pragmatic-programmer-original", "description": "Reference pragmatic engineering framework prose for local design choices.", "type": "reference"},
+    "skills/development/code-complexity/references/pragmatic-programmer/broken-windows.md": {"target": "hermes/skills/code-complexity/references/pragmatic-programmer/broken-windows.md", "name": "code-complexity-broken-windows", "description": "Reference maintenance discipline for local code quality.", "type": "reference"},
+    "skills/development/code-complexity/references/pragmatic-programmer/contracts-assertions.md": {"target": "hermes/skills/code-complexity/references/pragmatic-programmer/contracts-assertions.md", "name": "code-complexity-contracts-assertions", "description": "Reference contracts and assertions for explicit local invariants.", "type": "reference"},
+    "skills/development/code-complexity/references/pragmatic-programmer/dry-orthogonality.md": {"target": "hermes/skills/code-complexity/references/pragmatic-programmer/dry-orthogonality.md", "name": "code-complexity-dry-orthogonality", "description": "Reference DRY and orthogonality for local change isolation.", "type": "reference"},
+    "skills/development/code-complexity/references/pragmatic-programmer/estimation-portfolio.md": {"target": "hermes/skills/code-complexity/references/pragmatic-programmer/estimation-portfolio.md", "name": "code-complexity-estimation-portfolio", "description": "Reference estimation and risk guidance for engineering decisions.", "type": "reference"},
+    "skills/development/code-complexity/references/pragmatic-programmer/reversibility.md": {"target": "hermes/skills/code-complexity/references/pragmatic-programmer/reversibility.md", "name": "code-complexity-reversibility", "description": "Reference reversible decisions in local design work.", "type": "reference"},
+    "skills/development/code-complexity/references/pragmatic-programmer/tracer-bullets.md": {"target": "hermes/skills/code-complexity/references/pragmatic-programmer/tracer-bullets.md", "name": "code-complexity-tracer-bullets", "description": "Reference thin end-to-end validation paths.", "type": "reference"},
+    "skills/development/code-complexity/references/software-design-philosophy-original.md": {"target": "hermes/skills/code-complexity/references/software-design-philosophy-original.md", "name": "code-complexity-software-design-philosophy-original", "description": "Reference software-design philosophy framework prose for complexity management.", "type": "reference"},
+    "skills/development/code-complexity/references/software-design-philosophy/comments-as-design.md": {"target": "hermes/skills/code-complexity/references/software-design-philosophy/comments-as-design.md", "name": "code-complexity-comments-as-design", "description": "Reference comments as durable design documentation.", "type": "reference"},
+    "skills/development/code-complexity/references/software-design-philosophy/complexity-symptoms.md": {"target": "hermes/skills/code-complexity/references/software-design-philosophy/complexity-symptoms.md", "name": "code-complexity-complexity-symptoms", "description": "Reference symptoms of accumulated code complexity.", "type": "reference"},
+    "skills/development/code-complexity/references/software-design-philosophy/deep-modules.md": {"target": "hermes/skills/code-complexity/references/software-design-philosophy/deep-modules.md", "name": "code-complexity-deep-modules", "description": "Reference deep-module design and interface economy.", "type": "reference"},
+    "skills/development/code-complexity/references/software-design-philosophy/general-vs-special.md": {"target": "hermes/skills/code-complexity/references/software-design-philosophy/general-vs-special.md", "name": "code-complexity-general-vs-special", "description": "Reference general versus special-purpose interface choices.", "type": "reference"},
+    "skills/development/code-complexity/references/software-design-philosophy/information-hiding.md": {"target": "hermes/skills/code-complexity/references/software-design-philosophy/information-hiding.md", "name": "code-complexity-information-hiding", "description": "Reference information-hiding practices for local complexity reduction.", "type": "reference"},
+    "skills/development/code-complexity/references/software-design-philosophy/strategic-programming.md": {"target": "hermes/skills/code-complexity/references/software-design-philosophy/strategic-programming.md", "name": "code-complexity-strategic-programming", "description": "Reference strategic investment in maintainable code structure.", "type": "reference"},
     "rules/cross-harness-agents-md.md": {
         "target": "hermes/skills/portable-project-context/SKILL.md",
         "name": "portable-project-context",
@@ -6103,6 +6129,46 @@ satisfy a diagram.
 Report the proposed module map, ownership and dependency evidence, vocabulary/context
 boundaries, deliberately deferred details, vertical-slice verification, residual risk,
 and the next operator-confirmation point for any write-impacting implementation."""
+    if source_path == "skills/development/code-complexity/SKILL.md":
+        return """# Code Complexity
+
+Use this module when writing or reviewing an existing function, class, or module that
+is hard to understand or expensive to change. It is a read-only analysis protocol: it
+does not modify code, add dependencies, or authorise a refactor.
+
+## Scope and exclusions
+
+This module improves the comprehensibility of an existing unit: function shape, names,
+interfaces, local responsibilities, information hiding, comments, errors, and tests.
+Use `architecture-first` for system boundaries and code placement; `refactoring-safely`
+for a named, verified transformation of an oversized unit; `system-and-data-design` for
+capacity, storage, scaling, or distributed-system choices; and `lean-code` to remove
+unjustified scope. It complements `code-quality`; it does not replace project-specific
+correctness, security, or review requirements.
+
+## Read-only complexity review
+
+1. State the observed change cost and inspect the smallest relevant call sites, tests,
+   public contract, and error paths. Record behaviour that must remain stable before
+   proposing a simplification.
+2. Identify change amplification and leaked knowledge: a decision belongs to one owner;
+   callers should not need unstated locks, formats, ordering rules, or configuration.
+3. Assess interface depth. Prefer a small, clear interface that hides useful behaviour;
+   do not split a coherent unit into shallow wrappers merely to reduce line count.
+4. Check names, responsibilities, parameters, comments, and error handling. A name
+   should reveal intent; a function should operate at one abstraction level; comments
+   preserve why and constraints; failure must be explicit rather than quietly treated
+   as success.
+5. Distinguish duplicated knowledge from coincidental text. Reduce coupling only where
+   two sites must change together, and preserve independently changing behaviour.
+6. Propose the smallest safe change, its behavioural verification, residual risk, and
+   the operator-confirmation point before any write-impacting refactor.
+
+## Output
+
+Report the affected unit, concrete complexity symptoms, knowledge owner, interface and
+error-path evidence, minimal proposed change, verification needed, and any scope that
+belongs to a sibling module."""
     if source_path == "principles/30-gates-that-cannot-bootstrap.md":
         return """# Gates That Cannot Bootstrap Themselves
 

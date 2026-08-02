@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 26 | 4 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 59 | 100 |
+| `skills/` | 159 | 81 | 78 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **129** | **265** |
+| **Total** | **394** | **151** | **243** |
 
 ## Ported so far
 
@@ -91,6 +91,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/operational/observability-monitoring/SKILL.md` | `hermes/skills/observability-monitoring/SKILL.md` |
 | `skills/operational/observability-monitoring/references/source-notes.md` | `hermes/skills/observability-monitoring/references/source-notes.md` |
 | `skills/development/architecture-first/` (13 reviewed markdown files) | `hermes/skills/architecture-first/` (flat package with Clean Architecture and domain-driven design references) |
+| `skills/development/code-complexity/` (22 reviewed markdown files) | `hermes/skills/code-complexity/` (flat package with Clean Code, Pragmatic Programmer, and Software Design Philosophy references) |
 | `templates/proof-plan.md` | `hermes/templates/proof-plan.md` |
 | `templates/agent-task/handoff.md` | `hermes/templates/agent-task-handoff.md` |
 | `templates/agent-task/fix-log.md` | `hermes/templates/agent-task-fix-log.md` |
@@ -453,9 +454,10 @@ below is eligible for automatic porting without a new operator matrix decision.
      a FLAT 13-file markdown package (`SKILL.md` + 12 data-only Clean Architecture and
      domain-driven-design references). It decides code placement and dependency/domain boundaries;
      it explicitly excludes code-complexity, refactoring-safely, and system-and-data-design scope.
-  6. `skills/development/code-complexity/` → `hermes/skills/code-complexity/` — FLAT. 22-file
-     package (`SKILL.md` + Clean Code + Pragmatic Programmer + Software Design Philosophy
-     references).
+  6. `skills/development/code-complexity/` → `hermes/skills/code-complexity/` — ported as a
+     FLAT 22-file markdown package (`SKILL.md` + 21 data-only Clean Code, Pragmatic Programmer,
+     and Software Design Philosophy references). It decides local comprehensibility and explicitly
+     excludes architecture-first, refactoring-safely, system-and-data-design, and lean-code scope.
   7. `skills/development/refactoring-safely/` → `hermes/skills/refactoring-safely/` — FLAT.
      8-file package (`SKILL.md` + refactoring-pattern references).
   8. `skills/development/system-and-data-design/` → `hermes/skills/system-and-data-design/`

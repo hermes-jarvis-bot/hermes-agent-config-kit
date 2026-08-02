@@ -486,6 +486,182 @@ skills/development/architecture-first/references/domain-driven-design/ubiquitous
   description: Reference ubiquitous-language practices for consistent domain terminology.
   risk: medium
 
+skills/development/code-complexity/SKILL.md:
+  status: supported
+  target: hermes/skills/code-complexity/SKILL.md
+  type: skill
+  name: code-complexity
+  description: Keep functions, interfaces, and modules comprehensible through information hiding, clear names, bounded responsibilities, and explicit error handling.
+  risk: medium
+
+skills/development/code-complexity/references/clean-code-original.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/clean-code-original.md
+  type: reference
+  name: code-complexity-clean-code-original
+  description: Reference Clean Code framework prose for reviewed local code quality decisions.
+  risk: medium
+
+skills/development/code-complexity/references/clean-code/code-smells.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/clean-code/code-smells.md
+  type: reference
+  name: code-complexity-code-smells
+  description: Reference code-smell signals for reviewed local complexity decisions.
+  risk: medium
+
+skills/development/code-complexity/references/clean-code/comments-formatting.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/clean-code/comments-formatting.md
+  type: reference
+  name: code-complexity-comments-formatting
+  description: Reference comment and formatting practices for readable code.
+  risk: medium
+
+skills/development/code-complexity/references/clean-code/error-handling.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/clean-code/error-handling.md
+  type: reference
+  name: code-complexity-error-handling
+  description: Reference explicit error-handling practices for reviewed code.
+  risk: medium
+
+skills/development/code-complexity/references/clean-code/functions-and-methods.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/clean-code/functions-and-methods.md
+  type: reference
+  name: code-complexity-functions-methods
+  description: Reference function and method responsibility guidance.
+  risk: medium
+
+skills/development/code-complexity/references/clean-code/naming-conventions.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/clean-code/naming-conventions.md
+  type: reference
+  name: code-complexity-naming-conventions
+  description: Reference naming conventions for comprehensible code.
+  risk: medium
+
+skills/development/code-complexity/references/clean-code/testing-principles.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/clean-code/testing-principles.md
+  type: reference
+  name: code-complexity-testing-principles
+  description: Reference testing principles for readable behavioural checks.
+  risk: medium
+
+skills/development/code-complexity/references/pragmatic-programmer-original.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/pragmatic-programmer-original.md
+  type: reference
+  name: code-complexity-pragmatic-programmer-original
+  description: Reference pragmatic engineering framework prose for local design choices.
+  risk: medium
+
+skills/development/code-complexity/references/pragmatic-programmer/broken-windows.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/pragmatic-programmer/broken-windows.md
+  type: reference
+  name: code-complexity-broken-windows
+  description: Reference maintenance discipline for local code quality.
+  risk: medium
+
+skills/development/code-complexity/references/pragmatic-programmer/contracts-assertions.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/pragmatic-programmer/contracts-assertions.md
+  type: reference
+  name: code-complexity-contracts-assertions
+  description: Reference contracts and assertions for explicit local invariants.
+  risk: medium
+
+skills/development/code-complexity/references/pragmatic-programmer/dry-orthogonality.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/pragmatic-programmer/dry-orthogonality.md
+  type: reference
+  name: code-complexity-dry-orthogonality
+  description: Reference DRY and orthogonality for local change isolation.
+  risk: medium
+
+skills/development/code-complexity/references/pragmatic-programmer/estimation-portfolio.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/pragmatic-programmer/estimation-portfolio.md
+  type: reference
+  name: code-complexity-estimation-portfolio
+  description: Reference estimation and risk guidance for engineering decisions.
+  risk: medium
+
+skills/development/code-complexity/references/pragmatic-programmer/reversibility.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/pragmatic-programmer/reversibility.md
+  type: reference
+  name: code-complexity-reversibility
+  description: Reference reversible decisions in local design work.
+  risk: medium
+
+skills/development/code-complexity/references/pragmatic-programmer/tracer-bullets.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/pragmatic-programmer/tracer-bullets.md
+  type: reference
+  name: code-complexity-tracer-bullets
+  description: Reference thin end-to-end validation paths.
+  risk: medium
+
+skills/development/code-complexity/references/software-design-philosophy-original.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/software-design-philosophy-original.md
+  type: reference
+  name: code-complexity-software-design-philosophy-original
+  description: Reference software-design philosophy framework prose for complexity management.
+  risk: medium
+
+skills/development/code-complexity/references/software-design-philosophy/comments-as-design.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/software-design-philosophy/comments-as-design.md
+  type: reference
+  name: code-complexity-comments-as-design
+  description: Reference comments as durable design documentation.
+  risk: medium
+
+skills/development/code-complexity/references/software-design-philosophy/complexity-symptoms.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/software-design-philosophy/complexity-symptoms.md
+  type: reference
+  name: code-complexity-complexity-symptoms
+  description: Reference symptoms of accumulated code complexity.
+  risk: medium
+
+skills/development/code-complexity/references/software-design-philosophy/deep-modules.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/software-design-philosophy/deep-modules.md
+  type: reference
+  name: code-complexity-deep-modules
+  description: Reference deep-module design and interface economy.
+  risk: medium
+
+skills/development/code-complexity/references/software-design-philosophy/general-vs-special.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/software-design-philosophy/general-vs-special.md
+  type: reference
+  name: code-complexity-general-vs-special
+  description: Reference general versus special-purpose interface choices.
+  risk: medium
+
+skills/development/code-complexity/references/software-design-philosophy/information-hiding.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/software-design-philosophy/information-hiding.md
+  type: reference
+  name: code-complexity-information-hiding
+  description: Reference information-hiding practices for local complexity reduction.
+  risk: medium
+
+skills/development/code-complexity/references/software-design-philosophy/strategic-programming.md:
+  status: supported
+  target: hermes/skills/code-complexity/references/software-design-philosophy/strategic-programming.md
+  type: reference
+  name: code-complexity-strategic-programming
+  description: Reference strategic investment in maintainable code structure.
+  risk: medium
+
 templates/proof-plan.md:
   status: supported
   target: hermes/templates/proof-plan.md
