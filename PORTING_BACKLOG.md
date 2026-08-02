@@ -34,7 +34,7 @@ rechecked against the pinned snapshot when this table changes.
 | `skills/` | 159 | 46 | 113 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **115** | **279** |
+| **Total** | **394** | **116** | **278** |
 
 ## Ported so far
 
@@ -88,6 +88,8 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/operational/harness-audit/references/scoring-rubric.md` | `hermes/skills/harness-audit/references/scoring-rubric.md` |
 | `skills/operational/cross-harness-continuation/SKILL.md` | `hermes/skills/cross-harness-continuation/SKILL.md` |
 | `skills/operational/cross-harness-continuation/references/CONTINUITY.example.json` | `hermes/skills/cross-harness-continuation/references/continuity-contract-example.md` |
+| `skills/operational/observability-monitoring/SKILL.md` | `hermes/skills/observability-monitoring/SKILL.md` |
+| `skills/operational/observability-monitoring/references/source-notes.md` | `hermes/skills/observability-monitoring/references/source-notes.md` |
 | `templates/proof-plan.md` | `hermes/templates/proof-plan.md` |
 | `templates/agent-task/handoff.md` | `hermes/templates/agent-task-handoff.md` |
 | `templates/agent-task/fix-log.md` | `hermes/templates/agent-task-fix-log.md` |
@@ -697,6 +699,10 @@ threat-model review before any Hermes-native reference is accepted.
 domain package under `hermes/skills/frontend/frontend-design/`. Its four references
 remain data-only guidance; no project tooling, service-worker registration, or external
 publication action is activated by this adapter.
+`skills/operational/observability-monitoring/` is ported as a flat two-file,
+markdown-only module under `hermes/skills/observability-monitoring/`. It retains
+read-only telemetry, SLI/SLO, alerting, and incident-evidence guidance. The upstream
+`agents/openai.yaml` is Codex-specific manifest metadata and remains unported.
 
 Acceptance criteria:
 

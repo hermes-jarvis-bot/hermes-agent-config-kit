@@ -366,6 +366,22 @@ skills/operational/cross-harness-continuation/references/CONTINUITY.example.json
   description: Provide a data-only example of a bounded cross-session continuity contract with baseline, scope, preserved decisions, and verification evidence.
   risk: low
 
+skills/operational/observability-monitoring/SKILL.md:
+  status: supported
+  target: hermes/skills/observability-monitoring/SKILL.md
+  type: skill
+  name: observability-monitoring
+  description: Design, audit, and troubleshoot monitoring through user-impact evidence, layered telemetry, actionable alerts, SLI/SLO controls, and read-only incident triage.
+  risk: low
+
+skills/operational/observability-monitoring/references/source-notes.md:
+  status: supported
+  target: hermes/skills/observability-monitoring/references/source-notes.md
+  type: reference
+  name: observability-monitoring-source-notes
+  description: Record source provenance and current-practice references for observability guidance without carrying upstream local-media paths or tooling.
+  risk: low
+
 templates/proof-plan.md:
   status: supported
   target: hermes/templates/proof-plan.md
