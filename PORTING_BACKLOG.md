@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 26 | 4 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 44 | 115 |
+| `skills/` | 159 | 46 | 113 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **113** | **281** |
+| **Total** | **394** | **115** | **279** |
 
 ## Ported so far
 
@@ -86,6 +86,8 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
 | `skills/operational/harness-audit/references/checklist-per-subsystem.md` | `hermes/skills/harness-audit/references/checklist-per-subsystem.md` |
 | `skills/operational/harness-audit/references/scoring-rubric.md` | `hermes/skills/harness-audit/references/scoring-rubric.md` |
+| `skills/operational/cross-harness-continuation/SKILL.md` | `hermes/skills/cross-harness-continuation/SKILL.md` |
+| `skills/operational/cross-harness-continuation/references/CONTINUITY.example.json` | `hermes/skills/cross-harness-continuation/references/continuity-contract-example.md` |
 | `templates/proof-plan.md` | `hermes/templates/proof-plan.md` |
 | `templates/agent-task/handoff.md` | `hermes/templates/agent-task-handoff.md` |
 | `templates/agent-task/fix-log.md` | `hermes/templates/agent-task-fix-log.md` |
@@ -437,12 +439,9 @@ below is eligible for automatic porting without a new operator matrix decision.
      specialization of the already-ported `no-guessing` (complementary, not a duplicate) and
      does not fetch, stash, reset, pull, deploy, or copy project trees automatically.
   3. `skills/operational/cross-harness-continuation/` → `hermes/skills/cross-harness-continuation/`
-     — FLAT (the `operational` domain is already flat-ported, e.g. `harness-audit`; do not
-     introduce `hermes/skills/operational/`). 2-file package: `SKILL.md` +
-     `references/CONTINUITY.example.json`, the JSON converted to `.md` the same way
-     `templates/agent-task/state.json` became `agent-task-state.md`. Complementary to the
-     already-ported `session-handoff` (upstream frames it as governing the CONTRACT between
-     agents, not one agent's own notes).
+     — ported as a FLAT two-file package (`SKILL.md` + converted data-only
+     `references/continuity-contract-example.md`); it governs the evidence-backed contract
+     between agents and remains complementary to `session-handoff`, which covers session notes.
   4. `skills/operational/observability-monitoring/` → `hermes/skills/observability-monitoring/`
      — FLAT (same reason). Port `SKILL.md` + `references/source-notes.md` only;
      `agents/openai.yaml` is Codex-plugin manifest metadata (same class as
@@ -606,7 +605,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.36` |
+| Latest released tag | `v0.3.38` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |

@@ -133,6 +133,7 @@ Current generated Hermes skills:
 - `code-quality`
 - `codified-context`
 - `coordination-primitives-mapping`
+- `cross-harness-continuation` (with a data-only continuity-contract example reference)
 - `deep-review`
 - `deterministic-orchestration`
 - `durable-context-maintenance`

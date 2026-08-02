@@ -504,6 +504,17 @@ SUPPORTED = {
         "name": "verify-git-currency-first",
         "description": "Establish current remote, local, and deployed Git state before diagnosing, editing, synchronising, deploying, or copying project trees.",
     },
+    "skills/operational/cross-harness-continuation/SKILL.md": {
+        "target": "hermes/skills/cross-harness-continuation/SKILL.md",
+        "name": "cross-harness-continuation",
+        "description": "Continue a bounded project slice across agent sessions using a shared, evidence-backed continuity contract without overwriting accepted work or activating enforcement.",
+    },
+    "skills/operational/cross-harness-continuation/references/CONTINUITY.example.json": {
+        "target": "hermes/skills/cross-harness-continuation/references/continuity-contract-example.md",
+        "name": "cross-harness-continuation-contract-example",
+        "description": "Provide a data-only example of a bounded cross-session continuity contract with baseline, scope, preserved decisions, and verification evidence.",
+        "type": "reference",
+    },
     "rules/cross-harness-agents-md.md": {
         "target": "hermes/skills/portable-project-context/SKILL.md",
         "name": "portable-project-context",
@@ -767,6 +778,103 @@ def adapt_text(text: str) -> str:
 
 
 def adapt_source_text(source_path: str, text: str) -> str:
+    if source_path == "skills/operational/cross-harness-continuation/SKILL.md":
+        return """# Cross-Harness Continuation
+
+Use this module when a bounded project slice moves between agent sessions or
+interfaces and the next operator needs to preserve decisions that Git alone cannot
+express. It governs the shared continuation contract between agents; use
+`session-handoff` for one agent's concise session notes. This is guidance only: it
+does not create a contract, change files, activate a guard, or authorise a replan.
+
+## Read-only intake
+
+1. Locate the project-approved continuity record, newest handoff, project guidance,
+   and current Git status. Treat the live checkout as authoritative over stale prose.
+2. Confirm the baseline branch and commit, pre-existing dirty paths, claimed scope,
+   preserved decisions, rejected approaches, and recorded verification evidence.
+3. If the record, baseline, scope, or required evidence is absent, report the gap
+   before editing. Do not infer another agent's intent from a clean tree or prose.
+
+## Continuation protocol
+
+1. Preserve accepted decisions and existing changes unless focused evidence proves a
+   regression or the operator explicitly authorises redesign.
+2. Keep the next change within the declared file scope. A scope expansion is a new
+   decision that must record its reason and affected paths before write-impacting work.
+3. Use the smallest relevant verification, then an independent verifier for a
+   non-trivial or cross-module change. Record commands, outcomes, and remaining risk
+   in the approved continuity record or handoff.
+4. Finish with one explicit next step and a clean checkpoint when the project workflow
+   permits it. Parallel work needs isolated worktrees and integration verification;
+   this contract does not resolve concurrent merges.
+
+## Replan boundary
+
+A replan is valid only when measured evidence disproves the current design, the
+requirements changed, or the operator explicitly authorises a redesign. Record the
+reason, intended design change, and scope before altering accepted work. An informal
+flag, clean checkout, or aesthetic preference is not evidence of authority.
+
+## Contract shape
+
+Use `references/continuity-contract-example.md` as data-only field guidance. Keep
+the record small: put long research or transcripts in the project's approved archive
+and link stable evidence rather than copying credentials or raw session history.
+
+## Output
+
+Report the verified baseline, dirty-path classification, declared scope, preserved
+decisions, verification status, any replan authority, residual risk, and the exact
+next operator-confirmation point."""
+    if source_path == "skills/operational/cross-harness-continuation/references/CONTINUITY.example.json":
+        return """# Continuity Contract Example
+
+This data-only example records the minimum information needed to continue one
+bounded project slice across agents. Store it only in a project-approved location.
+It does not create state, claim files, dispatch work, modify a repository, or
+authorise any action.
+
+## Example fields
+
+```yaml
+schema_version: 1
+mode: continuation
+project: example-project
+goal: Finish one verified implementation slice without replacing accepted work.
+baseline:
+  repo_root: <project-relative-or-approved-path>
+  branch: feature/example
+  head: <exact-commit>
+  preexisting_paths: []
+scope:
+  enforce: true
+  protect_unlisted: true
+  files:
+    - src/example.py
+    - tests/test_example.py
+preserve:
+  - Keep the public contract stable.
+  - Keep the accepted ownership model unless evidence disproves it.
+do_not_redo:
+  - Do not replace a working component without a measured regression.
+verification:
+  - command: <focused-project-check>
+    status: pending
+    evidence: <result-or-stable-link>
+```
+
+## Use notes
+
+- Record exact baseline and pre-existing dirty paths before a continuation edit.
+- Claim only the files needed for the bounded slice; record a reason before expanding scope.
+- Preserve accepted decisions and rejected approaches so the next agent does not repeat
+  already-settled work.
+- Record real verification evidence and one next action. Do not include access credentials,
+  private transcripts, or unverified claims.
+- A replan requires measured evidence or explicit operator authority and must be recorded
+  separately from ordinary continuation state.
+"""
     if source_path == "rules/verify-git-currency-first.md":
         return """# Verify Git Currency First
 

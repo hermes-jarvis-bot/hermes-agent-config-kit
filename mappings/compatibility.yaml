@@ -350,6 +350,22 @@ skills/operational/harness-audit/references/scoring-rubric.md:
   description: Calibrate evidence-based one-to-five harness audit scores without assuming active enforcement or a fixed project layout.
   risk: low
 
+skills/operational/cross-harness-continuation/SKILL.md:
+  status: supported
+  target: hermes/skills/cross-harness-continuation/SKILL.md
+  type: skill
+  name: cross-harness-continuation
+  description: Continue a bounded project slice across agent sessions using a shared, evidence-backed continuity contract without overwriting accepted work or activating enforcement.
+  risk: low
+
+skills/operational/cross-harness-continuation/references/CONTINUITY.example.json:
+  status: supported
+  target: hermes/skills/cross-harness-continuation/references/continuity-contract-example.md
+  type: reference
+  name: cross-harness-continuation-contract-example
+  description: Provide a data-only example of a bounded cross-session continuity contract with baseline, scope, preserved decisions, and verification evidence.
+  risk: low
+
 templates/proof-plan.md:
   status: supported
   target: hermes/templates/proof-plan.md
