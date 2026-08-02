@@ -382,6 +382,110 @@ skills/operational/observability-monitoring/references/source-notes.md:
   description: Record source provenance and current-practice references for observability guidance without carrying upstream local-media paths or tooling.
   risk: low
 
+skills/development/architecture-first/SKILL.md:
+  status: supported
+  target: hermes/skills/architecture-first/SKILL.md
+  type: skill
+  name: architecture-first
+  description: Design module boundaries, dependency direction, state ownership, and domain vocabulary before implementation without prescribing premature layers or infrastructure choices.
+  risk: medium
+
+skills/development/architecture-first/references/clean-architecture-original.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/clean-architecture-original.md
+  type: reference
+  name: architecture-first-clean-architecture-original
+  description: Reference Clean Architecture boundary and dependency guidance for a reviewed design.
+  risk: medium
+
+skills/development/architecture-first/references/clean-architecture/boundaries-and-layers.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/clean-architecture/boundaries-and-layers.md
+  type: reference
+  name: architecture-first-boundaries-and-layers
+  description: Reference architecture boundaries, layers, and dependency-direction decisions.
+  risk: medium
+
+skills/development/architecture-first/references/clean-architecture/details-and-code-organization.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/clean-architecture/details-and-code-organization.md
+  type: reference
+  name: architecture-first-details-and-code-organization
+  description: Reference implementation details, frameworks, and code-organisation boundary decisions.
+  risk: medium
+
+skills/development/architecture-first/references/clean-architecture/python-implementation.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/clean-architecture/python-implementation.md
+  type: reference
+  name: architecture-first-python-implementation
+  description: Reference Python-oriented clean-architecture implementation patterns for reviewed designs.
+  risk: medium
+
+skills/development/architecture-first/references/clean-architecture/solid-and-components.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/clean-architecture/solid-and-components.md
+  type: reference
+  name: architecture-first-solid-and-components
+  description: Reference SOLID, component cohesion, and coupling principles for reviewed architecture.
+  risk: medium
+
+skills/development/architecture-first/references/domain-driven-design-original.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/domain-driven-design-original.md
+  type: reference
+  name: architecture-first-domain-driven-design-original
+  description: Reference domain-driven design concepts for reviewed system boundaries.
+  risk: medium
+
+skills/development/architecture-first/references/domain-driven-design/bounded-contexts.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/domain-driven-design/bounded-contexts.md
+  type: reference
+  name: architecture-first-bounded-contexts
+  description: Reference bounded contexts and context mapping for domain-boundary design.
+  risk: medium
+
+skills/development/architecture-first/references/domain-driven-design/building-blocks.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/domain-driven-design/building-blocks.md
+  type: reference
+  name: architecture-first-domain-building-blocks
+  description: Reference entities, value objects, and aggregates for reviewed domain modelling.
+  risk: medium
+
+skills/development/architecture-first/references/domain-driven-design/domain-events.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/domain-driven-design/domain-events.md
+  type: reference
+  name: architecture-first-domain-events
+  description: Reference domain events and consistency boundaries for reviewed designs.
+  risk: medium
+
+skills/development/architecture-first/references/domain-driven-design/repositories-factories.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/domain-driven-design/repositories-factories.md
+  type: reference
+  name: architecture-first-repositories-factories
+  description: Reference repositories and factories at domain-to-infrastructure boundaries.
+  risk: medium
+
+skills/development/architecture-first/references/domain-driven-design/strategic-design.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/domain-driven-design/strategic-design.md
+  type: reference
+  name: architecture-first-strategic-design
+  description: Reference strategic domain design and subdomain prioritisation decisions.
+  risk: medium
+
+skills/development/architecture-first/references/domain-driven-design/ubiquitous-language.md:
+  status: supported
+  target: hermes/skills/architecture-first/references/domain-driven-design/ubiquitous-language.md
+  type: reference
+  name: architecture-first-ubiquitous-language
+  description: Reference ubiquitous-language practices for consistent domain terminology.
+  risk: medium
+
 templates/proof-plan.md:
   status: supported
   target: hermes/templates/proof-plan.md

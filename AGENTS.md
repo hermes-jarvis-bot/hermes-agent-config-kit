@@ -135,6 +135,7 @@ Current generated Hermes skills:
 - `coordination-primitives-mapping`
 - `cross-harness-continuation` (with a data-only continuity-contract example reference)
 - `observability-monitoring` (with data-only source notes; its Codex manifest remains unported)
+- `architecture-first` (with reviewed Clean Architecture and domain-driven design references; scope excludes code-complexity, refactoring-safely, and system-and-data-design)
 - `deep-review`
 - `deterministic-orchestration`
 - `durable-context-maintenance`

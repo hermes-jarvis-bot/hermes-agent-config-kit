@@ -526,6 +526,59 @@ SUPPORTED = {
         "description": "Record source provenance and current-practice references for observability guidance without carrying upstream local-media paths or tooling.",
         "type": "reference",
     },
+    "skills/development/architecture-first/SKILL.md": {
+        "target": "hermes/skills/architecture-first/SKILL.md",
+        "name": "architecture-first",
+        "description": "Design a system's module boundaries, dependency direction, state ownership, and domain vocabulary before implementation without prescribing premature layers or infrastructure choices.",
+    },
+    "skills/development/architecture-first/references/clean-architecture-original.md": {
+        "target": "hermes/skills/architecture-first/references/clean-architecture-original.md",
+        "name": "architecture-first-clean-architecture-original", "description": "Reference Clean Architecture boundary and dependency guidance for a reviewed design.", "type": "reference",
+    },
+    "skills/development/architecture-first/references/clean-architecture/boundaries-and-layers.md": {
+        "target": "hermes/skills/architecture-first/references/clean-architecture/boundaries-and-layers.md",
+        "name": "architecture-first-boundaries-and-layers", "description": "Reference architecture boundaries, layers, and dependency-direction decisions.", "type": "reference",
+    },
+    "skills/development/architecture-first/references/clean-architecture/details-and-code-organization.md": {
+        "target": "hermes/skills/architecture-first/references/clean-architecture/details-and-code-organization.md",
+        "name": "architecture-first-details-and-code-organization", "description": "Reference implementation details, frameworks, and code-organisation boundary decisions.", "type": "reference",
+    },
+    "skills/development/architecture-first/references/clean-architecture/python-implementation.md": {
+        "target": "hermes/skills/architecture-first/references/clean-architecture/python-implementation.md",
+        "name": "architecture-first-python-implementation", "description": "Reference Python-oriented clean-architecture implementation patterns for reviewed designs.", "type": "reference",
+    },
+    "skills/development/architecture-first/references/clean-architecture/solid-and-components.md": {
+        "target": "hermes/skills/architecture-first/references/clean-architecture/solid-and-components.md",
+        "name": "architecture-first-solid-and-components", "description": "Reference SOLID, component cohesion, and coupling principles for reviewed architecture.", "type": "reference",
+    },
+    "skills/development/architecture-first/references/domain-driven-design-original.md": {
+        "target": "hermes/skills/architecture-first/references/domain-driven-design-original.md",
+        "name": "architecture-first-domain-driven-design-original", "description": "Reference domain-driven design concepts for reviewed system boundaries.", "type": "reference",
+    },
+    "skills/development/architecture-first/references/domain-driven-design/bounded-contexts.md": {
+        "target": "hermes/skills/architecture-first/references/domain-driven-design/bounded-contexts.md",
+        "name": "architecture-first-bounded-contexts", "description": "Reference bounded contexts and context mapping for domain-boundary design.", "type": "reference",
+    },
+    "skills/development/architecture-first/references/domain-driven-design/building-blocks.md": {
+        "target": "hermes/skills/architecture-first/references/domain-driven-design/building-blocks.md",
+        "name": "architecture-first-domain-building-blocks", "description": "Reference entities, value objects, and aggregates for reviewed domain modelling.", "type": "reference",
+    },
+    "skills/development/architecture-first/references/domain-driven-design/domain-events.md": {
+        "target": "hermes/skills/architecture-first/references/domain-driven-design/domain-events.md",
+        "name": "architecture-first-domain-events", "description": "Reference domain events and consistency boundaries for reviewed designs.", "type": "reference",
+    },
+    "skills/development/architecture-first/references/domain-driven-design/repositories-factories.md": {
+        "target": "hermes/skills/architecture-first/references/domain-driven-design/repositories-factories.md",
+        "name": "architecture-first-repositories-factories", "description": "Reference repositories and factories at domain-to-infrastructure boundaries.", "type": "reference",
+    },
+    "skills/development/architecture-first/references/domain-driven-design/strategic-design.md": {
+        "target": "hermes/skills/architecture-first/references/domain-driven-design/strategic-design.md",
+        "name": "architecture-first-strategic-design", "description": "Reference strategic domain design and subdomain prioritisation decisions.", "type": "reference",
+    },
+    "skills/development/architecture-first/references/domain-driven-design/ubiquitous-language.md": {
+        "target": "hermes/skills/architecture-first/references/domain-driven-design/ubiquitous-language.md",
+        "name": "architecture-first-ubiquitous-language", "description": "Reference ubiquitous-language practices for consistent domain terminology.", "type": "reference",
+    },
     "rules/cross-harness-agents-md.md": {
         "target": "hermes/skills/portable-project-context/SKILL.md",
         "name": "portable-project-context",
@@ -6009,6 +6062,47 @@ intentional simplification and its upgrade path, why required behaviour remains
 complete, and the verification evidence. For routine quality or broader review, use
 the Hermes-native `code-quality` module.
 """
+    if source_path == "skills/development/architecture-first/SKILL.md":
+        return """# Architecture First
+
+Use this module before creating a service, API, subsystem, or cross-module feature
+whose placement is not already clear. It is a read-only design protocol: it does not
+create files, select frameworks, add dependencies, or authorise implementation.
+
+## Scope and exclusions
+
+This module decides where code lives: module responsibilities, dependency direction,
+state ownership, and domain boundaries. Use `code-complexity` for function shape,
+naming, and local complexity; `refactoring-safely` for splitting an already oversized
+module; and `system-and-data-design` for capacity, storage, scaling, or distributed
+systems choices. Use `lean-code` when the useful outcome is to remove unjustified
+scope rather than establish a durable boundary. Do not introduce layers merely to
+satisfy a diagram.
+
+## Read-only design protocol
+
+1. State the user outcome, change boundary, existing project constraints, and smallest
+   viable vertical slice. Stop early for a script, spike, one-file task, or an existing
+   seam that needs no boundary change.
+2. Name modules by their reason to change and assign each mutable state item one owner.
+   Record what each module may know and which interfaces expose that knowledge.
+3. Draw dependency arrows. Business policy must not depend on framework, transport,
+   storage, queue, or other delivery details; define ports from the inner policy side
+   where an outer detail is necessary.
+4. Establish ubiquitous language. Where one term has different meanings, draw a bounded
+   context rather than forcing a shared model. Define aggregates around consistency
+   needs and name domain events as meaningful completed facts.
+5. Record a concise architecture note or ADR: module map, ownership, dependency flow,
+   external boundaries, alternatives, decision, consequences, and assumptions.
+6. Validate one vertical slice and tests that exercise policy without requiring the
+   outer framework where practical. Treat dependency cycles, shared mutable state, and
+   unexplained cross-boundary imports as design faults to resolve or explicitly accept.
+
+## Output
+
+Report the proposed module map, ownership and dependency evidence, vocabulary/context
+boundaries, deliberately deferred details, vertical-slice verification, residual risk,
+and the next operator-confirmation point for any write-impacting implementation."""
     if source_path == "principles/30-gates-that-cannot-bootstrap.md":
         return """# Gates That Cannot Bootstrap Themselves
 

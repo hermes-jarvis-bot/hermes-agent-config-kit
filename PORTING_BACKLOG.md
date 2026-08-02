@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 26 | 4 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 46 | 113 |
+| `skills/` | 159 | 59 | 100 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **116** | **278** |
+| **Total** | **394** | **129** | **265** |
 
 ## Ported so far
 
@@ -90,6 +90,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/operational/cross-harness-continuation/references/CONTINUITY.example.json` | `hermes/skills/cross-harness-continuation/references/continuity-contract-example.md` |
 | `skills/operational/observability-monitoring/SKILL.md` | `hermes/skills/observability-monitoring/SKILL.md` |
 | `skills/operational/observability-monitoring/references/source-notes.md` | `hermes/skills/observability-monitoring/references/source-notes.md` |
+| `skills/development/architecture-first/` (13 reviewed markdown files) | `hermes/skills/architecture-first/` (flat package with Clean Architecture and domain-driven design references) |
 | `templates/proof-plan.md` | `hermes/templates/proof-plan.md` |
 | `templates/agent-task/handoff.md` | `hermes/templates/agent-task-handoff.md` |
 | `templates/agent-task/fix-log.md` | `hermes/templates/agent-task-fix-log.md` |
@@ -448,9 +449,10 @@ below is eligible for automatic porting without a new operator matrix decision.
      — FLAT (same reason). Port `SKILL.md` + `references/source-notes.md` only;
      `agents/openai.yaml` is Codex-plugin manifest metadata (same class as
      `.claude-plugin/plugin.json`) and stays unported.
-  5. `skills/development/architecture-first/` → `hermes/skills/architecture-first/` — FLAT (the
-     `development` domain is already flat-ported: deep-review, repo-map, workflow-orchestration,
-     proof-verify). 13-file package (`SKILL.md` + 12 `references/`: Clean Architecture + DDD).
+  5. `skills/development/architecture-first/` → `hermes/skills/architecture-first/` — ported as
+     a FLAT 13-file markdown package (`SKILL.md` + 12 data-only Clean Architecture and
+     domain-driven-design references). It decides code placement and dependency/domain boundaries;
+     it explicitly excludes code-complexity, refactoring-safely, and system-and-data-design scope.
   6. `skills/development/code-complexity/` → `hermes/skills/code-complexity/` — FLAT. 22-file
      package (`SKILL.md` + Clean Code + Pragmatic Programmer + Software Design Philosophy
      references).
