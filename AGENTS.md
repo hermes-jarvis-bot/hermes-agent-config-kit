@@ -172,6 +172,7 @@ Current generated Hermes skills:
 - `multi-agent-task-decomposition`
 - `multi-session-coordination`
 - `mvp-agent-blueprint`
+- `gates-that-cannot-bootstrap`
 - `no-guessing`
 - `no-pre-existing-evasion`
 - `portable-project-context`

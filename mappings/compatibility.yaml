@@ -678,6 +678,14 @@ principles/29-mvp-agent-blueprint.md:
   description: Design a minimal useful agent with explicit domain intake, autonomy level, tool policy, safety gates, observability, and release checklist.
   risk: medium
 
+principles/30-gates-that-cannot-bootstrap.md:
+  status: supported
+  target: hermes/skills/gates-that-cannot-bootstrap/SKILL.md
+  type: principle_skill
+  name: gates-that-cannot-bootstrap
+  description: Design and verify adoption gates that report relevant missing controls without becoming noisy or trusting forgeable state signals.
+  risk: low
+
 principles/14-managed-agents.md:
   status: supported
   target: hermes/skills/managed-execution-boundaries/SKILL.md

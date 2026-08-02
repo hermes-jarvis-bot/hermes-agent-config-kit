@@ -27,14 +27,14 @@ rechecked against the pinned snapshot when this table changes.
 | `docs/` | 4 | 0 | 4 |
 | `evals/` | 2 | 0 | 2 |
 | `hooks/` | 44 | 0 | 44 |
-| `principles/` | 30 | 29 | 1 |
+| `principles/` | 30 | 30 | 0 |
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 25 | 5 |
 | `scripts/` | 35 | 0 | 35 |
 | `skills/` | 159 | 44 | 115 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **111** | **283** |
+| **Total** | **394** | **112** | **282** |
 
 ## Ported so far
 
@@ -127,6 +127,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `principles/27-feature-tracking.md` | `hermes/skills/long-run-feature-tracking/SKILL.md` |
 | `principles/28-feature-layer-architecture.md` | `hermes/skills/feature-layer-architecture/SKILL.md` |
 | `principles/29-mvp-agent-blueprint.md` | `hermes/skills/mvp-agent-blueprint/SKILL.md` |
+| `principles/30-gates-that-cannot-bootstrap.md` | `hermes/skills/gates-that-cannot-bootstrap/SKILL.md` |
 | `rules/activity-journal-and-state-registry.md` | `hermes/skills/activity-journal-and-state-registry/SKILL.md` |
 | `rules/folder-lifecycle-labels.md` | `hermes/skills/folder-lifecycle-classification/SKILL.md` |
 | `rules/file-organization-cohesion.md` | `hermes/skills/file-organization-cohesion/SKILL.md` |
@@ -422,17 +423,14 @@ below is eligible for automatic porting without a new operator matrix decision.
      package is ported as data-only design guidance (`SKILL.md` + 6 `references/`: architectures,
      encoders-data, eval-debug, memory, samplers, training). Model downloads, workload launch,
      GPU changes, deployment, and spend remain separate approved protocols.
-- **⚠️ Upstream drift before queue #4:** the pinned snapshot (`c26589a`, 2026-07-13) is 48
-  commits behind upstream `b293615` (2026-08-02). `scripts/sync_upstream.py --sync` must run
-  first (snapshot refresh + regeneration of all current `SUPPORTED` entries + report +
-  lockfile advance) before queue #4's sources are readable locally. Check the sync report's
-  `manual-reapproval` bucket for hand-adapted (hardcoded-override) sources with upstream
-  changes — note them for separate operator re-review, do not auto-accept or auto-port them.
+- **Upstream sync before queue #4:** completed at `b293615` (2026-08-02); the snapshot and
+  report are current. The report identifies 13 `manual-reapproval` sources with upstream
+  changes; they remain separate operator re-review work and are not auto-accepted or ported.
 - **Domain queue #4 (operator-approved 2026-08-02; all vetted clean on 4 axes + leak sweep +
   full-text read; port in order, one per run):**
   1. `principles/30-gates-that-cannot-bootstrap.md` → `hermes/skills/gates-that-cannot-bootstrap/SKILL.md`
-     — single file, principles fast-lane; a meta-principle about opt-in gates that stay silent
-     precisely where they're needed most (the population that never adopted the gate).
+     — ported as a single-file, Hermes-native design and verification module for opt-in gates
+     that would otherwise stay silent where adoption is missing; it does not activate controls.
   2. `rules/verify-git-currency-first.md` → `hermes/skills/verify-git-currency-first/SKILL.md`
      — single file; an explicit specialization of the already-ported `no-guessing` (complementary,
      not a duplicate).
@@ -606,7 +604,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.33` |
+| Latest released tag | `v0.3.36` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
