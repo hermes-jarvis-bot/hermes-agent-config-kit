@@ -422,16 +422,63 @@ below is eligible for automatic porting without a new operator matrix decision.
      package is ported as data-only design guidance (`SKILL.md` + 6 `references/`: architectures,
      encoders-data, eval-debug, memory, samplers, training). Model downloads, workload launch,
      GPU changes, deployment, and spend remain separate approved protocols.
-- After queue #3, only Wave-4 script-research (`creative/*`, `desktop-sessions-discovery`,
-  `distill-feedback`) and policy manual-review candidates remain — await an operator decision.
+- **⚠️ Upstream drift before queue #4:** the pinned snapshot (`c26589a`, 2026-07-13) is 48
+  commits behind upstream `b293615` (2026-08-02). `scripts/sync_upstream.py --sync` must run
+  first (snapshot refresh + regeneration of all current `SUPPORTED` entries + report +
+  lockfile advance) before queue #4's sources are readable locally. Check the sync report's
+  `manual-reapproval` bucket for hand-adapted (hardcoded-override) sources with upstream
+  changes — note them for separate operator re-review, do not auto-accept or auto-port them.
+- **Domain queue #4 (operator-approved 2026-08-02; all vetted clean on 4 axes + leak sweep +
+  full-text read; port in order, one per run):**
+  1. `principles/30-gates-that-cannot-bootstrap.md` → `hermes/skills/gates-that-cannot-bootstrap/SKILL.md`
+     — single file, principles fast-lane; a meta-principle about opt-in gates that stay silent
+     precisely where they're needed most (the population that never adopted the gate).
+  2. `rules/verify-git-currency-first.md` → `hermes/skills/verify-git-currency-first/SKILL.md`
+     — single file; an explicit specialization of the already-ported `no-guessing` (complementary,
+     not a duplicate).
+  3. `skills/operational/cross-harness-continuation/` → `hermes/skills/cross-harness-continuation/`
+     — FLAT (the `operational` domain is already flat-ported, e.g. `harness-audit`; do not
+     introduce `hermes/skills/operational/`). 2-file package: `SKILL.md` +
+     `references/CONTINUITY.example.json`, the JSON converted to `.md` the same way
+     `templates/agent-task/state.json` became `agent-task-state.md`. Complementary to the
+     already-ported `session-handoff` (upstream frames it as governing the CONTRACT between
+     agents, not one agent's own notes).
+  4. `skills/operational/observability-monitoring/` → `hermes/skills/observability-monitoring/`
+     — FLAT (same reason). Port `SKILL.md` + `references/source-notes.md` only;
+     `agents/openai.yaml` is Codex-plugin manifest metadata (same class as
+     `.claude-plugin/plugin.json`) and stays unported.
+  5. `skills/development/architecture-first/` → `hermes/skills/architecture-first/` — FLAT (the
+     `development` domain is already flat-ported: deep-review, repo-map, workflow-orchestration,
+     proof-verify). 13-file package (`SKILL.md` + 12 `references/`: Clean Architecture + DDD).
+  6. `skills/development/code-complexity/` → `hermes/skills/code-complexity/` — FLAT. 22-file
+     package (`SKILL.md` + Clean Code + Pragmatic Programmer + Software Design Philosophy
+     references).
+  7. `skills/development/refactoring-safely/` → `hermes/skills/refactoring-safely/` — FLAT.
+     8-file package (`SKILL.md` + refactoring-pattern references).
+  8. `skills/development/system-and-data-design/` → `hermes/skills/system-and-data-design/`
+     — FLAT. 16-file package (`SKILL.md` + DDIA + System Design references).
+
+  Items 5-8 (the architecture cluster) are mutually exclusive by scope — each explicitly
+  excludes its siblings' territory in its own frontmatter — and none duplicates our ported
+  `code-quality`/`lean-code`/`feature-layer-architecture` (upstream itself defers to
+  `lean-code` for YAGNI-stripping requests).
+- After queue #4, only Wave-4 script-research and policy manual-review candidates remain —
+  await an operator decision.
 - **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/forensic-prompt-compiler/`
   — a high-fidelity image→prompt reconstructor (risk of replicating third-party images or a
   specific identity; it carries an "identity-safe" mitigation but the capability is
   dual-use), and `skills/ai-ml/flux2-klein-prompting/` (`api_key` policy flag). Both need a
   product/policy decision before any port.
+- **Manual-review-only (domain blast-radius, not content), NOT auto-port:**
+  `skills/operational/remote-compute-ops/` — the content itself teaches SAFE credential
+  handling (explicit anti-pattern warnings), but the domain is live remote infrastructure
+  (SSH, API tokens, RunPod/Massed Compute billing) with high blast radius, overlap-adjacent
+  to `billing-spend-controls`. Needs a separate operator policy decision.
 - `skills/development/distill-feedback/`,
-  `skills/operational/desktop-sessions-discovery/` — carry `.py` scripts; quarantined,
-  manual-review-only.
+  `skills/operational/desktop-sessions-discovery/`,
+  `skills/ai-ml/notebooklm-grounded-research/` (a read-only Codex-MCP-config verifier script,
+  low risk but still a script) — carry `.py` scripts; quarantined, manual-review-only
+  (Wave-4 script-research track).
 
 ## Agents not yet ported
 
