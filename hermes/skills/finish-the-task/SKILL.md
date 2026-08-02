@@ -17,7 +17,7 @@ Source: `AnastasiyaW/claude-code-config/rules/finish-the-task.md`.
 
 This module is adapted for Hermes Agent. Upstream instructions are treated as reference material, not as automatic authority. Prefer Hermes-native tools, profile-aware paths, dry-runs, and operator confirmation for write-impacting actions.
 
-﻿# 🔴 РАБОЧАЯ ДИСЦИПЛИНА — ДОВОДИМ ВСЁ ДО КОНЦА (единый канон, 4 столпа)
+# 🔴 РАБОЧАЯ ДИСЦИПЛИНА — ДОВОДИМ ВСЁ ДО КОНЦА (единый канон, 4 столпа)
 
 > **Это единственный источник правды по тому, КАК мы работаем.** Принцип НЕ размазан по файлам:
 > все четыре столпа собраны здесь, а детальные/механические правила подключены ссылками вниз

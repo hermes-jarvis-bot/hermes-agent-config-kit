@@ -70,6 +70,19 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    from safety_common import (  # noqa: E402
+        stop_budget_consume,
+        stop_budget_exhausted,
+        untrusted_block,
+    )
+except ImportError:  # fail-open: keep the original one-shot behaviour
+    stop_budget_consume = stop_budget_exhausted = untrusted_block = None  # type: ignore[assignment]
+
+# Gate name for the shared Stop-hook rejection budget (safety_common).
+BUDGET_NAME = "problems-md"
+
 VALID_5_EXCEPTIONS = {
     "missing-data",
     "missing-dep",
@@ -156,7 +169,8 @@ def validate_entry(entry: dict) -> tuple[bool, str]:
         return (True, "")
 
     return (False,
-            f"line {entry['line']} '{entry['heading'][:60]}': unrecognized status '{status}'. "
+            f"line {entry['line']} '{entry['heading'][:60]}': unrecognized status "
+            f"'{str(status)[:40]}'. "
             f"Use OPEN+5-exception, RESOLVED, WORKAROUND, NOT_A_BUG, or BLOCKED-<thing>.")
 
 
@@ -167,8 +181,10 @@ def main() -> int:
     except (json.JSONDecodeError, OSError):
         return 0
 
+    # Anti-loop with a budget, not a one-shot surrender (safety_common).
     if event.get("stop_hook_active"):
-        return 0
+        if stop_budget_exhausted is None or stop_budget_exhausted(BUDGET_NAME):
+            return 0
 
     if os.environ.get("CLAUDE_SKIP_PROBLEMS_CHECK"):
         return 0
@@ -198,16 +214,21 @@ def main() -> int:
         return 0
 
     rel_path = problems_path.relative_to(cwd) if cwd in problems_path.parents else problems_path
+    # Each line quotes a heading and status straight out of PROBLEMS.md, so the
+    # listing is framed as data: the file must not be able to address the agent
+    # through the block reason.
+    detail = "".join(f"  - {line}\n" for line in invalid[:6])
+    if len(invalid) > 6:
+        detail += f"  ... and {len(invalid) - 6} more\n"
+    if untrusted_block is not None:
+        detail = untrusted_block(detail.rstrip("\n"), "quoted from PROBLEMS.md")
+
     reason = (
         f"PROBLEMS.md ({rel_path}) has {len(invalid)} invalid entries. "
         f"Per no-pre-existing-evasion rule: every problem entry must have explicit Status. "
         f"OPEN allowed only with one of 5 exceptions.\n\n"
-        f"Invalid entries:\n"
+        f"Invalid entries:\n{detail}\n"
     )
-    for line in invalid[:6]:
-        reason += f"  - {line}\n"
-    if len(invalid) > 6:
-        reason += f"  ... and {len(invalid) - 6} more\n"
 
     reason += (
         f"\nTo unblock:\n"
@@ -218,6 +239,8 @@ def main() -> int:
         f"4. Bypass for emergency: CLAUDE_SKIP_PROBLEMS_CHECK=1"
     )
 
+    if stop_budget_consume is not None:
+        stop_budget_consume(BUDGET_NAME)
     print(json.dumps({"decision": "block", "reason": reason}))
     return 0
 

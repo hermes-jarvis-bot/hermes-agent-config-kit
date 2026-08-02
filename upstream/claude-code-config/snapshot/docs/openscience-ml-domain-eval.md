@@ -46,4 +46,3 @@ explainability, and inference deployment choices.
 - Added unit test: `scripts/test_openscience_skill_inventory.py`.
 - Added compact skill: `skills/ai-ml/ml-research-lab/SKILL.md`.
 - Verified on the real OpenScience checkout: 292 skills inventoried.
-

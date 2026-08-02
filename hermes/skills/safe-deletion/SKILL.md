@@ -52,4 +52,4 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
 - `a reviewed guard candidate` (post-action verification concept) — проверяет, что destructive-операция реально завершилась.
 
 Related upstream references, review before porting: AGENTS.md or project guidance «Anti-Fabrication» («Deletion = re-verification»),
-`system-verification-independent.md`, `safety-hooks.md`.
+`system-verification-independent.md`, `safety.md`.

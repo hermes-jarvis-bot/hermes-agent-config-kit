@@ -1,10 +1,22 @@
-﻿# Claude Code + Codex Agent Configuration System
+# Claude Code + Codex Agent Configuration System
 
 [![OKF v0.1 compliant](https://img.shields.io/badge/OKF-v0.1%20compliant-4285F4)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
 
 A practical configuration kit for Claude Code, Codex, and other coding agents. It contains architectural principles, enforcement hooks, skills, drop-in rules, starter templates, and dynamic-workflow commands. Drop the relevant parts into a project so the agent starts from verified working patterns instead of rediscovering them every session.
 
 This is not a collection of tips. It is a **system** that teaches your agent *how to work* - when to use one agent vs many, how to verify its own output, how to manage context across long sessions, how to not get poisoned by malicious packages.
+
+## Notes
+
+Write-ups of the incidents that produced a rule or a hook here. Each states what was measured,
+what is inference, and what the fix does not cover.
+
+| | |
+|---|---|
+| **[Starting from what you remember](docs/starting-from-what-you-remember.md)** | Why a brand-new project arrives years out of date, why an invented package name is now a security problem rather than a 404, and where a dependency check has to sit to catch either. Ships as [`hooks/dependency-currency-guard.py`](hooks/dependency-currency-guard.py). |
+| **[Why an agent circles instead of acting](docs/why-agents-circle-instead-of-acting.md)** | Two agents, identical rules, different gate shapes. Describing a fix instead of applying it turned out to be the only move with no gate on it. |
+| **[Gates that cannot bootstrap themselves](principles/30-gates-that-cannot-bootstrap.md)** | A check that only arms once the thing it checks for already exists will never arm. The failure looks exactly like compliance. |
+| **[Nine skills, one skeleton, and nobody reaching for them](docs/skills-organised-by-author.md)** | Nine architecture skills existed and one was reachable — the one arguing for less code. How a one-sided advisory becomes a ratchet toward monoliths, and why filing knowledge by source book makes it unreachable. |
 
 ---
 
@@ -68,6 +80,11 @@ See [AGENTS.md](AGENTS.md) for the procedure an agent follows after install,
 [HOW-IT-WORKS.md](HOW-IT-WORKS.md) for the mechanics of each layer, and
 [docs/runtime-wiring.md](docs/runtime-wiring.md) for the live verification contract.
 
+Moved the config to a new machine or account and most skills stopped being
+offered? Nothing raises an error when that happens — see
+[docs/skill-tree-recovery.md](docs/skill-tree-recovery.md) and run
+`python scripts/recover_skill_trees.py --report`.
+
 ---
 
 ## What This Gives You
@@ -101,6 +118,7 @@ See [AGENTS.md](AGENTS.md) for the procedure an agent follows after install,
 - **Feature rationale evaporates into git log after 6 weeks?** Three-tier KB (Global -> Layer -> Feature narrative) with ULTRAPACK-style task.md, auto-allocated F-NNN ID, hyperlinked invariants ([Feature-Layer Architecture](principles/28-feature-layer-architecture.md))
 - **Model collapses to "predict zero" on residual/delta tasks?** Traps and fixes for low-signal training (overlay maps, denoise deltas, color-correction residuals), from 4 rounds of real failure ([Low-Signal Residual Training](principles/12-low-signal-residual-training.md))
 - **Deep research results evaporate with the conversation?** Save structured findings to an incoming folder -> review -> knowledge base pipeline ([Research Pipeline](principles/13-research-pipeline.md))
+- **Need a human-browsable memory view without a second source of truth?** Use an optional Obsidian-compatible Markdown hub over the private archive ([Obsidian Mind adoption note](docs/research/obsidian-mind-adoption-2026-07-28.md))
 - **Building a brand-new agent and not sure what to decide first?** 15-section MVP blueprint: autonomy level -> tool risk classes -> permission matrix -> budgets -> evals -> release checklist ([MVP Agent Blueprint](principles/29-mvp-agent-blueprint.md))
 
 **Need smaller diagnostic command output?** The optional RTK integration is
@@ -133,6 +151,8 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [over-engineering-advisor](hooks/over-engineering-advisor.py) | `PostToolUse` | Advisory nudge when an edit adds a large code block or a new dependency — "is this the minimal solution?" (never blocks) |
 | [activity-journal-guard](hooks/activity-journal-guard.py) | `PreToolUse` | Enforces the shared activity journal — blocks a mutating command on a tracked shared resource that does not log to its journal |
 | [coord-claim-guard](hooks/coord-claim-guard.py) | `PreToolUse` | Claim-before-edit gate for multi-session / coord-enabled repos (blocks editing a file without an active claim) |
+| [continuity-contract-guard](hooks/continuity-contract-guard.py) | `PreToolUse` | Protects Claude/Codex continuation: no silent whole-file Write, out-of-scope edits, or near-whole-file replacement |
+| [continuity-session-check](hooks/continuity-session-check.py) | `SessionStart` | Surfaces the shared `.claude/continuity/CONTINUITY.json` contract and its preserve/do-not-redo decisions |
 | [cyrillic-bash-guard](hooks/cyrillic-bash-guard.py) | `PreToolUse` | Blocks raw non-ASCII (Cyrillic/CJK) in Windows Bash commands — encoding-corruption guard |
 | [feature-list-validator](hooks/feature-list-validator.py) | `Stop` | Validates feature_list.json discipline (WIP=1; `done` needs evidence) — companion to problems-md-validator |
 | [handoff-resume-gate](hooks/handoff-resume-gate.py) | `SessionStart` | Resume freshness-gate — complements session-handoff-check by gating on stale/unacknowledged handoffs |
@@ -147,11 +167,26 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [task-inbox-show](hooks/task-inbox-show.py) | `SessionStart` | Surfaces pending tasks from `.claude/task-inbox/` |
 | [plan-gate](hooks/plan-gate.py) | `UserPromptSubmit` | Non-blocking nudge: substantive build/refactor ask + no plan artifact in the project -> one-line "freeze acceptance criteria first" reminder (max once/day) |
 
+**Supporting hooks and shared utilities** (wire these when the project needs the corresponding workflow):
+
+| Hook | Event | What It Does |
+|---|---|---|
+| [conversation-history-capture](hooks/conversation-history-capture.py) | `Stop` | Archives the local session transcript for searchable continuation |
+| [directory-creation-guard](hooks/directory-creation-guard.py) | `PreToolUse` | Applies lifecycle labels and placement checks to new directories |
+| [docs-staleness-guard](hooks/docs-staleness-guard.py) | `SessionStart` | Surfaces stale project guidance before work begins |
+| [feedback-pending-show](hooks/feedback-pending-show.py) | `SessionStart` | Shows queued corrections waiting for review |
+| [git-source-gate](hooks/git-source-gate.py) | `Stop` | Checks that durable work is represented in Git before closure |
+| [github-workflow-security](hooks/github-workflow-security.py) | `PreToolUse` | Adds a security checklist before editing GitHub Actions workflows |
+| [kb-validate-gate](hooks/kb-validate-gate.py) | `Stop` | Runs the project knowledge-base validator when opted in |
+| [session-feedback-capture](hooks/session-feedback-capture.py) | `Stop` | Queues durable correction notes without blocking session closure |
+| [safety_common.py](hooks/safety_common.py) | shared | Shared event parsing and decision helpers for opt-in hooks |
 **Starter templates** for common project types: [web-app](templates/CLAUDE-web-app.md), [ML project](templates/CLAUDE-ml-project.md), [library](templates/CLAUDE-library.md), [code review](templates/REVIEW.md), [project chronicle](templates/chronicle.md), [memory files](templates/memory-project.md), [memory reference](templates/memory-reference.md), [proof plan](templates/proof-plan.md), [bug-fix prompt](templates/bug-fix-prompt.md) (anti-"pre-existing" constraints baked in), [long-run project harness pack](templates/long-run-project/) (drop-in `feature_list.schema.json` + `feature_list.template.json` + `init.sh.template` for any project crossing 5+ features and 5+ sessions).
 
 **Dynamic workflow commands** ([workflows/](workflows/)) - ready-to-drop `.js` orchestration scripts for Claude Code dynamic workflows (`/deep-review-flow`, `/research-cn-ru`) plus [EFFECTIVE-AGENTS.md](workflows/EFFECTIVE-AGENTS.md) - measured cost lessons (one `agent()` ≈ 95-150k tokens; resume as the main economy lever).
 
 **Cross-harness setup** ([rules/cross-harness-agents-md.md](rules/cross-harness-agents-md.md)) - share one `AGENTS.md` per project between Claude Code, Gemini CLI, and Codex without symlinks: Claude imports it via `@AGENTS.md`, Gemini reads it via `context.fileName`, Codex natively. Companion skill [gemini-delegate](skills/operational/gemini-delegate/SKILL.md) covers multi-account Gemini CLI delegation (quota ladders, account switcher [scripts/gemini-switch.sh](scripts/gemini-switch.sh), trust boundaries).
+
+For serial Claude/Codex handoff, use the [cross-harness-continuation](skills/operational/cross-harness-continuation/) contract. It records the Git baseline, claimed files, accepted decisions, rejected approaches, and verification. The guard blocks silent rewrites and scope drift; an intentional redesign must use an explicit, reasoned `replan` mode.
 
 **Your agent picks the approach that fits.** The [alternatives/](alternatives/) directory compares 2-5 approaches for each problem, with pros, cons, and "when to choose" guidance:
 

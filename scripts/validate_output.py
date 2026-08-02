@@ -32,6 +32,7 @@ FORBIDDEN_GENERATED_HARNESS_PATTERNS = (
     r"claude-code-config[\\/](?:hooks|scripts)[\\/]",
     r"\.hermes-compatible project artefacts/",
     r"\b[A-Za-z0-9_-]+-(?:guard|gate|hook|validator|reminder|check)\.py\b",
+    r"\bpython(?:3)?[ \t]+[^\n]*?(?:scripts/|access_inventory)",
 )
 GENERATED_PROVENANCE_MARKERS = (
     "Adapted for Hermes Agent by hermes-agent-config-kit.",

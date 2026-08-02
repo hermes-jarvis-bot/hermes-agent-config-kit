@@ -670,6 +670,18 @@ def snapshot_is_complete(sha: str) -> bool:
     )
 
 
+def normalize_snapshot_text(root: Path) -> None:
+    """Keep text snapshot data compatible with the repository's diff gate."""
+    text_suffixes = {".md", ".py", ".json", ".jsonl", ".yaml", ".yml", ".js", ".sh"}
+    for path in root.rglob("*"):
+        if not path.is_file() or path.suffix not in text_suffixes:
+            continue
+        text = path.read_text(encoding="utf-8")
+        normalized = re.sub(r"\n[ \t]*\n+\Z", "\n", text)
+        if normalized != text:
+            path.write_text(normalized, encoding="utf-8")
+
+
 def download_snapshot(sha: str) -> None:
     url = f"https://github.com/{UPSTREAM_REPO}/archive/{sha}.tar.gz"
     with tempfile.TemporaryDirectory() as td:
@@ -689,6 +701,7 @@ def download_snapshot(sha: str) -> None:
         backup = SNAPSHOT.parent / ".snapshot-previous"
         try:
             shutil.copytree(roots[0], staged_snapshot)
+            normalize_snapshot_text(staged_snapshot)
             if backup.exists():
                 shutil.rmtree(backup)
             if SNAPSHOT.exists():
@@ -744,6 +757,32 @@ def adapt_text(text: str) -> str:
 
 
 def adapt_source_text(source_path: str, text: str) -> str:
+    if source_path == "rules/no-guessing.md":
+        text = re.sub(
+            r"\n## 🔴 «Проверить не могу».*?(?=\n## )",
+            """
+## Проверка доступности — это тоже проверяемое утверждение
+
+Отказ от проверки не должен подменять собой диагностику. Прежде чем сообщать,
+что доступ, разрешение или подходящий интерфейс отсутствует, выполните
+read-only discovery через уже одобренные для проекта средства: документацию,
+явно предоставленные конфигурационные записи, состояние доступа и безопасные
+проверки интерфейса. Не запускайте утилиты, взятые из внешнего snapshot, и не
+ищите или не раскрывайте значения access credentials.
+
+- Если подходящий одобренный доступ подтверждён, используйте его только в
+  пределах разрешённого протокола и приведите минимальное evidence.
+- Если он не подтверждён, сообщите точный недостающий scope, credential или
+  endpoint. Это blocker с конкретным следующим шагом, а не предположение.
+- Ошибка авторизации или 403 требует проверки назначенных прав и области
+  действия; она не доказывает, что других одобренных путей не существует.
+
+""",
+            text,
+            count=1,
+            flags=re.DOTALL,
+        )
+        return adapt_text(text)
     if source_path.startswith("skills/ai-ml/diffusion-engineering/"):
         return "\n".join(line.rstrip() for line in text.splitlines()) + "\n"
     if source_path == "skills/ai-ml/vlm-segmentation/SKILL.md":

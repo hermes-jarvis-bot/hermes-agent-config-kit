@@ -4,6 +4,42 @@ Changelog for claude-code-skills. Newest first.
 
 ---
 
+## 2026-07-31 (v3.34.0 - skill-tree recovery after a machine/account move)
+
+- Added `scripts/recover_skill_trees.py`: diagnoses and repairs skill trees that
+  a machine or account move left half-copied. Union fill — a directory that
+  already carries a `SKILL.md` is authoritative and is never overwritten, so the
+  run is idempotent; nothing is deleted.
+- Added [docs/skill-tree-recovery.md](docs/skill-tree-recovery.md) describing the
+  four ways a skill disappears without any error being raised: a dangling
+  cross-profile junction/symlink, an empty directory shell, a UTF-8 BOM before
+  the opening `---`, and a stale copy that lost its `name:` field.
+- The dangling-link case also breaks the *diagnosis*: `iterdir() + is_dir()`
+  follows the link, gets `False`, and drops the entry, so a tree of 107 dead
+  junctions reported "no problems". The script enumerates raw directory entries
+  and classifies non-resolving ones as `BROKEN_LINK`, printing where each pointed.
+- Documented how to merge two live trees that were edited independently: resolve
+  per file on evidence, because neither side is automatically newer, and never
+  propagate a line where a skill references its own `scripts/` directory.
+- Wired the check into [docs/runtime-wiring.md](docs/runtime-wiring.md) as a
+  runtime-contract row, and added the `обвязка` / `wiring` / `account-migration`
+  keywords. (GitHub topics reject non-ASCII, so the repo carries `harness`,
+  `agent-harness` and `wiring` there instead.)
+
+## 2026-07-22 (v3.33.0 - grounded NotebookLM research)
+
+- Added `skills/ai-ml/notebooklm-grounded-research` for large stable
+  documentation, courses, books, and papers with citation-preserving answers.
+- Added a keyword route for NotebookLM without making the optional browser
+  bridge mandatory for unrelated research.
+- Pinned the documented integration to `notebooklm-mcp@2.0.0` with the Codex
+  `minimal` profile (5 tools), and added a read-only setup verifier.
+- Added explicit trust, privacy, source-ingestion, and authentication bounds:
+  the bridge is community browser automation, not an official API; live code,
+  official docs, and tests remain authoritative.
+- Verified the route, skill lint, lock/catalog, lifecycle contracts, pinned
+  package age, stdio startup, and `tools/list` with the minimal profile.
+
 ## 2026-06-28 (v3.32.0 — skill description discipline + skill-lint)
 
 Applied the Google *Agent Skills* whitepaper (May 2026) description discipline to the whole skill
@@ -277,14 +313,14 @@ UPDATED HOW-IT-WORKS.md, alternatives/agent-mailbox-system.md, principles/19-int
 - Sanitization: replaced specific deployment name + 3 person-name role assignments with generic role descriptions (planner / executor / reviewer). The pattern stays intact; the case study just becomes provider-neutral.
 
 UPDATED rules/no-guessing.md, rules/verify-at-consumer.md
-- Replaced "Илюхина's Claude" attribution with "a collaborator's parallel Claude session" (idea attribution preserved, person name removed)
+- Replaced a personal-name attribution with "a collaborator's parallel Claude session" (idea attribution preserved, person name removed)
 
 UPDATED rules/long-run-harness.md
 - Replaced 3 broken author-workspace `.claude/rules/...` cross-refs with `project-level .claude/rules/...` (in the public repo they read as broken pointers)
 
 UPDATED UPDATES.md (historic entries)
 - v3.7.1 entry: replaced 3 specific project mentions with generic descriptors
-- v3.20.x entry: "Илюхина's Claude" attribution updated
+- v3.20.x entry: personal-name attribution updated
 - Inter-Agent Mail v3.18 entry: production validation reference made provider-neutral
 
 **Local-only changes (not in public repo, documented here for reference):**
@@ -2956,4 +2992,3 @@ The `mderk/memento` repo appears to have been removed from GitHub. All reference
 ## Core Working Rules added (2026-06-07)
 
 Five hard user-directive rules added to rules/: secrets-as-data, quality-no-monkey-patch, finish-the-task, quality-over-tokens-independent-verify, deletion-confirm-and-verify. Registered in CLAUDE.md 'Core Working Rules'. Mirror existing safety hooks (stop-phrase-guard, human-confirmation-guard, verify-deleted-guard, pre-push public-repo scan).
-

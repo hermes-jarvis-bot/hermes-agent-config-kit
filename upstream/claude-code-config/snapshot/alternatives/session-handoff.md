@@ -1,6 +1,6 @@
 ---
 related_principles: [16, 18]
-last_reviewed: 2026-04-14
+last_reviewed: 2026-07-22
 ---
 
 # Session Handoff: Seamless Transitions Between Sessions
@@ -354,7 +354,7 @@ covers:
   - ...
   - session-12_ci-pipeline
 through: 2026-03-15 18:00
-author: ani
+author: reviewer
 ---
 
 # Rollup — March weeks 1-3

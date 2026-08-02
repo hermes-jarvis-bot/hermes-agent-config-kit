@@ -276,5 +276,3 @@ Output ONE prompt in English. No JSON. No explanations. No preamble. Just the pr
 ---
 
 ## QUICK DECISION TREE
-
-
