@@ -726,6 +726,37 @@ skills/development/refactoring-safely/references/refactoring-patterns/smell-cata
   description: Reference code-smell signals and candidate behaviour-preserving transformations.
   risk: medium
 
+skills/development/system-and-data-design/SKILL.md:
+  status: supported
+  target: hermes/skills/system-and-data-design/SKILL.md
+  type: skill
+  name: system-and-data-design
+  description: Plan and review capacity, storage, data flow, consistency, resilience, and scaling decisions from measured requirements without provisioning infrastructure.
+  risk: medium
+
+skills/development/system-and-data-design/references/ddia-systems-original.md:
+  status: supported
+  target: hermes/skills/system-and-data-design/references/ddia-systems-original.md
+  type: reference
+  name: system-and-data-design-ddia-original
+  description: Reference data-intensive-systems framework prose as reviewed design material.
+  risk: medium
+
+skills/development/system-and-data-design/references/ddia-systems/batch-stream.md: {status: supported, target: hermes/skills/system-and-data-design/references/ddia-systems/batch-stream.md, type: reference, name: system-and-data-design-batch-stream, description: Reference batch and stream processing trade-offs for reviewed data-flow design., risk: medium}
+skills/development/system-and-data-design/references/ddia-systems/data-models.md: {status: supported, target: hermes/skills/system-and-data-design/references/ddia-systems/data-models.md, type: reference, name: system-and-data-design-data-models, description: Reference data-model and query-language trade-offs for reviewed storage design., risk: medium}
+skills/development/system-and-data-design/references/ddia-systems/fault-tolerance.md: {status: supported, target: hermes/skills/system-and-data-design/references/ddia-systems/fault-tolerance.md, type: reference, name: system-and-data-design-fault-tolerance, description: Reference fault-tolerance concepts for reviewed distributed-system design., risk: medium}
+skills/development/system-and-data-design/references/ddia-systems/partitioning.md: {status: supported, target: hermes/skills/system-and-data-design/references/ddia-systems/partitioning.md, type: reference, name: system-and-data-design-partitioning, description: Reference partitioning trade-offs and hotspot analysis for reviewed scaling design., risk: medium}
+skills/development/system-and-data-design/references/ddia-systems/replication.md: {status: supported, target: hermes/skills/system-and-data-design/references/ddia-systems/replication.md, type: reference, name: system-and-data-design-replication, description: Reference replication, lag, and conflict trade-offs for reviewed data design., risk: medium}
+skills/development/system-and-data-design/references/ddia-systems/storage-engines.md: {status: supported, target: hermes/skills/system-and-data-design/references/ddia-systems/storage-engines.md, type: reference, name: system-and-data-design-storage-engines, description: Reference storage-engine and indexing trade-offs for reviewed workload design., risk: medium}
+skills/development/system-and-data-design/references/ddia-systems/transactions.md: {status: supported, target: hermes/skills/system-and-data-design/references/ddia-systems/transactions.md, type: reference, name: system-and-data-design-transactions, description: Reference transaction and consistency trade-offs for reviewed data operations., risk: medium}
+skills/development/system-and-data-design/references/system-design-original.md: {status: supported, target: hermes/skills/system-and-data-design/references/system-design-original.md, type: reference, name: system-and-data-design-system-design-original, description: Reference scalable-system framework prose as reviewed design material., risk: medium}
+skills/development/system-and-data-design/references/system-design/building-blocks.md: {status: supported, target: hermes/skills/system-and-data-design/references/system-design/building-blocks.md, type: reference, name: system-and-data-design-building-blocks, description: Reference infrastructure building-block trade-offs for reviewed system design., risk: medium}
+skills/development/system-and-data-design/references/system-design/common-designs.md: {status: supported, target: hermes/skills/system-and-data-design/references/system-design/common-designs.md, type: reference, name: system-and-data-design-common-designs, description: Reference common system-design patterns as reviewed starting points., risk: medium}
+skills/development/system-and-data-design/references/system-design/database-scaling.md: {status: supported, target: hermes/skills/system-and-data-design/references/system-design/database-scaling.md, type: reference, name: system-and-data-design-database-scaling, description: Reference database selection and scaling trade-offs for reviewed systems., risk: medium}
+skills/development/system-and-data-design/references/system-design/estimation-numbers.md: {status: supported, target: hermes/skills/system-and-data-design/references/system-design/estimation-numbers.md, type: reference, name: system-and-data-design-estimation-numbers, description: Reference capacity-estimation methods and assumptions for reviewed designs., risk: medium}
+skills/development/system-and-data-design/references/system-design/four-step-process.md: {status: supported, target: hermes/skills/system-and-data-design/references/system-design/four-step-process.md, type: reference, name: system-and-data-design-four-step-process, description: Reference a structured system-design review process., risk: medium}
+skills/development/system-and-data-design/references/system-design/reliability-operations.md: {status: supported, target: hermes/skills/system-and-data-design/references/system-design/reliability-operations.md, type: reference, name: system-and-data-design-reliability-operations, description: Reference reliability and operational-readiness trade-offs for reviewed designs., risk: medium}
+
 templates/proof-plan.md:
   status: supported
   target: hermes/templates/proof-plan.md

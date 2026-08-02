@@ -31,10 +31,10 @@ rechecked against the pinned snapshot when this table changes.
 | `references/` | 1 | 0 | 1 |
 | `rules/` | 30 | 26 | 4 |
 | `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 82 | 77 |
+| `skills/` | 159 | 98 | 61 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **160** | **234** |
+| **Total** | **394** | **176** | **218** |
 
 ## Ported so far
 
@@ -93,6 +93,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/development/architecture-first/` (13 reviewed markdown files) | `hermes/skills/architecture-first/` (flat package with Clean Architecture and domain-driven design references) |
 | `skills/development/code-complexity/` (22 reviewed markdown files) | `hermes/skills/code-complexity/` (flat package with Clean Code, Pragmatic Programmer, and Software Design Philosophy references) |
 | `skills/development/refactoring-safely/` (8 reviewed markdown files) | `hermes/skills/refactoring-safely/` (flat package with behaviour-preserving transformation references) |
+| `skills/development/system-and-data-design/` (16 reviewed markdown files) | `hermes/skills/system-and-data-design/` (flat package with DDIA and System Design references) |
 | `templates/proof-plan.md` | `hermes/templates/proof-plan.md` |
 | `templates/agent-task/handoff.md` | `hermes/templates/agent-task-handoff.md` |
 | `templates/agent-task/fix-log.md` | `hermes/templates/agent-task-fix-log.md` |
@@ -465,14 +466,18 @@ below is eligible for automatic porting without a new operator matrix decision.
      one verified step at a time, and explicit exclusions for architecture, local complexity,
      system design, and scope reduction.
   8. `skills/development/system-and-data-design/` → `hermes/skills/system-and-data-design/`
-     — FLAT. 16-file package (`SKILL.md` + DDIA + System Design references).
+     — ported as a FLAT 16-file markdown package (`SKILL.md` + 15 data-only DDIA and
+     System Design references). It reviews capacity, storage, data flow, consistency,
+     resilience, and scaling from stated requirements without provisioning infrastructure;
+     its scope explicitly excludes architecture-first, code-complexity, refactoring-safely,
+     and lean-code concerns.
 
   Items 5-8 (the architecture cluster) are mutually exclusive by scope — each explicitly
   excludes its siblings' territory in its own frontmatter — and none duplicates our ported
   `code-quality`/`lean-code`/`feature-layer-architecture` (upstream itself defers to
   `lean-code` for YAGNI-stripping requests).
-- After queue #4, only Wave-4 script-research and policy manual-review candidates remain —
-  await an operator decision.
+- Queue #4 is complete. Only Wave-4 script-research and policy manual-review candidates
+  remain; do not select a further port automatically. An operator decision is required.
 - **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/forensic-prompt-compiler/`
   — a high-fidelity image→prompt reconstructor (risk of replicating third-party images or a
   specific identity; it carries an "identity-safe" mitigation but the capability is

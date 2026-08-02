@@ -617,6 +617,26 @@ SUPPORTED = {
     "skills/development/refactoring-safely/references/refactoring-patterns/refactoring-workflow.md": {"target": "hermes/skills/refactoring-safely/references/refactoring-patterns/refactoring-workflow.md", "name": "refactoring-safely-workflow", "description": "Reference small-step refactoring, safety-net, rollback, and review guidance.", "type": "reference"},
     "skills/development/refactoring-safely/references/refactoring-patterns/simplifying-conditionals.md": {"target": "hermes/skills/refactoring-safely/references/refactoring-patterns/simplifying-conditionals.md", "name": "refactoring-safely-simplifying-conditionals", "description": "Reference behaviour-preserving conditional simplification transformations.", "type": "reference"},
     "skills/development/refactoring-safely/references/refactoring-patterns/smell-catalog.md": {"target": "hermes/skills/refactoring-safely/references/refactoring-patterns/smell-catalog.md", "name": "refactoring-safely-smell-catalog", "description": "Reference code-smell signals and candidate behaviour-preserving transformations.", "type": "reference"},
+    "skills/development/system-and-data-design/SKILL.md": {
+        "target": "hermes/skills/system-and-data-design/SKILL.md",
+        "name": "system-and-data-design",
+        "description": "Plan and review capacity, storage, data flow, consistency, resilience, and scaling decisions from measured requirements without provisioning infrastructure.",
+    },
+    "skills/development/system-and-data-design/references/ddia-systems-original.md": {"target": "hermes/skills/system-and-data-design/references/ddia-systems-original.md", "name": "system-and-data-design-ddia-original", "description": "Reference data-intensive-systems framework prose as reviewed design material.", "type": "reference"},
+    "skills/development/system-and-data-design/references/ddia-systems/batch-stream.md": {"target": "hermes/skills/system-and-data-design/references/ddia-systems/batch-stream.md", "name": "system-and-data-design-batch-stream", "description": "Reference batch and stream processing trade-offs for reviewed data-flow design.", "type": "reference"},
+    "skills/development/system-and-data-design/references/ddia-systems/data-models.md": {"target": "hermes/skills/system-and-data-design/references/ddia-systems/data-models.md", "name": "system-and-data-design-data-models", "description": "Reference data-model and query-language trade-offs for reviewed storage design.", "type": "reference"},
+    "skills/development/system-and-data-design/references/ddia-systems/fault-tolerance.md": {"target": "hermes/skills/system-and-data-design/references/ddia-systems/fault-tolerance.md", "name": "system-and-data-design-fault-tolerance", "description": "Reference fault-tolerance concepts for reviewed distributed-system design.", "type": "reference"},
+    "skills/development/system-and-data-design/references/ddia-systems/partitioning.md": {"target": "hermes/skills/system-and-data-design/references/ddia-systems/partitioning.md", "name": "system-and-data-design-partitioning", "description": "Reference partitioning trade-offs and hotspot analysis for reviewed scaling design.", "type": "reference"},
+    "skills/development/system-and-data-design/references/ddia-systems/replication.md": {"target": "hermes/skills/system-and-data-design/references/ddia-systems/replication.md", "name": "system-and-data-design-replication", "description": "Reference replication, lag, and conflict trade-offs for reviewed data design.", "type": "reference"},
+    "skills/development/system-and-data-design/references/ddia-systems/storage-engines.md": {"target": "hermes/skills/system-and-data-design/references/ddia-systems/storage-engines.md", "name": "system-and-data-design-storage-engines", "description": "Reference storage-engine and indexing trade-offs for reviewed workload design.", "type": "reference"},
+    "skills/development/system-and-data-design/references/ddia-systems/transactions.md": {"target": "hermes/skills/system-and-data-design/references/ddia-systems/transactions.md", "name": "system-and-data-design-transactions", "description": "Reference transaction and consistency trade-offs for reviewed data operations.", "type": "reference"},
+    "skills/development/system-and-data-design/references/system-design-original.md": {"target": "hermes/skills/system-and-data-design/references/system-design-original.md", "name": "system-and-data-design-system-design-original", "description": "Reference scalable-system framework prose as reviewed design material.", "type": "reference"},
+    "skills/development/system-and-data-design/references/system-design/building-blocks.md": {"target": "hermes/skills/system-and-data-design/references/system-design/building-blocks.md", "name": "system-and-data-design-building-blocks", "description": "Reference infrastructure building-block trade-offs for reviewed system design.", "type": "reference"},
+    "skills/development/system-and-data-design/references/system-design/common-designs.md": {"target": "hermes/skills/system-and-data-design/references/system-design/common-designs.md", "name": "system-and-data-design-common-designs", "description": "Reference common system-design patterns as reviewed starting points.", "type": "reference"},
+    "skills/development/system-and-data-design/references/system-design/database-scaling.md": {"target": "hermes/skills/system-and-data-design/references/system-design/database-scaling.md", "name": "system-and-data-design-database-scaling", "description": "Reference database selection and scaling trade-offs for reviewed systems.", "type": "reference"},
+    "skills/development/system-and-data-design/references/system-design/estimation-numbers.md": {"target": "hermes/skills/system-and-data-design/references/system-design/estimation-numbers.md", "name": "system-and-data-design-estimation-numbers", "description": "Reference capacity-estimation methods and assumptions for reviewed designs.", "type": "reference"},
+    "skills/development/system-and-data-design/references/system-design/four-step-process.md": {"target": "hermes/skills/system-and-data-design/references/system-design/four-step-process.md", "name": "system-and-data-design-four-step-process", "description": "Reference a structured system-design review process.", "type": "reference"},
+    "skills/development/system-and-data-design/references/system-design/reliability-operations.md": {"target": "hermes/skills/system-and-data-design/references/system-design/reliability-operations.md", "name": "system-and-data-design-reliability-operations", "description": "Reference reliability and operational-readiness trade-offs for reviewed designs.", "type": "reference"},
     "rules/cross-harness-agents-md.md": {
         "target": "hermes/skills/portable-project-context/SKILL.md",
         "name": "portable-project-context",
@@ -932,6 +952,52 @@ OpenTelemetry profiles remain under development and their specification is Alpha
 Treat profiling as an optional attribution signal and verify backend and agent
 support before making it a production dependency.
 """
+    if source_path == "skills/development/system-and-data-design/SKILL.md":
+        return """# System and Data Design
+
+Use this module to plan or review whether a system can meet a stated workload and
+where its data should live. It covers capacity estimates, data access patterns,
+storage, replication, partitioning, consistency, queues, and resilience. It is a
+read-only design protocol: it does not provision infrastructure, change a cloud
+account, create data stores, run migrations, deploy, or authorise spending.
+
+## Scope and exclusions
+
+Begin with the smallest credible deployment. Use `architecture-first` for module
+boundaries, dependency direction, and domain ownership; `code-complexity` for local
+function, interface, and readability concerns; `refactoring-safely` for a
+behaviour-preserving code transformation; and `lean-code` when the primary answer is
+to remove unjustified scope. This module does not turn a low-traffic internal tool
+into a distributed system merely because the diagram can accommodate one.
+
+## Read-only design protocol
+
+1. Establish functional behaviour, peak and expected load, payload and retention,
+   read/write mix, latency and staleness tolerance, failure tolerance, budget,
+   compliance, existing constraints, and what evidence is unavailable. Treat absent
+   requirements as a design blocker rather than inventing scale.
+2. Make order-of-magnitude estimates for requests, bandwidth, storage growth, working
+   set, recovery window, and limiting resource. Record assumptions and ranges; the
+   purpose is to choose an appropriate scale, not to manufacture false precision.
+3. Draw the smallest end-to-end data flow. Add a cache, queue, replica, partition, CDN,
+   or secondary store only against an observed or estimated bottleneck, and record the
+   new operational cost: invalidation, lag, ordering, duplicate delivery, conflicts,
+   recovery, or cross-partition complexity.
+4. Select data model, indexes, storage behaviour, replication, partitioning key, and
+   transaction or consistency guarantee from the access patterns and invariants. State
+   which reads may be stale, which operations require atomicity, how side effects are
+   made idempotent, and where data can be lost or replayed.
+5. Review the first failure at 10x expected load, dependency degradation behaviour,
+   observability needs, backup and restore evidence, rollback boundary, and the
+   operator-confirmation point before any infrastructure, data, billing, or deployment
+   action. Load individual references as reviewed data for the decision in question.
+
+## Output
+
+Report requirements and assumptions, estimates and limiting resource, proposed data
+flow, each component's explicit reason and cost, storage and consistency decisions,
+capacity and failure boundaries, verification evidence still needed, residual risk,
+and the next operator-confirmation point."""
     if source_path == "skills/operational/cross-harness-continuation/SKILL.md":
         return """# Cross-Harness Continuation
 

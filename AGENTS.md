@@ -138,6 +138,7 @@ Current generated Hermes skills:
 - `architecture-first` (with reviewed Clean Architecture and domain-driven design references; scope excludes code-complexity, refactoring-safely, and system-and-data-design)
 - `code-complexity` (with reviewed Clean Code, Pragmatic Programmer, and Software Design Philosophy references; scope excludes architecture-first, refactoring-safely, system-and-data-design, and lean-code)
 - `refactoring-safely` (with reviewed refactoring-pattern references; scope is behaviour-preserving transformations with characterization evidence and excludes architecture, local complexity, system design, and scope reduction)
+- `system-and-data-design` (with reviewed DDIA and System Design references; scope covers capacity, storage, data flow, consistency, resilience, and scaling, excluding architecture, local code complexity, refactoring, and scope reduction)
 - `deep-review`
 - `deterministic-orchestration`
 - `durable-context-maintenance`
