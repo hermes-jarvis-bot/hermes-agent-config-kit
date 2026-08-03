@@ -477,9 +477,8 @@ below is eligible for automatic porting without a new operator matrix decision.
   `lean-code` for YAGNI-stripping requests).
 - Queue #4 is complete.
 - **Track A — re-review 13 existing hand-adapted ports (operator-approved 2026-08-03),
-  surfaced by the sync report's `manual-reapproval` bucket**: 5/13 reviewed, 8 pending.
-  Pending sources: `rules/folder-lifecycle-labels.md`,
-  `rules/git-source-of-truth.md`, `rules/memory-maintenance.md`,
+  surfaced by the sync report's `manual-reapproval` bucket**: 6/13 reviewed, 7 pending.
+  Pending sources: `rules/git-source-of-truth.md`, `rules/memory-maintenance.md`,
   `rules/no-claude-attribution.md`, `rules/safety-billing.md`,
   `rules/silent-failure-detection.md`, `skills/development/proof-verify/SKILL.md`,
   and `skills/development/workflow-orchestration/SKILL.md`. For each, diff the upstream
@@ -511,6 +510,11 @@ below is eligible for automatic porting without a new operator matrix decision.
     adaptation already preserves durable-versus-disposable placement, hierarchy and
     cohesion checks, read-only preflight, and approval-gated relocation without importing
     the upstream advisory hook, `docs/layers/` convention, or other harness wiring.
+  - `rules/folder-lifecycle-labels.md` → `hermes/skills/folder-lifecycle-classification/SKILL.md`:
+    reviewed, no change needed. The upstream delta changes only the illustrative marker
+    field `project` from `retouch-app` to `example-app`; the Hermes adaptation deliberately
+    does not prescribe or create the upstream marker schema and already preserves the
+    recoverability taxonomy, read-only inspection, active-consumer checks, and confirmation-gated cleanup boundary.
 - **Domain queue #5 (operator-approved 2026-08-03; vetted clean on 4 axes + leak sweep +
   full-text read; port in order, one per run):**
   1. `rules/rlm-context-as-program.md` → `hermes/skills/rlm-context-as-program/SKILL.md`
