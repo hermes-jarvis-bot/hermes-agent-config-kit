@@ -1125,6 +1125,14 @@ rules/rlm-context-as-program.md:
   description: Plan bounded analysis of an artefact too large for one context window through metadata-first chunking, per-chunk evidence, synthesis, and explicit cost limits without activating recursive execution or delegation.
   risk: medium
 
+rules/moa-gemini-delegation-eval.md:
+  status: supported
+  target: hermes/skills/moa-gemini-delegation-eval/SKILL.md
+  type: rule_skill
+  name: moa-gemini-delegation-eval
+  description: Decide whether a multi-model panel is justified through bounded, representative evaluation of quality, evidence, latency, cost, and privacy without enabling delegation or sending prompts to external providers.
+  risk: medium
+
 rules/cross-harness-agents-md.md:
   status: supported
   target: hermes/skills/portable-project-context/SKILL.md

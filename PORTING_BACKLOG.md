@@ -29,12 +29,12 @@ rechecked against the pinned snapshot when this table changes.
 | `hooks/` | 44 | 0 | 44 |
 | `principles/` | 30 | 30 | 0 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 27 | 3 |
+| `rules/` | 30 | 28 | 2 |
 | `scripts/` | 35 | 0 | 35 |
 | `skills/` | 159 | 98 | 61 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **177** | **217** |
+| **Total** | **394** | **178** | **216** |
 
 ## Ported so far
 
@@ -148,6 +148,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/agent-docs-freshness.md` | `hermes/skills/documentation-freshness/SKILL.md` |
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
 | `rules/verify-git-currency-first.md` | `hermes/skills/verify-git-currency-first/SKILL.md` |
+| `rules/moa-gemini-delegation-eval.md` | `hermes/skills/moa-gemini-delegation-eval/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
 | `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
 | `rules/quality-code.md` | `hermes/skills/code-quality/SKILL.md` |
@@ -295,11 +296,10 @@ The following rules stayed out of MVP:
 
 
 - `rules/long-run-harness.md`
-- `rules/moa-gemini-delegation-eval.md`
 - `rules/no-pre-existing-evasion.md`
 - `rules/safety-hooks.md`
 
-The remaining rules require separate review. `rules/long-run-harness.md` overlaps `long-run-feature-tracking`; `rules/moa-gemini-delegation-eval.md` is the remaining approved Queue #5 item; `rules/no-pre-existing-evasion.md` needs a target-name and hook-link adaptation decision; `rules/safety-hooks.md` remains executable-adjacent and quarantined.
+The remaining rules require separate review. `rules/long-run-harness.md` overlaps `long-run-feature-tracking`; `rules/no-pre-existing-evasion.md` needs a target-name and hook-link adaptation decision; `rules/safety-hooks.md` remains executable-adjacent and quarantined.
 
 ## Skill packages not yet ported
 
@@ -497,11 +497,12 @@ below is eligible for automatic porting without a new operator matrix decision.
      synthesis, explicit coverage, and bounded cost controls. No upstream workflow path,
      executable helper, recursive execution, or delegation mechanism is carried over.
   2. `rules/moa-gemini-delegation-eval.md` →
-     `hermes/skills/moa-gemini-delegation-eval/SKILL.md` — single file (61 lines); gate
-     Mixture-of-Agents/multi-model-panel adoption behind empirical eval rather than vendor
-     hype. Not a duplicate of the operational `skills/operational/gemini-delegate/`
-     candidate (that one is delegation mechanics; this is the adoption decision). The "don't
-     send secrets to external Gemini prompts" line is a warning, not a credential mechanism.
+     `hermes/skills/moa-gemini-delegation-eval/SKILL.md` — ported as a single data-only
+     evaluation gate for multi-model adoption. It requires representative, bounded evidence
+     for quality, latency, cost, and privacy before any later implementation; it does not
+     enable delegation, select a provider, or send prompts. It is not a duplicate of the
+     operational `skills/operational/gemini-delegate/` candidate, which concerns delegation
+     mechanics rather than the adoption decision.
 - **Needs adaptation (not a fast-lane copy), pending a separate decision:**
   `rules/no-pre-existing-evasion.md` — a companion to the already-ported principle 26
   (`no-pre-existing-evasion` skill); carries the 5-exception taxonomy plus a dedicated
@@ -658,7 +659,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.45` |
+| Latest released tag | `v0.3.46` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
