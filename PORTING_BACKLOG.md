@@ -476,8 +476,48 @@ below is eligible for automatic porting without a new operator matrix decision.
   excludes its siblings' territory in its own frontmatter — and none duplicates our ported
   `code-quality`/`lean-code`/`feature-layer-architecture` (upstream itself defers to
   `lean-code` for YAGNI-stripping requests).
-- Queue #4 is complete. Only Wave-4 script-research and policy manual-review candidates
-  remain; do not select a further port automatically. An operator decision is required.
+- Queue #4 is complete.
+- **Track A — re-review 13 existing hand-adapted ports (operator-approved 2026-08-03),
+  surfaced by the sync report's `manual-reapproval` bucket** (their upstream sources
+  changed since our hand adaptation): `rules/agent-docs-freshness.md`,
+  `rules/autonomy-risk-tiers.md`, `rules/cross-harness-agents-md.md`,
+  `rules/edit-formats-and-tiering.md`, `rules/file-organization-cohesion.md`,
+  `rules/folder-lifecycle-labels.md`, `rules/git-source-of-truth.md`,
+  `rules/memory-maintenance.md`, `rules/no-claude-attribution.md`,
+  `rules/safety-billing.md`, `rules/silent-failure-detection.md`,
+  `skills/development/proof-verify/SKILL.md`,
+  `skills/development/workflow-orchestration/SKILL.md`. For each: diff the upstream
+  source against our current hand-adaptation, decide whether the change is material
+  (otherwise record "reviewed, no change needed"); this is a drift-assessment, not a
+  mechanical conversion — do not auto-accept or auto-port. One re-review counts as the
+  run's one artefact, same as a queue item.
+- **Domain queue #5 (operator-approved 2026-08-03; vetted clean on 4 axes + leak sweep +
+  full-text read; port in order, one per run):**
+  1. `rules/rlm-context-as-program.md` → `hermes/skills/rlm-context-as-program/SKILL.md`
+     — single file (63 lines); handling an artefact too large for the context window by
+     treating it as a variable and chunking/mapping/recursing over it via code instead of
+     inlining it (the RLM technique). Neutralize the one `~/.claude/workflows/rlm-explore.js`
+     mention as a harness-tooling reference; do not leave a literal `.claude/` path.
+  2. `rules/moa-gemini-delegation-eval.md` →
+     `hermes/skills/moa-gemini-delegation-eval/SKILL.md` — single file (61 lines); gate
+     Mixture-of-Agents/multi-model-panel adoption behind empirical eval rather than vendor
+     hype. Not a duplicate of the operational `skills/operational/gemini-delegate/`
+     candidate (that one is delegation mechanics; this is the adoption decision). The "don't
+     send secrets to external Gemini prompts" line is a warning, not a credential mechanism.
+- **Needs adaptation (not a fast-lane copy), pending a separate decision:**
+  `rules/no-pre-existing-evasion.md` — a companion to the already-ported principle 26
+  (`no-pre-existing-evasion` skill); carries the 5-exception taxonomy plus a dedicated
+  section linking 3 Claude Code hook files (test-gate-stop-hook.py,
+  problems-md-validator.py, stop-phrase-guard.py), not an incidental mention. Requires
+  stripping the hook links, keeping the taxonomy, and resolving a target-name collision
+  with the existing `no-pre-existing-evasion` skill (different source, same natural name —
+  needs a distinct target name or a manual content merge). Not auto-port.
+- **Not portable (infra-coupled, confirmed source):** `rules/long-run-harness.md` — the
+  direct source of the `feature_list.json`/`init.sh` convention already excluded by our
+  2026-07-13 general rule on upstream-KB-infrastructure-coupled content.
+- After queue #5 and Track A, only the `no-pre-existing-evasion` adaptation, Wave-4
+  script-research, and policy manual-review candidates remain; do not select a further
+  port automatically. An operator decision is required.
 - **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/forensic-prompt-compiler/`
   — a high-fidelity image→prompt reconstructor (risk of replicating third-party images or a
   specific identity; it carries an "identity-safe" mitigation but the capability is
