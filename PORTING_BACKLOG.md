@@ -477,19 +477,23 @@ below is eligible for automatic porting without a new operator matrix decision.
   `lean-code` for YAGNI-stripping requests).
 - Queue #4 is complete.
 - **Track A — re-review 13 existing hand-adapted ports (operator-approved 2026-08-03),
-  surfaced by the sync report's `manual-reapproval` bucket** (their upstream sources
-  changed since our hand adaptation): `rules/agent-docs-freshness.md`,
-  `rules/autonomy-risk-tiers.md`, `rules/cross-harness-agents-md.md`,
+  surfaced by the sync report's `manual-reapproval` bucket**: 1/13 reviewed, 12 pending.
+  Pending sources: `rules/autonomy-risk-tiers.md`, `rules/cross-harness-agents-md.md`,
   `rules/edit-formats-and-tiering.md`, `rules/file-organization-cohesion.md`,
   `rules/folder-lifecycle-labels.md`, `rules/git-source-of-truth.md`,
   `rules/memory-maintenance.md`, `rules/no-claude-attribution.md`,
   `rules/safety-billing.md`, `rules/silent-failure-detection.md`,
-  `skills/development/proof-verify/SKILL.md`,
-  `skills/development/workflow-orchestration/SKILL.md`. For each: diff the upstream
-  source against our current hand-adaptation, decide whether the change is material
-  (otherwise record "reviewed, no change needed"); this is a drift-assessment, not a
-  mechanical conversion — do not auto-accept or auto-port. One re-review counts as the
-  run's one artefact, same as a queue item.
+  `skills/development/proof-verify/SKILL.md`, and
+  `skills/development/workflow-orchestration/SKILL.md`. For each, diff the upstream
+  source against the current hand-adaptation and decide whether the change is material;
+  this is a drift assessment, not a mechanical conversion — do not auto-accept or
+  auto-port. One re-review counts as the run's one artefact, same as a queue item.
+
+  Re-review ledger:
+  - `rules/agent-docs-freshness.md` → `hermes/skills/documentation-freshness/SKILL.md`:
+    reviewed, no change needed. Upstream delta is path-scoping metadata plus a renamed
+    reference to an upstream safety rule; both are harness-specific wiring or naming and
+    do not alter the existing Hermes data-only, read-only freshness protocol.
 - **Domain queue #5 (operator-approved 2026-08-03; vetted clean on 4 axes + leak sweep +
   full-text read; port in order, one per run):**
   1. `rules/rlm-context-as-program.md` → `hermes/skills/rlm-context-as-program/SKILL.md`
@@ -659,7 +663,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.46` |
+| Latest released tag | `v0.3.48` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
