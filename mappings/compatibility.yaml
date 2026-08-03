@@ -1117,6 +1117,14 @@ rules/verify-git-currency-first.md:
   description: Establish current remote, local, and deployed Git state before diagnosing, editing, synchronising, deploying, or copying project trees.
   risk: low
 
+rules/rlm-context-as-program.md:
+  status: supported
+  target: hermes/skills/rlm-context-as-program/SKILL.md
+  type: rule_skill
+  name: rlm-context-as-program
+  description: Plan bounded analysis of an artefact too large for one context window through metadata-first chunking, per-chunk evidence, synthesis, and explicit cost limits without activating recursive execution or delegation.
+  risk: medium
+
 rules/cross-harness-agents-md.md:
   status: supported
   target: hermes/skills/portable-project-context/SKILL.md

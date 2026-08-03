@@ -192,6 +192,7 @@ Current generated Hermes skills:
 - `repo-map`
 - `repository-attribution-hygiene`
 - `research-intake`
+- `rlm-context-as-program`
 - `red-lines`
 - `safe-deletion`
 - `risk-tiered-autonomy`

@@ -29,12 +29,12 @@ rechecked against the pinned snapshot when this table changes.
 | `hooks/` | 44 | 0 | 44 |
 | `principles/` | 30 | 30 | 0 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 26 | 4 |
+| `rules/` | 30 | 27 | 3 |
 | `scripts/` | 35 | 0 | 35 |
 | `skills/` | 159 | 98 | 61 |
 | `templates/` | 47 | 13 | 34 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **176** | **218** |
+| **Total** | **394** | **177** | **217** |
 
 ## Ported so far
 
@@ -297,10 +297,9 @@ The following rules stayed out of MVP:
 - `rules/long-run-harness.md`
 - `rules/moa-gemini-delegation-eval.md`
 - `rules/no-pre-existing-evasion.md`
-- `rules/rlm-context-as-program.md`
 - `rules/safety-hooks.md`
 
-No remaining rule is a clear low-risk auto-conversion candidate. `rules/long-run-harness.md` overlaps `long-run-feature-tracking`; `rules/moa-gemini-delegation-eval.md` and `rules/rlm-context-as-program.md` require provider or orchestration review; `rules/safety-hooks.md` remains executable-adjacent and quarantined.
+The remaining rules require separate review. `rules/long-run-harness.md` overlaps `long-run-feature-tracking`; `rules/moa-gemini-delegation-eval.md` is the remaining approved Queue #5 item; `rules/no-pre-existing-evasion.md` needs a target-name and hook-link adaptation decision; `rules/safety-hooks.md` remains executable-adjacent and quarantined.
 
 ## Skill packages not yet ported
 
@@ -494,10 +493,9 @@ below is eligible for automatic porting without a new operator matrix decision.
 - **Domain queue #5 (operator-approved 2026-08-03; vetted clean on 4 axes + leak sweep +
   full-text read; port in order, one per run):**
   1. `rules/rlm-context-as-program.md` → `hermes/skills/rlm-context-as-program/SKILL.md`
-     — single file (63 lines); handling an artefact too large for the context window by
-     treating it as a variable and chunking/mapping/recursing over it via code instead of
-     inlining it (the RLM technique). Neutralize the one `~/.claude/workflows/rlm-explore.js`
-     mention as a harness-tooling reference; do not leave a literal `.claude/` path.
+     — ported as a single data-only module for metadata-first partitioning, evidence-backed
+     synthesis, explicit coverage, and bounded cost controls. No upstream workflow path,
+     executable helper, recursive execution, or delegation mechanism is carried over.
   2. `rules/moa-gemini-delegation-eval.md` →
      `hermes/skills/moa-gemini-delegation-eval/SKILL.md` — single file (61 lines); gate
      Mixture-of-Agents/multi-model-panel adoption behind empirical eval rather than vendor
@@ -660,7 +658,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.42` |
+| Latest released tag | `v0.3.45` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
