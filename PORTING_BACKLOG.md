@@ -477,12 +477,12 @@ below is eligible for automatic porting without a new operator matrix decision.
   `lean-code` for YAGNI-stripping requests).
 - Queue #4 is complete.
 - **Track A — re-review 13 existing hand-adapted ports (operator-approved 2026-08-03),
-  surfaced by the sync report's `manual-reapproval` bucket**: 2/13 reviewed, 11 pending.
-  Pending sources: `rules/cross-harness-agents-md.md`, `rules/edit-formats-and-tiering.md`,
-  `rules/file-organization-cohesion.md`, `rules/folder-lifecycle-labels.md`,
-  `rules/git-source-of-truth.md`, `rules/memory-maintenance.md`,
-  `rules/no-claude-attribution.md`, `rules/safety-billing.md`,
-  `rules/silent-failure-detection.md`, `skills/development/proof-verify/SKILL.md`, and
+  surfaced by the sync report's `manual-reapproval` bucket**: 3/13 reviewed, 10 pending.
+  Pending sources: `rules/edit-formats-and-tiering.md`, `rules/file-organization-cohesion.md`,
+  `rules/folder-lifecycle-labels.md`, `rules/git-source-of-truth.md`,
+  `rules/memory-maintenance.md`, `rules/no-claude-attribution.md`,
+  `rules/safety-billing.md`, `rules/silent-failure-detection.md`,
+  `skills/development/proof-verify/SKILL.md`, and
   `skills/development/workflow-orchestration/SKILL.md`. For each, diff the upstream
   source against the current hand-adaptation and decide whether the change is material;
   this is a drift assessment, not a mechanical conversion — do not auto-accept or
@@ -498,6 +498,10 @@ below is eligible for automatic porting without a new operator matrix decision.
     and adds upstream hook-based deferral enforcement; the Hermes adaptation already
     preserves tiering, standing-authority checks, rollback evidence, and high-impact
     approval gates without importing harness hooks or broadening permissions.
+  - `rules/cross-harness-agents-md.md` → `hermes/skills/portable-project-context/SKILL.md`:
+    reviewed, no change needed. The upstream delta removes only a UTF-8 BOM; the Hermes
+    adaptation already preserves concise shared guidance, durable task handoffs, external
+    interface distrust, and access-credential boundaries without upstream-specific wiring.
 - **Domain queue #5 (operator-approved 2026-08-03; vetted clean on 4 axes + leak sweep +
   full-text read; port in order, one per run):**
   1. `rules/rlm-context-as-program.md` → `hermes/skills/rlm-context-as-program/SKILL.md`
@@ -667,7 +671,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.48` |
+| Latest released tag | `v0.3.50` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
