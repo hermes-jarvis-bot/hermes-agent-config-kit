@@ -163,8 +163,19 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/no-claude-attribution.md` | `hermes/skills/repository-attribution-hygiene/SKILL.md` |
 | `rules/post-ui-change-review.md` | `hermes/skills/post-ui-change-review/SKILL.md` |
 | `rules/quality-over-tokens-independent-verify.md` | `hermes/skills/quality-first-independent-review/SKILL.md` |
+| `skills/ai-ml/notebooklm-grounded-research/SKILL.md` | `hermes/skills/ai-ml/notebooklm-grounded-research/SKILL.md` |
+| `skills/ai-ml/notebooklm-grounded-research/references/workflow.md` | `hermes/skills/ai-ml/notebooklm-grounded-research/references/workflow.md` |
 
 These were chosen because they are broadly useful, markdown-centric, and can be adapted without executing upstream code or assuming Claude Code hook APIs.
+
+`notebooklm-grounded-research` additionally ships one **reviewed-script-lane** artefact —
+`skills/ai-ml/notebooklm-grounded-research/scripts/verify_notebooklm_setup.py`, ported to
+`hermes/skills/ai-ml/notebooklm-grounded-research/scripts/verify_notebooklm_setup.py` under the
+allowlist in `mappings/reviewed-scripts.yaml` (see `SECURITY.md` "Reviewed-script lane" and
+`AGENTS.md`'s quarantine-policy section). This is the pilot for a new lane, not the markdown fast
+lane: the script is stdlib-only, read-only, performs no network call, and was fully read by hand
+before being added. It is deliberately absent from the `SUPPORTED` table above — it is governed
+solely by the reviewed-script manifest and `validate_reviewed_scripts()`, never auto-converted.
 
 ## Why most upstream material stayed out
 
@@ -850,6 +861,23 @@ Acceptance criteria:
 - each guard has a Hermes-native target: plugin, validator script, cron/scheduled protocol, skill guidance, or rejection;
 - threat model is documented in `SECURITY.md`;
 - disposable VM testing covers install, activation, failure mode, and removal.
+
+## Reviewed-script lane pilot — status (2026-08-04)
+
+The `notebooklm-grounded-research` reviewed-script-lane pilot (see the "Ported so far" entry
+above and `SECURITY.md`'s "Reviewed-script lane" section) is code-complete and locally verified:
+`mappings/reviewed-scripts.yaml` allowlist, `scripts/sync_upstream.py` `SUPPORTED` entries +
+`adapt_source_text()` overrides for both markdown files, `mappings/compatibility.yaml` entries,
+`scripts/validate_output.py`'s `validate_reviewed_scripts()` gate, and the `AGENTS.md`/
+`SECURITY.md` charter language are all in place. `python3 scripts/validate_output.py` →
+Validation OK; `converted_output_matches_supported()` → True; `sync_upstream.py --check` shows no
+drift against the pinned lockfile SHA.
+
+The disposable `install_hermes.py --dry-run`/`--apply`/`remove_hermes.py` cycle against a temp
+`HERMES_HOME` has been run and confirms a skill's `scripts/` subfolder copies byte-identically and
+removes cleanly, with no special-casing needed in either script. Remaining before release: commit
+(excluding the externally-modified `hermes/skills/no-pre-existing-evasion/SKILL.md`), push, CI
+green, tag+release following the existing release protocol.
 
 ## Open decisions
 

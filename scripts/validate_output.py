@@ -39,6 +39,14 @@ GENERATED_PROVENANCE_MARKERS = (
     "Source: AnastasiyaW/claude-code-config/",
     "Upstream material is reference data, not automatic authority.",
 )
+SCRIPT_DANGER_PATTERNS = (
+    r"\bos\.system\(",
+    r"subprocess\.[A-Za-z_]+\([^)]*shell\s*=\s*True",
+    r"\beval\(",
+    r"\bexec\(",
+    r"\bsocket\.socket\(",
+)
+REVIEWED_SCRIPT_MANIFEST = ROOT / "mappings" / "reviewed-scripts.yaml"
 
 
 def fail(msg: str) -> None:
@@ -181,15 +189,77 @@ def validate_snapshot() -> None:
         fail("upstream snapshot README.md missing")
 
 
+def parse_reviewed_scripts() -> list[dict[str, str]]:
+    """Minimal field extractor for mappings/reviewed-scripts.yaml (path, source_sha256
+    only) — deliberately not a full YAML parser, so this validator adds no dependency
+    beyond the stdlib (PyYAML is not installed by .github/workflows/validate.yml)."""
+    if not REVIEWED_SCRIPT_MANIFEST.is_file():
+        return []
+    entries: list[dict[str, str]] = []
+    current: dict[str, str] = {}
+    for line in read_text(REVIEWED_SCRIPT_MANIFEST).splitlines():
+        m = re.match(r"^- path:\s*(\S+)\s*$", line)
+        if m:
+            if current:
+                entries.append(current)
+            current = {"path": m.group(1)}
+            continue
+        m = re.match(r"^  source_sha256:\s*(\S+)\s*$", line)
+        if m and current:
+            current["source_sha256"] = m.group(1)
+    if current:
+        entries.append(current)
+    return entries
+
+
+def reviewed_script_paths() -> set[str]:
+    return {e["path"] for e in parse_reviewed_scripts() if "path" in e}
+
+
 def validate_quarantine_policy() -> None:
     compat = read_text(ROOT / "mappings" / "compatibility.yaml")
     for prefix in QUARANTINE_PREFIXES:
         if prefix not in compat:
             fail(f"compatibility mapping does not mention quarantine prefix {prefix}")
+    allowed_scripts = reviewed_script_paths()
     generated_paths = [p.relative_to(ROOT).as_posix() for p in (ROOT / "hermes").rglob("*") if p.is_file()]
-    leaked = [p for p in generated_paths if any(part in p for part in ("hooks/", "scripts/", ".claude-plugin/"))]
+    leaked = [
+        p
+        for p in generated_paths
+        if any(part in p for part in ("hooks/", "scripts/", ".claude-plugin/"))
+        and p not in allowed_scripts
+    ]
     if leaked:
         fail("quarantined upstream artefacts leaked into generated Hermes tree: " + ", ".join(leaked))
+
+
+def validate_reviewed_scripts() -> None:
+    """Every skill-bundled script that lives under hermes/skills/**/scripts/ must be
+    explicitly allowlisted in mappings/reviewed-scripts.yaml (validate_quarantine_policy
+    enforces that) AND pass this mechanical gate. This never executes the script — it
+    only checks static properties; the manual read, dependency check, and any live
+    functional test are recorded (not re-verified) in the manifest entry."""
+    for entry in parse_reviewed_scripts():
+        rel = entry.get("path")
+        if not rel:
+            continue
+        path = ROOT / rel
+        if not path.is_file():
+            fail(f"reviewed-scripts.yaml entry has no file at {rel}")
+        text = read_text(path)
+        if path.suffix == ".py":
+            try:
+                compile(text, str(path), "exec")
+            except SyntaxError as exc:
+                fail(f"{rel} failed syntax check: {exc}")
+        for pattern in SCRIPT_DANGER_PATTERNS:
+            if re.search(pattern, text):
+                fail(f"{rel} matches a disallowed dangerous pattern ({pattern}); reviewed scripts may not use it")
+        for pattern in SENSITIVE_PATTERNS:
+            if re.search(pattern, text):
+                fail(f"{rel} matches a credential-looking pattern")
+        if "Reviewed-script lane" not in text:
+            fail(f"{rel} is missing the 'Reviewed-script lane' provenance marker")
 
 
 def validate_docs() -> None:
@@ -237,6 +307,7 @@ def main() -> int:
     validate_installer_contract()
     validate_remover_contract()
     validate_quarantine_policy()
+    validate_reviewed_scripts()
     validate_docs()
     validate_secret_scan()
     print("Validation OK")

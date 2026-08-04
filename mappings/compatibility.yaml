@@ -8,6 +8,30 @@ skills/ai-ml/ml-research-lab/SKILL.md:
   description: Plan and review reproducible machine-learning experiments across data, baselines, metrics, tracking, and deployment evidence without starting jobs or changing datasets.
   risk: low
 
+skills/ai-ml/notebooklm-grounded-research/SKILL.md:
+  status: supported
+  target: hermes/skills/ai-ml/notebooklm-grounded-research/SKILL.md
+  type: skill
+  name: notebooklm-grounded-research
+  description: Retrieve a small, citation-backed answer from a large stable corpus via NotebookLM MCP, then independently verify the claim against current code, tests, and official documentation before acting on it.
+  risk: low
+
+skills/ai-ml/notebooklm-grounded-research/references/workflow.md:
+  status: supported
+  target: hermes/skills/ai-ml/notebooklm-grounded-research/references/workflow.md
+  type: reference
+  name: notebooklm-grounded-research-workflow
+  description: Reference NotebookLM MCP bridge selection, configuration, first-run, and account-separation details for a reviewed grounded-research workflow.
+  risk: low
+
+skills/ai-ml/notebooklm-grounded-research/scripts/verify_notebooklm_setup.py:
+  status: review
+  target: hermes/skills/ai-ml/notebooklm-grounded-research/scripts/verify_notebooklm_setup.py
+  type: reviewed-script
+  name: notebooklm-grounded-research-verify-script
+  description: Read-only NotebookLM MCP setup verifier. Governed exclusively by mappings/reviewed-scripts.yaml and validate_reviewed_scripts() — never auto-converted by the SUPPORTED fast lane. status stays "review" (not "supported") because this path is never fed through convert_supported(); the reviewed-script manifest is the actual gate.
+  risk: low
+
 skills/ai-ml/flux2-lora-training/SKILL.md:
   status: supported
   target: hermes/skills/ai-ml/flux2-lora-training/SKILL.md
