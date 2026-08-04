@@ -1,0 +1,104 @@
+# Explicit, durable record of skill-bundled or skill-adjacent scripts that were fully read and
+# reviewed under the reviewed-script lane's own 7-point gate (see SECURITY.md "Reviewed-script
+# lane" and mappings/reviewed-scripts.yaml) and then DELIBERATELY REJECTED, rather than being
+# silently omitted or forgotten in commit-message prose.
+#
+# This is the negative-decision counterpart to mappings/reviewed-scripts.yaml: an entry here
+# does NOT mean "quarantined by default" (that is true of every unreviewed upstream script) — it
+# means this SPECIFIC script was read in full, weighed against the gate, and turned down for a
+# stated, citable reason. A later re-review must address the "revisit_condition" explicitly, not
+# just re-run the same review and reach a different conclusion by inertia.
+#
+# Fields mirror reviewed-scripts.yaml where they apply, plus:
+#   decision: always "rejected" in this file.
+#   reason: what the review found that disqualified the script.
+#   revisit_condition: what would have to change (in the script, or in this adapter's own
+#     tooling) before the rejection could reasonably be reconsidered.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: skills/creative/pixel-art-studio/scripts/bake_animation.py
+  source_sha256: 217c442235f939914fec407bdc3dfb8f92afb0e82896f8ef9f25e48808020213
+  reviewed_at: "2026-08-04"
+  reviewed_by: "operator-approved reviewed-script-lane review, hermes-agent-config-kit session (independently characterized by a research subagent, then fully read personally before this decision)"
+  decision: rejected
+  context: >
+    Reviewed alongside the pixel-art-studio port (v0.3.68). Six sibling
+    scripts in the same skill package (dither.py, palette.py, render.py,
+    preprocess.py, animate.py, quality_check.py) were reviewed and
+    accepted in the same pass; bake_animation.py alone was rejected.
+  reason: >
+    Drives a headless Chromium browser via Playwright
+    (`async_playwright`), calls `page.goto(url, wait_until="load")` where
+    `url` is a fully caller-controlled CLI argument (the docstring's own
+    examples point it at a local dev server, but nothing in the script
+    restricts it to localhost — an operator could point it at an arbitrary
+    external URL and the script will render whatever JavaScript runs
+    there), executes JavaScript inside that browser context via
+    `page.evaluate(...)` (by design, not a Python eval risk, but still
+    dynamic code execution worth flagging), and shells out to `ffmpeg` via
+    `subprocess.run(cmd, check=True)` for video-format output (argv-list
+    form, not `shell=True`, so no shell-injection risk from that call
+    specifically). It also leaves un-cleaned temporary frame directories
+    (`.bake_{canvas_id}_{period_ms}ms_{fps}fps`) next to the output path
+    after each run — no `shutil.rmtree` anywhere in the file. This is a
+    qualitatively different risk and dependency category from its six
+    sibling scripts, which are Pillow/numpy-only, read/write-confined
+    image-processing CLIs with no network calls, no subprocess calls, and
+    no browser automation. It also requires a much larger external
+    toolchain (Playwright, a Chromium install via `playwright install
+    chromium`, and `ffmpeg` in PATH) than the shared Pillow/numpy
+    prerequisite the other six scripts need.
+  revisit_condition: >
+    Could reasonably be reconsidered if a future port restricts the target
+    URL to a validated-safe scheme/allowlist (e.g. localhost-only or an
+    explicit operator-confirmed URL), adds explicit cleanup of the
+    `.bake_*` temp frame directories after each run (success or failure),
+    and gets separate, explicit operator sign-off on taking on the
+    Playwright + Chromium + ffmpeg dependency surface specifically (as
+    opposed to the Pillow/numpy surface already accepted for the other six
+    scripts in this same package).
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: scripts/gemini-switch.sh
+  source_sha256: 4cfaa85d33a3f00201f35e6adec1b4a10d0c5cc42db57a75423f0fca9b078a7d
+  reviewed_at: "2026-08-04"
+  reviewed_by: "operator-approved reviewed-script-lane review, hermes-agent-config-kit session (fully read personally before this decision)"
+  decision: rejected
+  context: >
+    Reviewed while porting the gemini-delegate skill (v0.3.66). This
+    script is NOT itself part of the gemini-delegate skill package
+    upstream — it lives at the upstream repo's top-level scripts/
+    directory (the same quarantined location as this adapter's own
+    hooks/scripts/ lane) and is referenced by gemini-delegate's SKILL.md
+    as a companion account-switcher tool, not bundled inside the skill
+    folder.
+  reason: >
+    Bash script that copies and overwrites live Google OAuth credential
+    files (`oauth_creds.json`, `google_accounts.json`) between
+    `~/.gemini/` (the active credential directory the Gemini CLI reads)
+    and `~/.gemini-stash/<name>/` (per-account backup directories), to
+    implement atomic multi-account switching. It reads one field
+    (`google_accounts.json`'s `.active` email) via an inline `python -c`
+    call purely for display purposes, and otherwise treats the credential
+    files as opaque blobs to copy — it never logs or prints raw OAuth
+    token content. It does not read secret VALUES beyond that one email
+    field, but it does perform live overwrite of a real, currently-active
+    credential file (`cmd_use`), with only a same-session backup-to-stash
+    as a safety net, and a `sync`/`use` flow that can silently proceed past
+    a mismatched-email warning if the operator answers the interactive
+    prompt without reading it closely. This is a meaningfully higher-stakes
+    category than the read-only or append-only scripts accepted so far
+    under the reviewed-script lane (see mappings/reviewed-scripts.yaml) —
+    credential-file mutation, not just credential-adjacent metadata
+    reading.
+  revisit_condition: >
+    Could reasonably be reconsidered with a dedicated credential-handling
+    review separate from the gemini-delegate skill port itself: confirming
+    the copy-then-atomic-rename pattern already used (`cp` to a `.tmp`
+    path then `mv`) is genuinely atomic on the target filesystems, that no
+    path in the script ever logs credential file contents, and getting
+    explicit operator sign-off specifically on shipping a script that
+    mutates live OAuth credentials as part of this adapter's own
+    distribution (as opposed to the operator running the same script
+    directly from their own separate claude-code-config checkout, which
+    this rejection does not prevent or discourage).

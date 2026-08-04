@@ -90,9 +90,11 @@
     relative to the script's own directory and the user-supplied input
     image; writes only to the user-supplied -o/--output path.
   functional_test: >
-    Not yet independently executed this session (image-processing CLI
-    requiring Pillow/numpy); full manual code read confirms the summary
-    above. Static syntax check (compile()) passed.
+    Operator-confirmed live execution on 2026-08-04 via `uv run --with
+    Pillow --with numpy python3 dither.py`: applied floyd-steinberg
+    dithering with the bundled endesga-32 palette to a 64x64 test PNG
+    rendered by render.py; produced a valid 64x64 output PNG with no
+    errors.
 
 - path: hermes/skills/creative/pixel-art-studio/scripts/palette.py
   source_repo: AnastasiyaW/claude-code-config
@@ -111,8 +113,13 @@
     No subprocess/os.system/eval/exec, no credential access. Writes only to
     a caller-supplied -o/--output path.
   functional_test: >
-    Not yet independently executed this session; full manual code read
-    confirms the summary above. Static syntax check (compile()) passed.
+    Operator-confirmed live execution on 2026-08-04 via `uv run --with
+    Pillow --with numpy python3 palette.py`: `--list` enumerated all
+    bundled palettes correctly grouped by category (hardware,
+    lospec-community, cultural, design-seeds); `--ramp "#5b3a3a" --steps 5
+    --hue-shift 40` produced a valid 5-color ramp with correct hue
+    rotation (35.0 deg, >= the 30 deg target) and monotonic lightness.
+    No errors.
 
 - path: hermes/skills/creative/pixel-art-studio/scripts/render.py
   source_repo: AnastasiyaW/claude-code-config
@@ -130,8 +137,11 @@
     palette .hex files relative to the script; writes only to the
     user-supplied -o/--output path.
   functional_test: >
-    Not yet independently executed this session; full manual code read
-    confirms the summary above. Static syntax check (compile()) passed.
+    Operator-confirmed live execution on 2026-08-04 via `uv run --with
+    Pillow --with numpy python3 render.py`: rendered a 4x4 static sprite
+    JSON to a 16x16 PNG, and separately a 2-frame animation JSON (via
+    animate.py's delegation into this script) to a valid 32x32 GIF. No
+    errors.
 
 - path: hermes/skills/creative/pixel-art-studio/scripts/preprocess.py
   source_repo: AnastasiyaW/claude-code-config
@@ -149,8 +159,11 @@
     self-cleaning temp PNG (created and unlinked with missing_ok=True in a
     finally block) plus the user-supplied -o/--output path.
   functional_test: >
-    Not yet independently executed this session; full manual code read
-    confirms the summary above. Static syntax check (compile()) passed.
+    Operator-confirmed live execution on 2026-08-04 via `uv run --with
+    Pillow --with numpy python3 preprocess.py`: downsampled a 64x64 test
+    PNG to a 16x16 target with the bundled endesga-32 palette and bayer4
+    dithering; produced a valid 16x16 output PNG with no errors, and no
+    leftover temp file (confirmed the self-cleaning unlink ran).
 
 - path: hermes/skills/creative/pixel-art-studio/scripts/animate.py
   source_repo: AnastasiyaW/claude-code-config
@@ -168,8 +181,11 @@
     subprocess/os.system/eval/exec, no credential access. Writes only to
     user-supplied or clearly-named default output paths.
   functional_test: >
-    Not yet independently executed this session; full manual code read
-    confirms the summary above. Static syntax check (compile()) passed.
+    Operator-confirmed live execution on 2026-08-04 via `uv run --with
+    Pillow --with numpy python3 animate.py`: `--template walk-4frame`
+    generated a valid 4-frame template JSON; a hand-authored 2-frame
+    animation JSON rendered to a valid GIF via this script's delegation
+    into render.py. No errors.
 
 - path: hermes/skills/creative/pixel-art-studio/scripts/quality_check.py
   source_repo: AnastasiyaW/claude-code-config
@@ -187,5 +203,27 @@
     writes at all beyond stdout. Its nested per-pixel checks are O(H*W) —
     a CPU-time consideration on very large inputs, not a security concern.
   functional_test: >
-    Not yet independently executed this session; full manual code read
-    confirms the summary above. Static syntax check (compile()) passed.
+    Operator-confirmed live execution on 2026-08-04 via `uv run --with
+    Pillow --with numpy python3 quality_check.py`: scored a rendered 8x8
+    (64x64 upscaled) test sprite with three colors, returning score=100,
+    verdict="ship", and correctly populated palette/orphan/doublies/
+    pillow-shading/anti-AA/silhouette findings; separately, `--animation`
+    on a 2-frame test JSON returned score=100, verdict="ship". A genuine
+    UPSTREAM EDGE-CASE BUG was found and is disclosed here rather than
+    silently avoided: `detect_block_size()`'s `rng.integers(0, h - block)`
+    call raises `ValueError: high <= 0` when an input image's height (or
+    width) exactly equals one of the candidate block sizes checked ([32,
+    16, 12, 10, 8, 6, 4, 3, 2]) — e.g. a plain, non-upscaled 16x16 PNG
+    with no integer-upscale factor. This was hit when testing against a
+    4x4-logical sprite rendered at pixel_size=4 (16x16 actual output) and
+    did not reproduce against a more typical 8x8-logical sprite rendered
+    at pixel_size=8 (64x64 actual, which has headroom above every
+    candidate block size). This is upstream's own pre-existing bug, not
+    something introduced by this port (only a provenance docstring was
+    added, no logic was changed) — it is not fixed here, consistent with
+    "ported unmodified after full manual review," but is recorded so a
+    future user or reviewer isn't the first to discover it. Workaround:
+    avoid running quality_check.py on an image whose exact pixel
+    dimensions match a small power-of-two/common block size with no
+    upscale factor; render at a size with some headroom (e.g. logical
+    grid x8 or more) instead.

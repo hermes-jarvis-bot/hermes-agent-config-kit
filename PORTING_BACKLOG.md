@@ -946,7 +946,10 @@ live Google OAuth credential files (`oauth_creds.json`, `google_accounts.json`).
 higher-stakes category than the read-only/append-only scripts reviewed so far, and pulling it in
 as a side effect of porting this skill's guidance would have been scope creep past what was
 asked. The ported `SKILL.md` describes the account-switch pattern conceptually and states this
-decision explicitly rather than silently dropping the capability.
+decision explicitly rather than silently dropping the capability. This rejection is recorded
+explicitly in `mappings/rejected-scripts.yaml` (source SHA-256, full reason, and the
+`revisit_condition` that would need to hold before reconsidering it), not just in this prose —
+see `SECURITY.md`'s "Rejected scripts" section.
 
 Released as **v0.3.66** (commit `0591db2`, CI `Validate adapter` green, release:
 https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.66).
@@ -992,6 +995,9 @@ adapter's autonomy-risk-tiers discipline rather than blocked on upfront question
   image-processing CLIs and was independently characterized as "needs-discussion" by a research
   subagent before this decision — same discipline as declining `gemini-switch.sh` earlier in this
   Wave: a script doesn't get pulled in by default just because it shipped alongside safer ones.
+  Both rejections are recorded explicitly, with source SHA-256, full reason, and a
+  `revisit_condition`, in `mappings/rejected-scripts.yaml` — see `SECURITY.md`'s "Rejected
+  scripts" section.
 - **`elements/elements.js` and `elements/catalog.html` ported as reference/asset data**, not
   through the reviewed-script-lane manifest: both were fully read by hand and confirmed to be
   inert, browser-sandboxed canvas-drawing code with no network calls, no `eval`, and no
@@ -1000,10 +1006,11 @@ adapter's autonomy-risk-tiers discipline rather than blocked on upfront question
   are. Porting them exposed that `elements/` (unlike `scripts/`) isn't covered by the quarantine
   substring check at all — a latent gap, noted here rather than relied upon; the actual basis for
   including them is the manual safety review, not the path-naming loophole.
-- **Binary example assets excluded** (~204 KB of PNG/GIF/APNG demo images and several large
-  self-contained HTML demo pages under `examples/`) — consistent with `git-source-of-truth.md`'s
-  heavy-binaries exclusion class and with every other port in this adapter so far; only prose,
-  scripts, references, and the small bundled palette/library data were ported.
+- **Binary example assets** (~204 KB of PNG/GIF/APNG demo images, two small JSON specs, and
+  several static HTML demo pages under `examples/`) were initially excluded on the general
+  heavy-binaries-exclusion reasoning in `git-source-of-truth.md`, then **included on explicit
+  operator instruction** since they exist as-is in the original upstream repository (see the
+  "Follow-up" note below for the full reversal and the one due-diligence finding it produced).
 
 Mechanical/process notes:
 
@@ -1028,11 +1035,10 @@ Mechanical/process notes:
   the 6 approved scripts was then also read in full personally, matching (not merely trusting)
   the subagent's findings, before being added to `mappings/reviewed-scripts.yaml` — the manifest
   entries are a personal sign-off, not a delegated rubber stamp.
-- **Live functional execution of the 6 scripts was not attempted**: Pillow and numpy are not
-  installed in this development environment, and installing them solely for a one-off
+- **Live functional execution of the 6 scripts was initially not attempted**: Pillow and numpy
+  were not installed in this development environment, and installing them solely for a one-off
   verification (when every script was already fully read and independently characterized) was
-  judged disproportionate. `mappings/reviewed-scripts.yaml`'s `functional_test` field says so
-  plainly for each entry rather than fabricating a result.
+  judged disproportionate at the time. Superseded — see the "Follow-up" note below.
 
 Full verification: `python3 scripts/validate_output.py` -> Validation OK;
 `converted_output_matches_supported()` -> True; disposable `install_hermes.py --apply` copied all
@@ -1041,6 +1047,38 @@ byte-identically; `remove_hermes.py --apply` removed them cleanly.
 
 Released as **v0.3.68** (commit `dfe1cde`, CI `Validate adapter` green, release:
 https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.68).
+
+**Follow-up (2026-08-04, operator-directed):** three of the decisions above were revisited on
+explicit operator instruction after the v0.3.68 release:
+
+1. **`bake_animation.py` and `gemini-switch.sh` rejections now recorded explicitly** in the new
+   `mappings/rejected-scripts.yaml` (source SHA-256, full reason, and a `revisit_condition` for
+   each), cross-linked from `SECURITY.md`'s new "Rejected scripts" section and from `AGENTS.md`'s
+   quarantine-policy section — not just described in this backlog's prose.
+2. **`examples/` (all ~204 KB of PNG/GIF/APNG demo images, two small JSON specs, and five static
+   HTML demo pages) restored** into the port unmodified, per explicit operator instruction that
+   they exist as-is in the upstream repository. Due diligence on the five HTML files found one
+   worth flagging: `examples/twilight-covers/index-v2-static.html` uses `fetch()` plus `eval()` to
+   load and re-run the canvas-drawing code from its sibling `index-v2.html` at a same-origin,
+   relative path (to avoid duplicating that code across two demo pages) — it fetches no external
+   URL and only functions when served locally, so this was judged safe to include as-is; noted in
+   the ported `SKILL.md` rather than silently passed over.
+3. **Live functional execution performed via `uv run --with Pillow --with numpy`**, per explicit
+   operator instruction that this dependency-acquisition path was fine. All 6 scripts were
+   exercised successfully (`palette.py --list`/`--ramp`; `render.py` on a static sprite and,
+   through `animate.py`'s delegation, an animation GIF; `dither.py` with floyd-steinberg;
+   `preprocess.py` downsampling with bayer4 dithering; `animate.py --template`; `quality_check.py`
+   on both a static sprite and `--animation` mode) — results recorded per-script in
+   `mappings/reviewed-scripts.yaml`'s `functional_test` fields. This surfaced one genuine
+   **upstream bug**, disclosed rather than silently worked around: `quality_check.py`'s
+   `detect_block_size()` raises `ValueError: high <= 0` when an input image's exact height or
+   width matches one of its candidate block sizes with no upscale headroom (e.g. a plain,
+   non-upscaled 16×16 PNG). Not fixed here — the script was ported unmodified, per this lane's own
+   discipline — but recorded in both `mappings/reviewed-scripts.yaml` and the ported `SKILL.md`'s
+   Gotchas section so a future user isn't the first to hit it.
+
+Released as **v0.3.69** (commit and release URL recorded once tagged) covering these three
+follow-up changes.
 
 **Wave transition status:** the active Wave remains **Wave 3 — skill package review**; no Wave 4
 trigger has fired (Wave 3's own candidate list — `article-structure-review`, `agent-harness-design`,

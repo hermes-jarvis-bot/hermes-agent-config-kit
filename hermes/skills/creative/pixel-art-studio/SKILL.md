@@ -19,8 +19,6 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
 
 # Pixel Art Studio
 
-# Pixel Art Studio
-
 This module ships six reviewed bundled scripts under `scripts/` — `dither.py`, `palette.py`,
 `render.py`, `preprocess.py`, `animate.py`, and `quality_check.py`. Each was read in full and
 reviewed under the reviewed-script lane (see `SECURITY.md` and `mappings/reviewed-scripts.yaml`),
@@ -42,6 +40,15 @@ browser-sandboxed drawing code (no network calls, no `eval`, no filesystem acces
 executes inside a browser loading a generated scene page or the bundled catalog; it ships as
 reference/asset data, not through the reviewed-script-lane manifest, since it is never invoked by
 an operator or agent directly the way the Python scripts are.
+
+`examples/` ships upstream's own worked-example outputs (a few small PNG/GIF/APNG images, two
+small JSON specs, and several static HTML demo pages) unmodified, present in the same form in the
+upstream repository. One of the HTML demos, `examples/twilight-covers/index-v2-static.html`, uses
+`fetch()` plus `eval()` to load and re-run the canvas-drawing code from its sibling
+`index-v2.html` at a same-origin, relative path — purely to avoid duplicating that code across
+two demo pages. It fetches no external or attacker-controlled URL, and only functions at all when
+served locally (a `file://`-opened page cannot `fetch()` a sibling file in most browsers); it is
+noted here rather than silently passed over.
 
 Programmatic pixel art creation with palette discipline, dithering, animation, and automated
 quality control. Designed for production-quality output, not a "look-pixelated filter on a
@@ -391,6 +398,14 @@ implies.
   RGBA.
 - AI-generated pixel art is not pixel art — outputs from image-generation models need the
   `preprocess.py` pipeline; do not trust their pixel-grid alignment as-is.
+- **`quality_check.py` crashes on an exact-block-size image with no upscale headroom.** Its block
+  detector raises `ValueError: high <= 0` when an input's height or width exactly equals one of
+  its candidate block sizes (32, 16, 12, 10, 8, 6, 4, 3, 2) with no integer upscale beyond that —
+  for example, a plain, non-upscaled 16×16 PNG. This is an upstream bug (confirmed live during
+  this port's functional testing; see `mappings/reviewed-scripts.yaml` for the exact repro), not
+  something this adapter introduced or has fixed, since the script was ported unmodified.
+  Workaround: render at a size with some headroom above the block sizes it checks (a logical grid
+  rendered at 8× or larger avoids it) rather than at a size that lands exactly on one.
 
 ## Troubleshooting
 
