@@ -33,11 +33,13 @@ Opt-in extras (use --extras):
   - file-cohesion-guard          PreToolUse    advisory: durable files belong in project structure
   - ask-question-guard           PreToolUse    blocks deferral/menu AskUserQuestion on reversible work
   - over-engineering-advisor     PostToolUse   advisory nudge on large/dependency-adding code changes
+  - module-shape-advisor         PostToolUse   advisory nudge when one source file crosses shape thresholds
   - precompact-handoff-guard     PreCompact    demands a fresh handoff before context compaction
   - handoff-closure-audit-guard  PreToolUse    blocks handoff writes without closure audit
   - continuity-contract-guard    PreToolUse    protects incremental edits across Claude/Codex
   - continuity-session-check     SessionStart  surfaces the shared continuation contract
-  - test-gate-stop-hook          Stop          blocks closing a session with red tests
+  - test-gate-stop-hook          Stop          selects fast/integration tests by Git-visible risk and blocks red/unproven evidence
+  - harness-load-advisor         Stop          reports overloaded or mis-scoped test/release profiles
   - problems-md-validator        Stop          blocks closing with unresolved OPEN problems
   - plan-gate                    UserPromptSubmit  plan-artifact discipline for risky asks
   - conversation-history-capture Stop          archives and indexes local Codex session JSONL histories
@@ -105,9 +107,11 @@ EXTRAS: list[tuple[str, str, str | None]] = [
     ("file-cohesion-guard.py",       "PreToolUse", "Write|Edit"),
     ("ask-question-guard.py",        "PreToolUse", "AskUserQuestion"),
     ("over-engineering-advisor.py",   "PostToolUse", "Write|Edit|MultiEdit"),
+    ("module-shape-advisor.py",        "PostToolUse", "Write|Edit|MultiEdit"),
     ("precompact-handoff-guard.py",  "PreCompact", None),
     ("handoff-closure-audit-guard.py", "PreToolUse", "Write|Edit|MultiEdit"),
     ("test-gate-stop-hook.py",       "Stop", None),
+    ("harness-load-advisor.py",       "Stop", None),
     ("problems-md-validator.py",     "Stop", None),
     ("plan-gate.py",                 "UserPromptSubmit", None),
     ("conversation-history-capture.py", "Stop", None),

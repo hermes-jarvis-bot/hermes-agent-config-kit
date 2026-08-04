@@ -32,6 +32,13 @@ implicit invocation. Check both boundaries with:
 python scripts/audit_skill_hook_wiring.py --strict
 ```
 
+When a session reports an overloaded gate, inspect the aggregate feedback
+without opening transcripts:
+
+```bash
+python scripts/harness_feedback_report.py
+```
+
 ## What Is Enforced
 
 | Concern | Primary scripts | Event |
@@ -40,7 +47,9 @@ python scripts/audit_skill_hook_wiring.py --strict
 | Shell injection and self-damage | `command-injection-guard.py`, `self-harm-guard.py` | `PreToolUse` |
 | GitHub Actions workflow injection | `github-workflow-security.py` | `PreToolUse` |
 | Git source-of-truth adoption | `git-source-gate.py` | `Stop` |
-| Tests and code quality | `test-muting-guard.py`, `over-engineering-advisor.py` | `PreToolUse` / `PostToolUse` |
+| Tests and code quality | `test-muting-guard.py`, `test-gate-stop-hook.py`, `over-engineering-advisor.py` | `PreToolUse` / `PostToolUse` / `Stop` |
+| Readable architecture and module shape | `architecture-first` skill, `architecture-quality` skill, `module-shape-advisor.py`, `scripts/architecture_audit.py` | router / `PostToolUse` / explicit audit |
+| Harness scope and overload feedback | `harness-load-advisor.py`, `harness-feedback` skill | `Stop` / router |
 | Documentation and long-run state | `docs-staleness-guard.py`, `kb-validate-gate.py`, `feature-list-validator.py` | `SessionStart` / `Stop` |
 | Completion and handoff quality | `handoff-closure-audit-guard.py`, `precompact-handoff-guard.py`, `session-handoff-reminder.py`, `stop-phrase-guard.py` | `PreToolUse` / `PreCompact` / `Stop` |
 | Deletion proof and secret exposure | `verify-deleted-guard.py`, `api-key-leak-detector.py`, `secret-leak-guard.py` | `PostToolUse` / `PreToolUse` |
@@ -62,6 +71,12 @@ plugins may include metadata such as `description`; the current Codex desktop
 plugin loader accepts only the `hooks` wrapper. Use
 `scripts/repair_codex_plugin_hook_schema.py --fix` if a plugin update introduces
 that incompatibility, then rerun the task-completion test.
+
+The architecture signal is intentionally split. `architecture-first` decides the
+seams before a new system exists; `architecture-quality` keeps those seams readable
+while web/service code grows; `module-shape-advisor.py` is a live advisory hook after
+code edits; and `architecture_audit.py` is a deterministic repository-level report.
+The hook is not a substitute for project-specific dependency contracts.
 
 See the current [Claude Code hooks reference](https://code.claude.com/docs/en/hooks)
 for supported events, handler types, and result schemas.
