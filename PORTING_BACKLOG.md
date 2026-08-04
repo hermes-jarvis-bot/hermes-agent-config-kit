@@ -768,7 +768,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.67` |
+| Latest released tag | `v0.3.68` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
@@ -1038,6 +1038,9 @@ Full verification: `python3 scripts/validate_output.py` -> Validation OK;
 `converted_output_matches_supported()` -> True; disposable `install_hermes.py --apply` copied all
 48 files (SKILL.md + 8 references + 6 scripts + 32 palette files + elements.js + catalog.html)
 byte-identically; `remove_hermes.py --apply` removed them cleanly.
+
+Released as **v0.3.68** (commit `dfe1cde`, CI `Validate adapter` green, release:
+https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.68).
 
 **Wave transition status:** the active Wave remains **Wave 3 — skill package review**; no Wave 4
 trigger has fired (Wave 3's own candidate list — `article-structure-review`, `agent-harness-design`,
