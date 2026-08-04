@@ -406,6 +406,14 @@ skills/operational/cross-harness-continuation/references/CONTINUITY.example.json
   description: Provide a data-only example of a bounded cross-session continuity contract with baseline, scope, preserved decisions, and verification evidence.
   risk: low
 
+skills/operational/gemini-delegate/SKILL.md:
+  status: supported
+  target: hermes/skills/gemini-delegate/SKILL.md
+  type: skill
+  name: gemini-delegate
+  description: Delegate work to Gemini CLI as a free second harness - multi-account switching, quota management, and context handoff.
+  risk: low
+
 skills/operational/observability-monitoring/SKILL.md:
   status: supported
   target: hermes/skills/observability-monitoring/SKILL.md

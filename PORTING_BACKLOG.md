@@ -166,6 +166,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/ai-ml/notebooklm-grounded-research/SKILL.md` | `hermes/skills/ai-ml/notebooklm-grounded-research/SKILL.md` |
 | `skills/ai-ml/notebooklm-grounded-research/references/workflow.md` | `hermes/skills/ai-ml/notebooklm-grounded-research/references/workflow.md` |
 | `skills/development/distill-feedback/SKILL.md` | `hermes/skills/distill-feedback/SKILL.md` |
+| `skills/operational/gemini-delegate/SKILL.md` | `hermes/skills/gemini-delegate/SKILL.md` |
 
 These were chosen because they are broadly useful, markdown-centric, and can be adapted without executing upstream code or assuming Claude Code hook APIs.
 
@@ -317,28 +318,23 @@ The remaining rules require separate review. `rules/long-run-harness.md` overlap
 
 Upstream contains 123 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
 
-Top-level skill packages left out:
+Top-level skill packages left out (this is a historical snapshot from early in the project and
+has not been kept in sync with later domain-queue ports — `agent-harness-design`,
+`diffusion-engineering`, `vlm-segmentation`, `distill-feedback`, `repo-map`, and
+`humanize-russian` are confirmed already ported per the "Ported so far" table above and are
+removed from this list; the remaining entries have not been re-checked this session):
 
-- `skills/agent-harness-design/`
-- `skills/ai-ml/diffusion-engineering/`
 - `skills/ai-ml/flux2-klein-prompting/`
 - `skills/ai-ml/forensic-prompt-compiler/`
-- `skills/ai-ml/vlm-segmentation/`
 - `skills/architecture/feature-new/`
 - `skills/architecture/harness-design/`
 - `skills/architecture/layer-new/`
 - `skills/architecture/plan-swarm-review/`
 - `skills/creative/pixel-art-storyboard/`
 - `skills/creative/pixel-art-studio/`
-- `skills/development/distill-feedback/`
 - `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
-- `skills/development/repo-map/`
 - `skills/development/workflow-orchestration/` (the markdown `SKILL.md` is ported; references, JavaScript template, and validation script remain unported and quarantined)
-
-- `skills/operational/desktop-sessions-discovery/`
-- `skills/operational/gemini-delegate/`
 - `skills/writing/humanize-english/`
-- `skills/writing/humanize-russian/`
 
 Special note: `skills/operational/harness-audit/SKILL.md`, its per-subsystem
 evidence checklist, and its scoring rubric are ported as reviewed, data-only
@@ -607,8 +603,20 @@ below is eligible for automatic porting without a new operator matrix decision.
   handling (explicit anti-pattern warnings), but the domain is live remote infrastructure
   (SSH, API tokens, RunPod/Massed Compute billing) with high blast radius, overlap-adjacent
   to `billing-spend-controls`. Needs a separate operator policy decision.
-- `skills/operational/desktop-sessions-discovery/` — carries a `.py` script; still
-  quarantined, manual-review-only (Wave-4 script-research track).
+- **Rejected (wrong domain, not a script-safety issue), 2026-08-04:**
+  `skills/operational/desktop-sessions-discovery/` — the entire skill package (SKILL.md + 4
+  scripts: `sessions_registry.py`, `sessions_inventory.py`, `sessions_find.py`,
+  `sessions_restore.py`) exists to discover and restore **Claude Desktop app** (Anthropic's
+  separate consumer application) sessions hidden across multiple `accountId` folders — a
+  workaround for an Anthropic bug (upstream cites `anthropics/claude-code#48511`). Its content
+  is entirely about that other product's reverse-engineered storage layout
+  (`%APPDATA%\Claude\claude-code-sessions\...`, `~/Library/Application Support/Claude/...`); it
+  has nothing to do with Hermes, which is not the Claude Desktop app and has no equivalent
+  multi-account session-visibility bug to work around. Not a candidate for adaptation — the
+  subject matter itself is out of scope, not something a rewording could fix. (Note in passing,
+  not evaluated further: `sessions_restore.py` also copies session files between account
+  folders, which would need its own credential/data-safety review if this were ever revisited
+  for a different reason.)
 - `skills/ai-ml/notebooklm-grounded-research/` and `skills/development/distill-feedback/` —
   **ported** via the reviewed-script lane (see "Ported so far" above and `SECURITY.md`'s
   "Reviewed-script lane" section); no longer quarantined. `distill-feedback`'s bundled
@@ -903,8 +911,52 @@ released as **v0.3.65** (commit `4cd2714`, CI green:
 https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/actions/runs/30889699624, release:
 https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.65).
 
-Remaining Wave-4 script-research candidate: `skills/operational/desktop-sessions-discovery/`
-(carries a `.py` script; not yet reviewed).
+`skills/operational/desktop-sessions-discovery/` — the last item this "Wave-4 script-research"
+label had flagged — has been reviewed and **rejected** (wrong domain, not a script-safety issue;
+see the rejection note under "Quarantine lane: not ported" above). No script-bearing candidates
+remain outstanding as of 2026-08-04.
+
+**Naming note:** "Wave-4 script-research" (this informal label, used in earlier session notes to
+bucket script-bearing skill candidates) is a different thing from the formally documented
+"Wave 4 — hook and workflow redesign" below, which covers a different scope: reimplementing
+upstream Claude-Code **hooks** (`hooks/*.py`, e.g. secret/destructive-command/handoff guards) and
+**JS workflows** (`workflows/*.js`) as Hermes-native guards, not porting skill-bundled scripts.
+The reviewed-script lane and its two pilots are **Wave 3** work (skill-package review), not a
+Wave 4 trigger: Wave 3's own documented acceptance criteria already anticipated this ("scripts
+are either removed, rewritten, or explicitly reviewed") — the reviewed-script lane is exactly
+that "explicitly reviewed" path being built out, not a new Wave.
+
+## Wave 3 continuation (2026-08-04)
+
+Following the two reviewed-script-lane pilots above, `skills/operational/gemini-delegate/` was
+ported as a markdown-only Wave 3 skill (no `scripts/` subfolder in the upstream package itself).
+Its upstream body referenced an external companion script (top-level `scripts/gemini-switch.sh`
+in the claude-code-config repo, not bundled with this skill package) that copies and overwrites
+live Google OAuth credential files (`oauth_creds.json`, `google_accounts.json`). That script was
+**deliberately not ported**, even via the reviewed-script lane: credential-file mutation is a
+higher-stakes category than the read-only/append-only scripts reviewed so far, and pulling it in
+as a side effect of porting this skill's guidance would have been scope creep past what was
+asked. The ported `SKILL.md` describes the account-switch pattern conceptually and states this
+decision explicitly rather than silently dropping the capability.
+
+Released as **v0.3.66** — see the "Latest released tag" field above for the exact commit and CI
+run once tagged.
+
+**Wave transition status:** the active Wave remains **Wave 3 — skill package review**; no Wave 4
+trigger has fired (Wave 3's own candidate list — `article-structure-review`, `agent-harness-design`,
+`frontend-design`, `observability-monitoring`, and now the reviewed-script-lane pilots plus
+`gemini-delegate` — is not exhausted purely by having ported several items; per release rule 4
+above, a Wave transition requires its exact trigger to be documented in the transition commit,
+which has not happened here). **0.4.x is not yet authorized.** It becomes authorized only when a
+future commit documents Wave 4's exact trigger (e.g., "first accepted and verified Hermes-native
+reimplementation of an upstream hook/guard") and updates this ledger accordingly, per the same
+discipline used for the Wave 2 and Wave 3 transitions above. Until then, all further work —
+including any additional reviewed-script-lane pilots — stays on the `0.3.x` patch line.
+
+Separately, `python3 scripts/sync_upstream.py --check` on 2026-08-04 shows upstream has advanced
+3 commits past the pinned `last_synced_sha` (from `9807b2d...` to `81c543a...`). This is a
+`--check`-only observation (non-mutating); a full `--sync` to review and pull those changes has
+not been run and is separate work from this Wave 3 continuation.
 
 ## Open decisions
 
