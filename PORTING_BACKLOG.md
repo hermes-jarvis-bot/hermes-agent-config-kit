@@ -167,6 +167,8 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/ai-ml/notebooklm-grounded-research/references/workflow.md` | `hermes/skills/ai-ml/notebooklm-grounded-research/references/workflow.md` |
 | `skills/development/distill-feedback/SKILL.md` | `hermes/skills/distill-feedback/SKILL.md` |
 | `skills/operational/gemini-delegate/SKILL.md` | `hermes/skills/gemini-delegate/SKILL.md` |
+| `skills/architecture/plan-swarm-review/SKILL.md` | `hermes/skills/architecture/plan-swarm-review/SKILL.md` |
+| `skills/architecture/plan-swarm-review/references/vulnerability-kb.md` | `hermes/skills/architecture/plan-swarm-review/references/vulnerability-kb.md` |
 
 These were chosen because they are broadly useful, markdown-centric, and can be adapted without executing upstream code or assuming Claude Code hook APIs.
 
@@ -329,7 +331,6 @@ removed from this list; the remaining entries have not been re-checked this sess
 - `skills/architecture/feature-new/`
 - `skills/architecture/harness-design/`
 - `skills/architecture/layer-new/`
-- `skills/architecture/plan-swarm-review/`
 - `skills/creative/pixel-art-storyboard/`
 - `skills/creative/pixel-art-studio/`
 - `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
@@ -942,10 +943,25 @@ decision explicitly rather than silently dropping the capability.
 Released as **v0.3.66** (commit `0591db2`, CI `Validate adapter` green, release:
 https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.66).
 
+`skills/architecture/plan-swarm-review/` followed as the next clean Wave 3 candidate: a
+markdown-only, two-file package (`SKILL.md` + `references/vulnerability-kb.md`, no scripts).
+The upstream `SKILL.md` referenced three sibling skills (`/plan-eng-review`, `/plan-ceo-review`,
+`/plan-design-review`) in its "when to use this vs other skills" comparison table; none of the
+three exist anywhere in the pinned upstream snapshot, so those dangling references were dropped
+and the comparison table rewritten against this adapter's own already-ported skills
+(`deep-review`, `vulnerability-detection-pipeline`, `proof-verify`,
+`multi-agent-task-decomposition`) instead. The upstream reference also pointed at a fuller
+`knowledge-vault/docs/security/cwe/` example set that is not part of this adapter; the ported
+reference states plainly that the condensed heuristics are the full extent of what's available
+here. Upstream frontmatter fields specific to the Claude Code harness (`user-invocable`,
+`model`, `allowed-tools`) were dropped, matching every other port's convention. This is the first
+port from the `skills/architecture/` upstream domain, so it uses the (post-decision) nested
+`hermes/skills/architecture/plan-swarm-review/` path rather than a flat one.
+
 **Wave transition status:** the active Wave remains **Wave 3 — skill package review**; no Wave 4
 trigger has fired (Wave 3's own candidate list — `article-structure-review`, `agent-harness-design`,
-`frontend-design`, `observability-monitoring`, and now the reviewed-script-lane pilots plus
-`gemini-delegate` — is not exhausted purely by having ported several items; per release rule 4
+`frontend-design`, `observability-monitoring`, the reviewed-script-lane pilots, `gemini-delegate`,
+and now `plan-swarm-review` — is not exhausted purely by having ported several items; per release rule 4
 above, a Wave transition requires its exact trigger to be documented in the transition commit,
 which has not happened here). **0.4.x is not yet authorized.** It becomes authorized only when a
 future commit documents Wave 4's exact trigger (e.g., "first accepted and verified Hermes-native

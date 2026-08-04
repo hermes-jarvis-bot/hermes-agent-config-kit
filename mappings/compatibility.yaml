@@ -406,6 +406,22 @@ skills/operational/cross-harness-continuation/references/CONTINUITY.example.json
   description: Provide a data-only example of a bounded cross-session continuity contract with baseline, scope, preserved decisions, and verification evidence.
   risk: low
 
+skills/architecture/plan-swarm-review/SKILL.md:
+  status: supported
+  target: hermes/skills/architecture/plan-swarm-review/SKILL.md
+  type: skill
+  name: plan-swarm-review
+  description: Iteratively harden a plan or a code module through escalating rounds of independent, differently-angled review (broad, then diverse-perspective multisample, then focused, then focused+multisample).
+  risk: medium
+
+skills/architecture/plan-swarm-review/references/vulnerability-kb.md:
+  status: supported
+  target: hermes/skills/architecture/plan-swarm-review/references/vulnerability-kb.md
+  type: reference
+  name: plan-swarm-review-vulnerability-kb
+  description: Condensed CWE Top 25 detection heuristics for use during plan-swarm-review's code-mode focused review rounds.
+  risk: medium
+
 skills/operational/gemini-delegate/SKILL.md:
   status: supported
   target: hermes/skills/gemini-delegate/SKILL.md
