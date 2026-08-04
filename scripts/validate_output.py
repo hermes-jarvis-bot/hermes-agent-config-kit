@@ -106,6 +106,35 @@ def parse_frontmatter(text: str, path: Path) -> dict[str, str]:
     return result
 
 
+PYTHON_SCRIPTS_INVOCATION_RE = re.compile(r"\bpython(?:3)?[ \t]+([^\s`]*scripts/[^\s`]+)")
+
+
+def _python_scripts_references_resolve_to_reviewed(path: Path, text: str) -> bool:
+    """True if this text contains at least one 'python .../scripts/x.py' invocation, and every
+    such match resolves (relative to this file's own directory) to an allowlisted reviewed
+    script. This allows a skill's own docs to reference a SIBLING skill's reviewed script by
+    relative path (e.g. pixel-art-storyboard's SKILL.md invoking
+    ../pixel-art-studio/scripts/palette.py) without requiring the referencing skill to itself
+    ship a reviewed script — narrower than _skill_dir_ships_reviewed_script, which only covers a
+    skill's own bundled script."""
+    matches = PYTHON_SCRIPTS_INVOCATION_RE.findall(text)
+    if not matches:
+        return False
+    allowed = reviewed_script_paths()
+    for m in matches:
+        candidate = (path.parent / m).resolve()
+        try:
+            candidate_rel = candidate.relative_to(ROOT).as_posix()
+        except ValueError:
+            return False
+        if candidate_rel not in allowed:
+            return False
+    return True
+
+
+PYTHON_SCRIPTS_PATTERN = r"\bpython(?:3)?[ \t]+[^\n]*?(?:scripts/|access_inventory)"
+
+
 def _skill_dir_ships_reviewed_script(skill_dir: Path) -> bool:
     skill_dir_rel = skill_dir.relative_to(ROOT).as_posix()
     return any(rel.startswith(skill_dir_rel + "/") for rel in reviewed_script_paths())
@@ -134,6 +163,8 @@ def validate_skills() -> None:
             if re.search(pattern, text, re.IGNORECASE):
                 if ships_reviewed_script and pattern in REVIEWED_SCRIPT_EXEMPT_PATTERNS:
                     continue
+                if pattern == PYTHON_SCRIPTS_PATTERN and _python_scripts_references_resolve_to_reviewed(path, text):
+                    continue
                 fail(f"{path} retains an upstream harness path or runtime reference")
     references = sorted((ROOT / "hermes" / "skills").glob("**/references/*.md"))
     for path in references:
@@ -145,6 +176,10 @@ def validate_skills() -> None:
         for pattern in FORBIDDEN_GENERATED_HARNESS_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
                 if ships_reviewed_script and pattern in REVIEWED_SCRIPT_EXEMPT_PATTERNS:
+                    continue
+                # Bash snippets in a reference file are written as if run from the skill's own
+                # root directory (path.parent.parent), not from references/ itself.
+                if pattern == PYTHON_SCRIPTS_PATTERN and _python_scripts_references_resolve_to_reviewed(path.parent, text):
                     continue
                 fail(f"{path} retains an upstream harness path or runtime reference")
 

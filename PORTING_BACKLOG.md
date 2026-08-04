@@ -178,6 +178,17 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/creative/pixel-art-studio/references/06-tools-and-libraries.md` | `hermes/skills/creative/pixel-art-studio/references/06-tools-and-libraries.md` |
 | `skills/creative/pixel-art-studio/references/07-cultural-styles.md` | `hermes/skills/creative/pixel-art-studio/references/07-cultural-styles.md` |
 | `skills/creative/pixel-art-studio/references/08-json-schema.md` | `hermes/skills/creative/pixel-art-studio/references/08-json-schema.md` |
+| `skills/creative/pixel-art-storyboard/SKILL.md` | `hermes/skills/creative/pixel-art-storyboard/SKILL.md` |
+| `skills/creative/pixel-art-storyboard/references/scene-description-framework.md` | `hermes/skills/creative/pixel-art-storyboard/references/scene-description-framework.md` |
+| `skills/creative/pixel-art-storyboard/references/looped-animation-techniques.md` | `hermes/skills/creative/pixel-art-storyboard/references/looped-animation-techniques.md` |
+| `skills/creative/pixel-art-storyboard/references/three-registers.md` | `hermes/skills/creative/pixel-art-storyboard/references/three-registers.md` |
+| `skills/creative/pixel-art-storyboard/references/easing-curves.md` | `hermes/skills/creative/pixel-art-storyboard/references/easing-curves.md` |
+| `skills/creative/pixel-art-storyboard/references/retouch-style-guide.md` | `hermes/skills/creative/pixel-art-storyboard/references/retouch-style-guide.md` |
+| `skills/creative/pixel-art-storyboard/references/smoother-animation-baking.md` | `hermes/skills/creative/pixel-art-storyboard/references/smoother-animation-baking.md` |
+| `skills/creative/pixel-art-storyboard/references/dataset-to-library-actionable.md` | `hermes/skills/creative/pixel-art-storyboard/references/dataset-to-library-actionable.md` |
+| `skills/creative/pixel-art-storyboard/references/element-library-scaling-architecture.md` | `hermes/skills/creative/pixel-art-storyboard/references/element-library-scaling-architecture.md` |
+| `skills/creative/pixel-art-storyboard/references/high-detail-pipeline.md` | `hermes/skills/creative/pixel-art-storyboard/references/high-detail-pipeline.md` |
+| `skills/creative/pixel-art-storyboard/references/pinterest-to-library-pipeline.md` | `hermes/skills/creative/pixel-art-storyboard/references/pinterest-to-library-pipeline.md` |
 
 These were chosen because they are broadly useful, markdown-centric, and can be adapted without executing upstream code or assuming Claude Code hook APIs.
 
@@ -340,7 +351,6 @@ removed from this list; the remaining entries have not been re-checked this sess
 - `skills/architecture/feature-new/`
 - `skills/architecture/harness-design/`
 - `skills/architecture/layer-new/`
-- `skills/creative/pixel-art-storyboard/` (companion to `pixel-art-studio`, below; not yet reviewed — also references a non-existent `templates/cover-template.js` and a personal, non-bundled `Grass Field with City.html` example file that will need adaptation)
 - `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
 - `skills/development/workflow-orchestration/` (the markdown `SKILL.md` is ported; references, JavaScript template, and validation script remain unported and quarantined)
 - `skills/writing/humanize-english/`
@@ -1081,10 +1091,70 @@ Released as **v0.3.69** (commit `bf683ed`, CI `Validate adapter` green, release:
 https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.69) covering these
 three follow-up changes.
 
+`skills/creative/pixel-art-storyboard/` — the `pixel-art-studio` companion deferred earlier —
+followed as the next Wave 3 item: `SKILL.md` (348 upstream lines), 10 reference files (3005
+upstream lines), and 2 static HTML canvas templates (`single-cover.html`, `grid-cover.html`, 255
+lines), no bundled scripts of its own. Decomposed the same way as `pixel-art-studio`: 10 parallel
+subagents drafted the reference-file adaptations (one file each), while the main `SKILL.md` and
+final cross-file consistency were done directly.
+
+Issues found and resolved during adaptation, all pre-existing in the upstream source (not
+introduced by this port):
+
+- **`templates/cover-template.js` does not exist upstream** — the `SKILL.md` referenced it, but
+  only `templates/single-cover.html` and `templates/grid-cover.html` exist in the pinned
+  snapshot. Every code example was pointed at the two templates that actually exist.
+- **A personal, non-bundled `Grass Field with City.html` example** is cited throughout several
+  files (the `SKILL.md`'s own frontmatter description, and `references/retouch-style-guide.md`
+  most heavily, alongside two other personal files, `Elements Sheet.html` and a "Preview Grid"
+  review UI) as the "authoritative"/"canonical" reference for this skill's aesthetic. None exist
+  in the snapshot. Noted as illustrative/historical context in the ported files rather than
+  silently kept as if bundled.
+- **Three recurring "companion research" files** (`image-collection-learning-2026.md`,
+  `image-to-pixelart-and-training-2026.md`, `image-to-pixel-art-tools-2026.md`) are cited across
+  four different reference files as if they were sibling documents, but none exist anywhere in
+  the pinned upstream snapshot. Each mention was replaced with a plain note that the file isn't
+  part of this port, rather than a dangling cross-reference.
+- **`bake_animation.py` is referenced throughout** (the main workflow's "Baking finished
+  animations" section, and three reference files: `smoother-animation-baking.md` — almost
+  entirely about this tool — plus `element-library-scaling-architecture.md` and
+  `high-detail-pipeline.md`). Consistent with the `pixel-art-studio` port and the
+  `mappings/rejected-scripts.yaml` record: every mention states plainly that the script was
+  fully read and deliberately not ported, and — following the same precedent set for
+  `gemini-switch.sh` in the `gemini-delegate` port — none of its example invocations are kept as
+  literal runnable-looking `bash` commands; they were rewritten as prose or a parameter/format
+  table describing what the upstream tool did.
+- **A Claude-Code "agent" invocation** (`@pixel-art-quality-board`, referencing
+  `agents/pixel-art-quality-board.md` — a Claude-Code autonomous-subagent descriptor with no
+  Hermes-native equivalent) in `references/high-detail-pipeline.md` was rephrased as a
+  description of the multi-dimensional review process itself, not a tool/agent call.
+- One `references/high-detail-pipeline.md` code example invoked `scripts/quality_check.py`
+  without the `../pixel-art-studio/` prefix used everywhere else in this skill (an
+  inconsistency already present upstream); normalized to match every other cross-skill
+  reference in this port.
+
+Porting this exposed one further validator gap, found and fixed rather than worked around: the
+`FORBIDDEN_GENERATED_HARNESS_PATTERNS` exemption added for `pixel-art-studio` (v0.3.68) only
+covered a skill referencing *its own* bundled reviewed script; it did not cover a *companion*
+skill's `SKILL.md`/references documenting a **sibling** skill's reviewed script via a relative
+path (e.g. `pixel-art-storyboard` invoking `../pixel-art-studio/scripts/palette.py`). Fixed with
+`_python_scripts_references_resolve_to_reviewed()`, which resolves each specific
+`python .../scripts/x.py` match relative to the referencing file's own directory and checks it
+against the reviewed-script allowlist directly — narrower and more precise than the per-skill
+exemption, and it correctly continues to reject a reference to an unreviewed or rejected script
+(e.g. `bake_animation.py`) even when it appears alongside legitimate ones.
+
+Full verification: `python3 scripts/validate_output.py` -> Validation OK;
+`converted_output_matches_supported()` -> True; disposable `install_hermes.py --apply` copied
+all 13 files (`SKILL.md` + 10 references + 2 templates) byte-identically; `remove_hermes.py
+--apply` removed them cleanly.
+
+Released as **v0.3.70** (commit and release URL recorded once tagged).
+
 **Wave transition status:** the active Wave remains **Wave 3 — skill package review**; no Wave 4
 trigger has fired (Wave 3's own candidate list — `article-structure-review`, `agent-harness-design`,
 `frontend-design`, `observability-monitoring`, the reviewed-script-lane pilots, `gemini-delegate`,
-and now `plan-swarm-review` — is not exhausted purely by having ported several items; per release rule 4
+`plan-swarm-review`, `pixel-art-studio`, and now `pixel-art-storyboard` — is not exhausted purely by having ported several items; per release rule 4
 above, a Wave transition requires its exact trigger to be documented in the transition commit,
 which has not happened here). **0.4.x is not yet authorized.** It becomes authorized only when a
 future commit documents Wave 4's exact trigger (e.g., "first accepted and verified Hermes-native

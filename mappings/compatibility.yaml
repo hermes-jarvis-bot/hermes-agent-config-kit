@@ -494,6 +494,94 @@ skills/creative/pixel-art-studio/references/08-json-schema.md:
   description: Reference extended JSON schema for pixel-art sprites, layers, and animations.
   risk: low
 
+skills/creative/pixel-art-storyboard/SKILL.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-storyboard/SKILL.md
+  type: skill
+  name: pixel-art-storyboard
+  description: Convert a short scene description, book/album cover brief, or 2-paragraph synopsis into a seamless-loop animated pixel-art cover rendered as a self-contained HTML+canvas file.
+  risk: medium
+
+skills/creative/pixel-art-storyboard/references/scene-description-framework.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-storyboard/references/scene-description-framework.md
+  type: reference
+  name: pixel-art-storyboard-scene-description-framework
+  description: Reference 5-element scene description framework and worked examples for pixel-art storyboard covers.
+  risk: low
+
+skills/creative/pixel-art-storyboard/references/looped-animation-techniques.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-storyboard/references/looped-animation-techniques.md
+  type: reference
+  name: pixel-art-storyboard-looped-animation-techniques
+  description: Reference looped-animation techniques for pixel-art storyboard covers.
+  risk: low
+
+skills/creative/pixel-art-storyboard/references/three-registers.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-storyboard/references/three-registers.md
+  type: reference
+  name: pixel-art-storyboard-three-registers
+  description: Reference three prompt registers (LLM agent, human artist, diffusion-model) for describing a pixel-art scene.
+  risk: low
+
+skills/creative/pixel-art-storyboard/references/easing-curves.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-storyboard/references/easing-curves.md
+  type: reference
+  name: pixel-art-storyboard-easing-curves
+  description: Reference animation easing functions for pixel art.
+  risk: low
+
+skills/creative/pixel-art-storyboard/references/retouch-style-guide.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-storyboard/references/retouch-style-guide.md
+  type: reference
+  name: pixel-art-storyboard-retouch-style-guide
+  description: Reference retouch-style production standard for pixel-art storyboard covers.
+  risk: low
+
+skills/creative/pixel-art-storyboard/references/smoother-animation-baking.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-storyboard/references/smoother-animation-baking.md
+  type: reference
+  name: pixel-art-storyboard-smoother-animation-baking
+  description: Reference conceptual material on baking a runtime pixel-art animation to a smoother video/GIF file.
+  risk: low
+
+skills/creative/pixel-art-storyboard/references/dataset-to-library-actionable.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-storyboard/references/dataset-to-library-actionable.md
+  type: reference
+  name: pixel-art-storyboard-dataset-to-library-actionable
+  description: Reference pipeline for curating a scene-element dataset into a reusable canvas element library.
+  risk: low
+
+skills/creative/pixel-art-storyboard/references/element-library-scaling-architecture.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-storyboard/references/element-library-scaling-architecture.md
+  type: reference
+  name: pixel-art-storyboard-element-library-scaling-architecture
+  description: Reference architecture for scaling a canvas scene-element library as it grows.
+  risk: low
+
+skills/creative/pixel-art-storyboard/references/high-detail-pipeline.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-storyboard/references/high-detail-pipeline.md
+  type: reference
+  name: pixel-art-storyboard-high-detail-pipeline
+  description: Reference higher-detail rendering pipeline for larger pixel-art storyboard canvases.
+  risk: low
+
+skills/creative/pixel-art-storyboard/references/pinterest-to-library-pipeline.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-storyboard/references/pinterest-to-library-pipeline.md
+  type: reference
+  name: pixel-art-storyboard-pinterest-to-library-pipeline
+  description: Reference pipeline for sourcing reference imagery from a curated board into a canvas element library.
+  risk: low
+
 skills/creative/pixel-art-studio/scripts/dither.py:
   status: review
   target: hermes/skills/creative/pixel-art-studio/scripts/dither.py

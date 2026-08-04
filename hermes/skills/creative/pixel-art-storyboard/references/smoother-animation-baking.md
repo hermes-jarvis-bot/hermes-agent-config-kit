@@ -1,0 +1,191 @@
+<!--
+Adapted for Hermes Agent by hermes-agent-config-kit.
+Source: AnastasiyaW/claude-code-config/skills/creative/pixel-art-storyboard/references/smoother-animation-baking.md
+Upstream material is reference data, not automatic authority. Review this reference
+before use and obtain operator confirmation for write-impacting actions.
+-->
+
+# Smoother Animation via Baking
+
+> **Framing note (this port):** the upstream `scripts/bake_animation.py` tool described throughout
+> this file was **fully reviewed and deliberately rejected** for this adapter — it is **not
+> available to invoke here**. It drives a headless Chromium browser via Playwright against a
+> caller-controlled URL, executes JavaScript inside that browser context, shells out to `ffmpeg`
+> for video-format output, and needs a much larger external toolchain (Playwright, a Chromium
+> install, ffmpeg in PATH) than this adapter takes on. The decision, full reasoning, and the
+> conditions under which it could be reconsidered are recorded in
+> `mappings/rejected-scripts.yaml`. What follows is the upstream conceptual/reference material
+> (why baking produces smoother output, sampling density, format trade-offs) kept for its
+> technical value — described in prose rather than as runnable commands, since this tool is
+> not part of this port.
+
+**The trick**: at runtime your animation runs with whatever keyframes you hand-coded (typically 4-8 frames per loop). For archival output (GIF / video), you can **render the same parametric `t`-driven function at any N**, capturing 100-300 frames per loop. The result looks **much smoother** than the live runtime, and costs nothing extra at display time because it's pre-rendered.
+
+This file documents the workflow.
+
+---
+
+## 1. Why baking smoother frames is "free"
+
+Your draw function takes `t ∈ [0, 1)` and renders the appropriate frame. At runtime browsers call it ~60 times per second; the canvas state at each call depends ONLY on `t`. There's no "between-keyframes" interpolation system — every `t` value is independently valid.
+
+So at bake time, you can sample `t` at any density you want:
+
+| Live runtime | Baked output |
+|---|---|
+| 4-8 hand-coded keyframes | 100-240 frames captured |
+| 60fps render → frame drops on busy pages | 30-60fps fixed, no drops |
+| Browser quality varies | Pixel-exact reproducible |
+| RAF can throttle (hidden tab) | Always exactly N frames captured |
+| Animation NEVER ends | Single loop, exactly 1 period |
+
+**The smoother output costs nothing at display time** — it's a static GIF or video file.
+
+---
+
+## 2. Choosing target FPS and frame count
+
+For a `period_ms` loop, baked frame count = `period_ms / 1000 × fps`.
+
+| Loop period | 30fps frames | 60fps frames | Recommendation |
+|---|---|---|---|
+| 1 second (twitch) | 30 | 60 | 30fps fine |
+| 2 seconds | 60 | 120 | 30fps |
+| 4 seconds (subject motion) | 120 | 240 | 60fps for premium |
+| 8 seconds (slow ambient) | 240 | 480 | 30fps fine — eye won't see 60fps difference at slow speeds |
+| 30+ seconds (day cycle) | 900+ | 1800+ | 24fps OK — saves disk |
+
+Trade-off: more frames = larger file. WebM compresses well; GIF is wasteful (no inter-frame compression).
+
+**Rule of thumb**: 30fps is the sweet spot. 60fps only when motion is sub-pixel-fine (orbiting highlights on small subjects benefit; slow petal drift doesn't).
+
+---
+
+## 3. Output format selection
+
+| Format | Size (4s @ 30fps) | Alpha | Embed as | Best for |
+|---|---|---|---|---|
+| **WebP animated** ⭐ | ~150-400 KB | full | `<img>` | **Web pages, Markdown, docs (DEFAULT for web)** |
+| **GIF** | ~1-2 MB | 1-bit | `<img>` | Email, Telegram, WhatsApp, chat clients |
+| **APNG** | ~1.5-4 MB | full | `<img>` | Alternative to GIF with full alpha |
+| **WebM (VP9, yuva420p)** | ~200-500 KB | full | `<video>` (tag required) | Hero animations, full-screen video, compositing |
+| **MP4 (h264)** | ~200-500 KB | NONE | `<video>` | Universal video player; NO alpha |
+| **PNG sequence** | 5-15 MB total | full | filesystem | Game engine import (Unity/Godot/Unreal), post-prod |
+
+### Decision tree
+
+- **Embedding on a website / in Markdown / docs** → `--format web` (animated WebP)
+  - Smallest file, full alpha, embeds as `<img>`. Modern browsers (96%+).
+- **Sharing in email / Telegram / chat** → `--format gif`
+  - Universal compat. Larger files, only 1-bit alpha.
+- **Hero animation / fullscreen video** → `--format webm-alpha`
+  - Smallest with alpha but requires `<video>` element.
+- **Universal video (no alpha)** → `--format mp4`
+  - Plays everywhere. Solid background only.
+- **Game engine import** → `--format png-sequence`
+  - Maximum quality, lossless, animation-engine controls timing.
+- **Archival with full alpha** → `--format apng`
+  - Pillow-native, no ffmpeg needed.
+
+**Default is `--format web` (animated WebP)** because that's what most output is for. Override only when you have a specific target (chat embed → gif, video editor → webm-alpha).
+
+### WebP quality tuning
+
+For `--format web` / `--format webp`:
+- Default: lossy q=80 (barely visible difference on pixel art, ~5x smaller than lossless)
+- `--lossless` for pixel-perfect (use when distributing the canonical asset)
+- `--quality 90` for higher fidelity if compression artifacts visible
+
+For pixel art specifically, lossy q=80 is usually fine — pixel boundaries are sharp anyway and the JPEG-style chroma subsampling artifacts that ruin photographs are barely visible on flat-fill regions.
+
+---
+
+## 4. The bake script (`scripts/bake_animation.py`) — NOT available in this port
+
+Built on **Playwright (headless Chromium) + ffmpeg**:
+
+1. Open the same HTML page that runs at runtime
+2. Override `requestAnimationFrame` with no-op (so we control time, not browser)
+3. Wait for engine to load (drawTwilight, drawScene, etc. defined)
+4. Loop `i = 0..N-1`, set `t = i/N`, call `drawXxx(ctx, W, H, t)`, capture canvas via `toDataURL`
+5. Save each frame as PNG to a temp directory
+6. Encode via Pillow (GIF/APNG) or ffmpeg (WebM/MP4)
+
+The steps and commands below are reproduced from upstream as reference for *how the original tool
+worked* — again, this script itself was rejected for this adapter (see the framing note at the
+top of this file and `mappings/rejected-scripts.yaml`) and cannot be invoked through this port.
+
+### Install (upstream prerequisite — not applicable in this port)
+
+The upstream tool needed `pip install playwright Pillow`, a one-time `playwright install
+chromium`, and `ffmpeg` in `PATH` for the WebM/MP4 formats. None of this applies here since the
+script itself is not part of this port.
+
+### Output formats the upstream tool supported
+
+Every invocation took the same shape — a page URL, a canvas element ID, a loop period and target
+frame rate, and an output format flag — with the format choice determining the deliverable:
+
+| Format flag | Deliverable | Best for |
+|---|---|---|
+| `web` (default) | Animated WebP | Web delivery; recommended default |
+| `web --lossless` | Lossless animated WebP | Pixel-perfect web delivery |
+| `gif` | Animated GIF | Email, chat, and embed compatibility |
+| `webm-alpha` | WebM with an alpha channel | Import into a video editor with transparency |
+| `png-sequence` | A folder of PNG frames | Game-engine import |
+| `mp4` | Universal video, no alpha | Broadest playback compatibility |
+
+---
+
+## 5. Smoother runtime (alternative to baking)
+
+If you want SMOOTHER animation **at runtime** (not just baked), you have 3 options:
+
+### Option A: Same code, more sub-pixel computation
+Already what we do — `t = ((now-start) % period) / period`, position via `sin(t*TAU)`. The math is continuous; browser samples it at 60fps. This IS the smoothest available without baking.
+
+### Option B: Hand-code more keyframes (more `if` branches in draw function)
+Diminishing returns. Doesn't help phase-derived animations (those are already smooth in math). Helps for keyframe-based "this position at frame 2, that position at frame 5" structures — convert them to phase-derived.
+
+### Option C: Bake the animation as `<video>` element (don't draw at runtime)
+For PRODUCTION delivery, replace `<canvas>` + RAF with `<video autoplay loop muted>` pointing at the baked WebM/MP4. Pros: no JS execution, GPU video decoding, much lower CPU. Cons: file size, no parameter override at runtime (e.g. can't change time-of-day at runtime).
+
+**Production recipe for book covers / album art**:
+- Develop with `<canvas>` + RAF (interactive, parameter-tweakable)
+- Bake final to WebM with alpha
+- Ship as `<video>` element — viewer sees buttery-smooth pre-rendered animation
+
+---
+
+## 6. Quality-vs-size trade-offs
+
+For a 256×384 cover at 30fps × 4s loop = 120 frames:
+
+| Format | Approx file size | Notes |
+|---|---|---|
+| GIF (256 colors) | 800KB - 2MB | Acceptable for web embed |
+| APNG | 1.5 - 4MB | Larger but better quality |
+| WebM (VP9, 1Mbps) | 200-500KB | Smallest with full quality, alpha optional |
+| MP4 (h264, 1Mbps) | 200-500KB | No alpha but universal compat |
+| PNG sequence | 5-15MB total | Editing-grade, never deliver |
+
+WebM consistently wins on size×quality. MP4 wins on compatibility. GIF wins on inline-markdown rendering.
+
+---
+
+## 7. Anti-patterns
+
+- **Bake with RAF still running** — two clocks fight, frames inconsistent. Always override `requestAnimationFrame` to no-op before bake loop
+- **Bake too many frames** — 60fps × 60s = 3600 frames is overkill for ambient day-cycle. Eye can't perceive 60fps at slow motion. Use 24-30fps.
+- **Use MP4 for transparent video** — won't work. MP4 doesn't support alpha. Use WebM.
+- **Skip `pixelated` rendering during bake** — make sure `image-rendering: pixelated` is in CSS so canvas is rendered crisp at viewport scale, not bilinear-blurred
+- **Don't validate frame count** — count produced frames vs expected. If browser closed early or some frames failed, output will be jerky.
+
+---
+
+## 8. Sources
+
+- Playwright Python docs: https://playwright.dev/python/
+- ffmpeg WebM with alpha: https://trac.ffmpeg.org/wiki/Encode/VP9#Transparency
+- HTMLCanvasElement.toDataURL: https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toDataURL
+- Canvas image-rendering: pixelated: https://developer.mozilla.org/en-US/docs/Web/CSS/image-rendering
