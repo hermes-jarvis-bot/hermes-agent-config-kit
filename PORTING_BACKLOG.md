@@ -169,6 +169,15 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/operational/gemini-delegate/SKILL.md` | `hermes/skills/gemini-delegate/SKILL.md` |
 | `skills/architecture/plan-swarm-review/SKILL.md` | `hermes/skills/architecture/plan-swarm-review/SKILL.md` |
 | `skills/architecture/plan-swarm-review/references/vulnerability-kb.md` | `hermes/skills/architecture/plan-swarm-review/references/vulnerability-kb.md` |
+| `skills/creative/pixel-art-studio/SKILL.md` | `hermes/skills/creative/pixel-art-studio/SKILL.md` |
+| `skills/creative/pixel-art-studio/references/01-techniques.md` | `hermes/skills/creative/pixel-art-studio/references/01-techniques.md` |
+| `skills/creative/pixel-art-studio/references/02-palette-theory.md` | `hermes/skills/creative/pixel-art-studio/references/02-palette-theory.md` |
+| `skills/creative/pixel-art-studio/references/03-shading-materials.md` | `hermes/skills/creative/pixel-art-studio/references/03-shading-materials.md` |
+| `skills/creative/pixel-art-studio/references/04-animation.md` | `hermes/skills/creative/pixel-art-studio/references/04-animation.md` |
+| `skills/creative/pixel-art-studio/references/05-quality-rubric.md` | `hermes/skills/creative/pixel-art-studio/references/05-quality-rubric.md` |
+| `skills/creative/pixel-art-studio/references/06-tools-and-libraries.md` | `hermes/skills/creative/pixel-art-studio/references/06-tools-and-libraries.md` |
+| `skills/creative/pixel-art-studio/references/07-cultural-styles.md` | `hermes/skills/creative/pixel-art-studio/references/07-cultural-styles.md` |
+| `skills/creative/pixel-art-studio/references/08-json-schema.md` | `hermes/skills/creative/pixel-art-studio/references/08-json-schema.md` |
 
 These were chosen because they are broadly useful, markdown-centric, and can be adapted without executing upstream code or assuming Claude Code hook APIs.
 
@@ -331,8 +340,7 @@ removed from this list; the remaining entries have not been re-checked this sess
 - `skills/architecture/feature-new/`
 - `skills/architecture/harness-design/`
 - `skills/architecture/layer-new/`
-- `skills/creative/pixel-art-storyboard/`
-- `skills/creative/pixel-art-studio/`
+- `skills/creative/pixel-art-storyboard/` (companion to `pixel-art-studio`, below; not yet reviewed — also references a non-existent `templates/cover-template.js` and a personal, non-bundled `Grass Field with City.html` example file that will need adaptation)
 - `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
 - `skills/development/workflow-orchestration/` (the markdown `SKILL.md` is ported; references, JavaScript template, and validation script remain unported and quarantined)
 - `skills/writing/humanize-english/`
@@ -960,6 +968,76 @@ port from the `skills/architecture/` upstream domain, so it uses the (post-decis
 
 Released as **v0.3.67** (commit `e173207`, CI `Validate adapter` green, release:
 https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.67).
+
+`skills/creative/pixel-art-studio/` followed as a larger Wave 3 + reviewed-script-lane
+combination, decomposed and partly fanned out to parallel subagents (per operator direction to
+decompose the task and use subagents where safe). Package size: `SKILL.md` (398 upstream lines),
+8 reference files (3093 upstream lines), 7 upstream Python scripts (2640 lines), one JS canvas
+library (`elements/elements.js`, 488 lines) plus its static preview page (`catalog.html`), and 30+
+bundled `.hex` palette files (136 KB) plus one small curated-index JSON.
+
+Scope decisions made autonomously (all reversible/git-revertable, decided and reported per this
+adapter's autonomy-risk-tiers discipline rather than blocked on upfront questions):
+
+- **Companion skill `pixel-art-storyboard` deferred** to a separate round — it has its own
+  dangling references (a non-existent `templates/cover-template.js`, a personal
+  `Grass Field with City.html` example file not in the snapshot) and is a large enough
+  companion package to deserve its own pass.
+- **`bake_animation.py` excluded** from this round (of 7 upstream scripts, only 6 were ported).
+  It drives a headless Chromium browser via Playwright against a fully caller-controlled URL
+  (`page.goto(url)`), shells out to `ffmpeg` (safe argv-list form, not `shell=True`, but still a
+  meaningfully larger external toolchain — Playwright + a Chromium install + ffmpeg, beyond the
+  Pillow/numpy the other six need), and leaves un-cleaned temporary frame directories on disk.
+  This is a qualitatively different risk category from the other six read/write-confined
+  image-processing CLIs and was independently characterized as "needs-discussion" by a research
+  subagent before this decision — same discipline as declining `gemini-switch.sh` earlier in this
+  Wave: a script doesn't get pulled in by default just because it shipped alongside safer ones.
+- **`elements/elements.js` and `elements/catalog.html` ported as reference/asset data**, not
+  through the reviewed-script-lane manifest: both were fully read by hand and confirmed to be
+  inert, browser-sandboxed canvas-drawing code with no network calls, no `eval`, and no
+  filesystem access — they only ever execute inside a browser loading the bundled catalog or a
+  generated scene page, never invoked by an operator/agent directly the way the Python scripts
+  are. Porting them exposed that `elements/` (unlike `scripts/`) isn't covered by the quarantine
+  substring check at all — a latent gap, noted here rather than relied upon; the actual basis for
+  including them is the manual safety review, not the path-naming loophole.
+- **Binary example assets excluded** (~204 KB of PNG/GIF/APNG demo images and several large
+  self-contained HTML demo pages under `examples/`) — consistent with `git-source-of-truth.md`'s
+  heavy-binaries exclusion class and with every other port in this adapter so far; only prose,
+  scripts, references, and the small bundled palette/library data were ported.
+
+Mechanical/process notes:
+
+- **Two safety-relevant validator gaps found and fixed while porting, not papered over:**
+  1. `validate_quarantine_policy()`'s leak check required an individual `reviewed-scripts.yaml`
+     entry for every file under a `scripts/`-named path, with no distinction between executable
+     code and inert bundled data — this would have forced 30+ near-identical manifest entries for
+     plain `.hex`/`.json` palette lookup tables that cannot execute and are already covered by
+     `validate_secret_scan()`'s broad sweep of the whole `hermes/` tree. Fixed with a narrow
+     `NON_EXECUTABLE_DATA_EXTENSIONS` allowlist (`.hex`, `.json`, `.txt`, `.csv`) — code files
+     still require full manifest review; only inert data sitting alongside a reviewed script is
+     exempted.
+  2. The `FORBIDDEN_GENERATED_HARNESS_PATTERNS` exemption added for the `distill-feedback` pilot
+     (v0.3.65) only covered `validate_skills()`'s `SKILL.md` loop, not the separate `references/*.md`
+     loop — so a reference file (`02-palette-theory.md`) documenting how to invoke this skill's
+     own bundled `scripts/palette.py` still false-positived. Fixed by computing the skill root
+     correctly for both call sites (`path.parent` for a `SKILL.md`, `path.parent.parent` for a
+     `references/*.md`) rather than assuming the check only needed to exist in one place.
+- Six subagents were used in parallel to draft the 8 reference-file adaptations (one file each);
+  a seventh research subagent independently characterized all 7 upstream scripts for
+  network/subprocess/credential/destructive-operation risk before any were ported. Every one of
+  the 6 approved scripts was then also read in full personally, matching (not merely trusting)
+  the subagent's findings, before being added to `mappings/reviewed-scripts.yaml` — the manifest
+  entries are a personal sign-off, not a delegated rubber stamp.
+- **Live functional execution of the 6 scripts was not attempted**: Pillow and numpy are not
+  installed in this development environment, and installing them solely for a one-off
+  verification (when every script was already fully read and independently characterized) was
+  judged disproportionate. `mappings/reviewed-scripts.yaml`'s `functional_test` field says so
+  plainly for each entry rather than fabricating a result.
+
+Full verification: `python3 scripts/validate_output.py` -> Validation OK;
+`converted_output_matches_supported()` -> True; disposable `install_hermes.py --apply` copied all
+48 files (SKILL.md + 8 references + 6 scripts + 32 palette files + elements.js + catalog.html)
+byte-identically; `remove_hermes.py --apply` removed them cleanly.
 
 **Wave transition status:** the active Wave remains **Wave 3 — skill package review**; no Wave 4
 trigger has fired (Wave 3's own candidate list — `article-structure-review`, `agent-harness-design`,

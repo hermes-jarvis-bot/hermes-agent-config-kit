@@ -422,6 +422,126 @@ skills/architecture/plan-swarm-review/references/vulnerability-kb.md:
   description: Condensed CWE Top 25 detection heuristics for use during plan-swarm-review's code-mode focused review rounds.
   risk: medium
 
+skills/creative/pixel-art-studio/SKILL.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-studio/SKILL.md
+  type: skill
+  name: pixel-art-studio
+  description: Create production-quality pixel art and animations programmatically - single-frame sprites, animations, image-to-pixel-art preprocessing, sprite sheets, and automated quality scoring.
+  risk: medium
+
+skills/creative/pixel-art-studio/references/01-techniques.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-studio/references/01-techniques.md
+  type: reference
+  name: pixel-art-studio-techniques
+  description: Reference pixel-art drawing techniques - clusters, anti-aliasing, jaggies, doublies, and outlining.
+  risk: low
+
+skills/creative/pixel-art-studio/references/02-palette-theory.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-studio/references/02-palette-theory.md
+  type: reference
+  name: pixel-art-studio-palette-theory
+  description: Reference palette theory, dithering, and banding guidance for pixel art.
+  risk: low
+
+skills/creative/pixel-art-studio/references/03-shading-materials.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-studio/references/03-shading-materials.md
+  type: reference
+  name: pixel-art-studio-shading-materials
+  description: Reference shading, light-source, and per-material rendering guidance for pixel art.
+  risk: low
+
+skills/creative/pixel-art-studio/references/04-animation.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-studio/references/04-animation.md
+  type: reference
+  name: pixel-art-studio-animation
+  description: Reference animation principles, frame counts, smear frames, and sub-pixel motion for pixel art.
+  risk: low
+
+skills/creative/pixel-art-studio/references/05-quality-rubric.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-studio/references/05-quality-rubric.md
+  type: reference
+  name: pixel-art-studio-quality-rubric
+  description: Reference quality-scoring rubric and anti-AI-slop detection checklist for pixel art.
+  risk: low
+
+skills/creative/pixel-art-studio/references/06-tools-and-libraries.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-studio/references/06-tools-and-libraries.md
+  type: reference
+  name: pixel-art-studio-tools-and-libraries
+  description: Reference tools and libraries used in pixel-art production workflows.
+  risk: low
+
+skills/creative/pixel-art-studio/references/07-cultural-styles.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-studio/references/07-cultural-styles.md
+  type: reference
+  name: pixel-art-studio-cultural-styles
+  description: Reference Chinese, Korean, Russian, and Western cultural pixel-art style guidance.
+  risk: low
+
+skills/creative/pixel-art-studio/references/08-json-schema.md:
+  status: supported
+  target: hermes/skills/creative/pixel-art-studio/references/08-json-schema.md
+  type: reference
+  name: pixel-art-studio-json-schema
+  description: Reference extended JSON schema for pixel-art sprites, layers, and animations.
+  risk: low
+
+skills/creative/pixel-art-studio/scripts/dither.py:
+  status: review
+  target: hermes/skills/creative/pixel-art-studio/scripts/dither.py
+  type: reviewed-script
+  name: pixel-art-studio-dither-script
+  description: Dithering algorithms (Bayer/Floyd-Steinberg/Atkinson/ordered/blue-noise). Governed exclusively by mappings/reviewed-scripts.yaml - never auto-converted by the SUPPORTED fast lane.
+  risk: low
+
+skills/creative/pixel-art-studio/scripts/palette.py:
+  status: review
+  target: hermes/skills/creative/pixel-art-studio/scripts/palette.py
+  type: reviewed-script
+  name: pixel-art-studio-palette-script
+  description: Palette list/show/extract/analyze/ramp-generation utility. Governed exclusively by mappings/reviewed-scripts.yaml - never auto-converted by the SUPPORTED fast lane.
+  risk: low
+
+skills/creative/pixel-art-studio/scripts/render.py:
+  status: review
+  target: hermes/skills/creative/pixel-art-studio/scripts/render.py
+  type: reviewed-script
+  name: pixel-art-studio-render-script
+  description: Renders the pixel-art JSON schema to PNG/GIF/APNG/sprite sheet. Governed exclusively by mappings/reviewed-scripts.yaml - never auto-converted by the SUPPORTED fast lane.
+  risk: low
+
+skills/creative/pixel-art-studio/scripts/preprocess.py:
+  status: review
+  target: hermes/skills/creative/pixel-art-studio/scripts/preprocess.py
+  type: reviewed-script
+  name: pixel-art-studio-preprocess-script
+  description: Image-to-pixel-art preprocessing pipeline (downsample/quantize/dither). Governed exclusively by mappings/reviewed-scripts.yaml - never auto-converted by the SUPPORTED fast lane.
+  risk: low
+
+skills/creative/pixel-art-studio/scripts/animate.py:
+  status: review
+  target: hermes/skills/creative/pixel-art-studio/scripts/animate.py
+  type: reviewed-script
+  name: pixel-art-studio-animate-script
+  description: Animation template generation, easing curves, and sprite-sheet combination. Governed exclusively by mappings/reviewed-scripts.yaml - never auto-converted by the SUPPORTED fast lane.
+  risk: low
+
+skills/creative/pixel-art-studio/scripts/quality_check.py:
+  status: review
+  target: hermes/skills/creative/pixel-art-studio/scripts/quality_check.py
+  type: reviewed-script
+  name: pixel-art-studio-quality-check-script
+  description: Read-only pixel-art quality scoring (orphans, doublies, pillow-shading, hue-rotation, AI-slop signals). Governed exclusively by mappings/reviewed-scripts.yaml - never auto-converted by the SUPPORTED fast lane.
+  risk: low
+
 skills/operational/gemini-delegate/SKILL.md:
   status: supported
   target: hermes/skills/gemini-delegate/SKILL.md

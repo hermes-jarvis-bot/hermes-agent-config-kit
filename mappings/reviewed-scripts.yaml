@@ -74,3 +74,118 @@
     human-turn extraction excludes tool_result/summary/system-reminder
     entries and that mark_processed correctly excludes processed sessions
     from subsequent pending_sessions() calls.
+
+- path: hermes/skills/creative/pixel-art-studio/scripts/dither.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: skills/creative/pixel-art-studio/scripts/dither.py
+  source_sha256: c7d59efbd827929b00db7b84beaabac70fbf73d1889788cbe08179d4fab0b1f7
+  reviewed_at: "2026-08-04"
+  reviewed_by: "operator-approved reviewed-script-lane, hermes-agent-config-kit session (independently characterized by a research subagent, then fully read personally before sign-off)"
+  summary: >
+    Dithering algorithms (Bayer 2/4/8, Floyd-Steinberg, Atkinson, ordered,
+    blue-noise) plus nearest-palette quantization. stdlib (argparse, json,
+    sys, pathlib) plus Pillow and numpy (documented external prerequisite:
+    pip install Pillow numpy). No network calls, no subprocess/os.system/
+    eval/exec, no credential access. Reads bundled palette .hex files
+    relative to the script's own directory and the user-supplied input
+    image; writes only to the user-supplied -o/--output path.
+  functional_test: >
+    Not yet independently executed this session (image-processing CLI
+    requiring Pillow/numpy); full manual code read confirms the summary
+    above. Static syntax check (compile()) passed.
+
+- path: hermes/skills/creative/pixel-art-studio/scripts/palette.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: skills/creative/pixel-art-studio/scripts/palette.py
+  source_sha256: e22d5ff520b0d5866fddd1b0439b8d5071ccb8c58e520d469820b5fccea8804f
+  reviewed_at: "2026-08-04"
+  reviewed_by: "operator-approved reviewed-script-lane, hermes-agent-config-kit session (independently characterized by a research subagent, then fully read personally before sign-off)"
+  summary: >
+    Palette utility: list/show/extract (k-means, median-cut, octree)/
+    analyze bundled or image-derived palettes, generate hue-shifted ramps,
+    search a bundled curated palette index by tag or mood. stdlib
+    (argparse, colorsys, json, sys, pathlib) plus Pillow and numpy
+    (documented external prerequisite). Confirmed no network imports
+    anywhere (no requests/urllib/httpx/socket) — --extract, --search-tag,
+    and --mood operate purely on local bundled data and local image files.
+    No subprocess/os.system/eval/exec, no credential access. Writes only to
+    a caller-supplied -o/--output path.
+  functional_test: >
+    Not yet independently executed this session; full manual code read
+    confirms the summary above. Static syntax check (compile()) passed.
+
+- path: hermes/skills/creative/pixel-art-studio/scripts/render.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: skills/creative/pixel-art-studio/scripts/render.py
+  source_sha256: a366e88a88b5887c9028a1fc6ac159bacd006e4b024fca02a477b7301febb147
+  reviewed_at: "2026-08-04"
+  reviewed_by: "operator-approved reviewed-script-lane, hermes-agent-config-kit session (independently characterized by a research subagent, then fully read personally before sign-off)"
+  summary: >
+    Renders the pixel-art JSON schema (single sprite, layered composition,
+    animation, or sprite sheet) to PNG/GIF/APNG. stdlib (argparse, json,
+    os, sys, pathlib, typing) plus Pillow (documented external
+    prerequisite); the `os` import is present but used for nothing risky
+    (no os.system anywhere). No network calls, no subprocess/eval/exec, no
+    credential access. Reads a JSON spec (path or stdin `-`) and bundled
+    palette .hex files relative to the script; writes only to the
+    user-supplied -o/--output path.
+  functional_test: >
+    Not yet independently executed this session; full manual code read
+    confirms the summary above. Static syntax check (compile()) passed.
+
+- path: hermes/skills/creative/pixel-art-studio/scripts/preprocess.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: skills/creative/pixel-art-studio/scripts/preprocess.py
+  source_sha256: ad3fd6f6667593f82746f4990474d1e31f463bab41b7f0afdc1da4c1f3da1c6c
+  reviewed_at: "2026-08-04"
+  reviewed_by: "operator-approved reviewed-script-lane, hermes-agent-config-kit session (independently characterized by a research subagent, then fully read personally before sign-off)"
+  summary: >
+    Image-to-pixel-art preprocessing pipeline (downsample, palette
+    quantize, optional dither). stdlib (argparse, json, sys, pathlib,
+    tempfile) plus Pillow and numpy (documented external prerequisite);
+    imports this same skill's dither.py and palette.py directly via
+    sys.path insertion (not a subprocess call). No network calls, no
+    subprocess/os.system/eval/exec, no credential access. Creates one
+    self-cleaning temp PNG (created and unlinked with missing_ok=True in a
+    finally block) plus the user-supplied -o/--output path.
+  functional_test: >
+    Not yet independently executed this session; full manual code read
+    confirms the summary above. Static syntax check (compile()) passed.
+
+- path: hermes/skills/creative/pixel-art-studio/scripts/animate.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: skills/creative/pixel-art-studio/scripts/animate.py
+  source_sha256: 63c80a6e9f21bebfc29bc87c2dec3d262b3a802ef27bc5747ed5208cb161f39e
+  reviewed_at: "2026-08-04"
+  reviewed_by: "operator-approved reviewed-script-lane, hermes-agent-config-kit session (independently characterized by a research subagent, then fully read personally before sign-off)"
+  summary: >
+    Animation helpers: empty walk/idle/attack/death template generation,
+    easing-curve waypoint computation, combining separate frame PNGs into
+    a sprite sheet, and delegating full JSON animation rendering to this
+    same skill's render.py (direct import via sys.path insertion, not a
+    subprocess call). stdlib (argparse, json, math, sys, pathlib) plus
+    Pillow (documented external prerequisite). No network calls, no
+    subprocess/os.system/eval/exec, no credential access. Writes only to
+    user-supplied or clearly-named default output paths.
+  functional_test: >
+    Not yet independently executed this session; full manual code read
+    confirms the summary above. Static syntax check (compile()) passed.
+
+- path: hermes/skills/creative/pixel-art-studio/scripts/quality_check.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: skills/creative/pixel-art-studio/scripts/quality_check.py
+  source_sha256: 14b1d042604b919444a198088518112150fe1adeba86ef408efad237e51d7be6
+  reviewed_at: "2026-08-04"
+  reviewed_by: "operator-approved reviewed-script-lane, hermes-agent-config-kit session (independently characterized by a research subagent, then fully read personally before sign-off)"
+  summary: >
+    Pixel-art quality scoring (orphan pixels, doublies, pillow-shading,
+    hue-rotation, over-AA, silhouette metrics; separate cross-frame
+    consistency check for animation JSON). stdlib (argparse, json, math,
+    sys, collections.Counter, pathlib, typing) plus Pillow and numpy
+    (documented external prerequisite). Fully read-only: no network calls,
+    no subprocess/os.system/eval/exec, no credential access, and no file
+    writes at all beyond stdout. Its nested per-pixel checks are O(H*W) —
+    a CPU-time consideration on very large inputs, not a security concern.
+  functional_test: >
+    Not yet independently executed this session; full manual code read
+    confirms the summary above. Static syntax check (compile()) passed.

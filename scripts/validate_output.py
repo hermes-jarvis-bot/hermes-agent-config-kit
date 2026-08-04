@@ -44,6 +44,12 @@ REVIEWED_SCRIPT_EXEMPT_PATTERNS = frozenset({
     r"\.claude[\\/]",
     r"\bpython(?:3)?[ \t]+[^\n]*?(?:scripts/|access_inventory)",
 })
+# Plain data bundled alongside a script (e.g. a reviewed script's own lookup tables) cannot
+# execute and is already covered by validate_secret_scan()'s broad credential-pattern sweep of
+# the whole hermes/ tree; it does not need its own mappings/reviewed-scripts.yaml entry even
+# when it happens to live under a scripts/ path. Keep this allowlist narrow and add extensions
+# only when a concrete, inert data format is bundled this way.
+NON_EXECUTABLE_DATA_EXTENSIONS = frozenset({".hex", ".json", ".txt", ".csv"})
 GENERATED_PROVENANCE_MARKERS = (
     "Adapted for Hermes Agent by hermes-agent-config-kit.",
     "Source: AnastasiyaW/claude-code-config/",
@@ -100,8 +106,8 @@ def parse_frontmatter(text: str, path: Path) -> dict[str, str]:
     return result
 
 
-def _skill_ships_reviewed_script(path: Path) -> bool:
-    skill_dir_rel = path.parent.relative_to(ROOT).as_posix()
+def _skill_dir_ships_reviewed_script(skill_dir: Path) -> bool:
+    skill_dir_rel = skill_dir.relative_to(ROOT).as_posix()
     return any(rel.startswith(skill_dir_rel + "/") for rel in reviewed_script_paths())
 
 
@@ -123,7 +129,7 @@ def validate_skills() -> None:
             fail(f"{path} missing metadata.hermes_config_kit mapping")
         if "~/.hermes" in text and "--apply" in text:
             fail(f"{path} appears to encourage live Hermes writes")
-        ships_reviewed_script = _skill_ships_reviewed_script(path)
+        ships_reviewed_script = _skill_dir_ships_reviewed_script(path.parent)
         for pattern in FORBIDDEN_GENERATED_HARNESS_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
                 if ships_reviewed_script and pattern in REVIEWED_SCRIPT_EXEMPT_PATTERNS:
@@ -135,8 +141,11 @@ def validate_skills() -> None:
         for marker in GENERATED_PROVENANCE_MARKERS:
             if marker not in text:
                 fail(f"{path} missing reference provenance marker: {marker}")
+        ships_reviewed_script = _skill_dir_ships_reviewed_script(path.parent.parent)
         for pattern in FORBIDDEN_GENERATED_HARNESS_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
+                if ships_reviewed_script and pattern in REVIEWED_SCRIPT_EXEMPT_PATTERNS:
+                    continue
                 fail(f"{path} retains an upstream harness path or runtime reference")
 
 
@@ -246,6 +255,7 @@ def validate_quarantine_policy() -> None:
         for p in generated_paths
         if any(part in p for part in ("hooks/", "scripts/", ".claude-plugin/"))
         and p not in allowed_scripts
+        and Path(p).suffix not in NON_EXECUTABLE_DATA_EXTENSIONS
     ]
     if leaked:
         fail("quarantined upstream artefacts leaked into generated Hermes tree: " + ", ".join(leaked))
