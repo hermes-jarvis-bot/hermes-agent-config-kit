@@ -561,20 +561,30 @@ below is eligible for automatic porting without a new operator matrix decision.
      enable delegation, select a provider, or send prompts. It is not a duplicate of the
      operational `skills/operational/gemini-delegate/` candidate, which concerns delegation
      mechanics rather than the adoption decision.
-- **Needs adaptation (not a fast-lane copy), pending a separate decision:**
-  `rules/no-pre-existing-evasion.md` — a companion to the already-ported principle 26
-  (`no-pre-existing-evasion` skill); carries the 5-exception taxonomy plus a dedicated
-  section linking 3 Claude Code hook files (test-gate-stop-hook.py,
-  problems-md-validator.py, stop-phrase-guard.py), not an incidental mention. Requires
-  stripping the hook links, keeping the taxonomy, and resolving a target-name collision
-  with the existing `no-pre-existing-evasion` skill (different source, same natural name —
-  needs a distinct target name or a manual content merge). Not auto-port.
+- **One-off manual enrichment (operator-reviewed 2026-08-04), NOT a new SUPPORTED entry:**
+  `rules/no-pre-existing-evasion.md` — fully diffed line-by-line against the already-ported
+  `hermes/skills/no-pre-existing-evasion/SKILL.md` (source: principles/26). Verdict: ~90% of
+  the content duplicates the existing skill (5-exception taxonomy, fix-or-record protocol,
+  required evidence, anti-patterns — already covered); the WIP=1/VCR-Blocking section is
+  infra-coupled to `feature_list.json`/`templates/long-run-project/` (same excluded class as
+  `long-run-harness`/`feature-new`); the Independent-verifier section duplicates the ported
+  `independent-verification`; the Opus-4.7-calibration section is a model-specific prompt tip,
+  not portable; the mechanical-enforcement section names literal Claude Code hook files, not
+  portable as-is. Opening a separate, similarly-named skill would mostly duplicate the
+  existing one — rejected as over-engineering. Action taken instead: a targeted, hand-written
+  enrichment of the EXISTING `hermes/skills/no-pre-existing-evasion/SKILL.md` (not through the
+  `convert_supported`/`SUPPORTED` mechanism) adding (1) three additional forbidden-phrase
+  examples ("known limitation"/"future work", "deferred for separate refactor"/"needs its own
+  PR", "good stopping point"/"natural checkpoint") and (2) a generalized, Hermes-native note
+  that mechanical/hook-level enforcement holds under context pressure better than prose rules
+  (no literal Claude Code hook paths). One commit, a small diff to the existing file, no new
+  artefact.
 - **Not portable (infra-coupled, confirmed source):** `rules/long-run-harness.md` — the
   direct source of the `feature_list.json`/`init.sh` convention already excluded by our
   2026-07-13 general rule on upstream-KB-infrastructure-coupled content.
-- After queue #5 and Track A, only the `no-pre-existing-evasion` adaptation, Wave-4
-  script-research, and policy manual-review candidates remain; do not select a further
-  port automatically. An operator decision is required.
+- After queue #5, Track A, and the `no-pre-existing-evasion` enrichment above, only
+  Wave-4 script-research and policy manual-review candidates remain; do not select a
+  further port automatically. An operator decision is required.
 - **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/forensic-prompt-compiler/`
   — a high-fidelity image→prompt reconstructor (risk of replicating third-party images or a
   specific identity; it carries an "identity-safe" mitigation but the capability is
