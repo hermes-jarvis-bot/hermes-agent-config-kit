@@ -149,6 +149,12 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [human-confirmation-guard](hooks/human-confirmation-guard.py) | `PreToolUse` | Requires explicit user confirmation before any deletion-intent command |
 | [ask-question-guard](hooks/ask-question-guard.py) | `PreToolUse` | Blocks deferral/menu `AskUserQuestion` ("what next?", "which of these?") on reversible work — decide and proceed instead |
 | [over-engineering-advisor](hooks/over-engineering-advisor.py) | `PostToolUse` | Advisory nudge when an edit adds a large code block or a new dependency — "is this the minimal solution?" (never blocks) |
+| [module-shape-advisor](hooks/module-shape-advisor.py) | `PostToolUse` | The mirror of the row above: advisory nudge when the whole FILE has outgrown its shape — "where is the seam?" Fires on cumulative size, not on your edit, because that is how a file gets there (never blocks) |
+| [dependency-currency-guard](hooks/dependency-currency-guard.py) | `PreToolUse` | Blocks a manifest edit that names a package which does not exist, is too new or too little used to be a real recall (the slopsquat profile), or pins a fast-moving library far behind current |
+| [pre-push-public-repo-scan](hooks/pre-push-public-repo-scan.py) | git `pre-push` | Two independent scans — regex and semantic — of a push to a PUBLIC repo; either one alarming blocks it. Private repos skip. Host and script names load from a local list, never from this file |
+| [shape_common](hooks/shape_common.py) | *(library)* | Not a hook: the one definition of "what shape is this file in", shared by `module-shape-advisor` and `scripts/architecture_audit.py` so the two cannot answer differently |
+| [harness-load-advisor](hooks/harness-load-advisor.py) | `Stop` | Notices when a closing message reports a high-cost gate (production signing, a release VM) blocking work whose actual risk is lower, and says so. A feedback guard, not a bypass — it never lifts the gate |
+| [repeated-attempt-guard](hooks/repeated-attempt-guard.py) | `PreToolUse` + `PostToolUse` | Stops the guess-and-retry loop: advisory on the third failed attempt at the same target, blocking on the fourth, unless something has been read since the last failure. One `Read` clears it — the block is lifted by the action that would have solved it three attempts earlier. Needs **both** events: `PostToolUse` records outcomes, `PreToolUse` decides |
 | [activity-journal-guard](hooks/activity-journal-guard.py) | `PreToolUse` | Enforces the shared activity journal — blocks a mutating command on a tracked shared resource that does not log to its journal |
 | [coord-claim-guard](hooks/coord-claim-guard.py) | `PreToolUse` | Claim-before-edit gate for multi-session / coord-enabled repos (blocks editing a file without an active claim) |
 | [continuity-contract-guard](hooks/continuity-contract-guard.py) | `PreToolUse` | Protects Claude/Codex continuation: no silent whole-file Write, out-of-scope edits, or near-whole-file replacement |
@@ -162,7 +168,7 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [claude-attribution-guard](hooks/claude-attribution-guard.py) | `PreToolUse` | Blocks commits/PRs carrying `Co-Authored-By: Claude` footers (see [rules/no-claude-attribution.md](rules/no-claude-attribution.md)) |
 | [pre-push-claude-attribution](hooks/pre-push-claude-attribution.py) | git `pre-push` | Final attribution gate before commits reach the remote |
 | [precompact-handoff-guard](hooks/precompact-handoff-guard.py) | `PreCompact` | Demands a fresh handoff before context compaction; writes an AUTO-DRAFT fallback if none exists |
-| [test-gate-stop-hook](hooks/test-gate-stop-hook.py) | `Stop` | Blocks closing a session while tests are red |
+| [test-gate-stop-hook](hooks/test-gate-stop-hook.py) | `Stop` | Selects fast/integration evidence by Git-visible risk and blocks closing while selected tests are red or unproven |
 | [problems-md-validator](hooks/problems-md-validator.py) | `Stop` | Blocks closing with OPEN problems lacking a valid deferral reason |
 | [task-inbox-show](hooks/task-inbox-show.py) | `SessionStart` | Surfaces pending tasks from `.claude/task-inbox/` |
 | [plan-gate](hooks/plan-gate.py) | `UserPromptSubmit` | Non-blocking nudge: substantive build/refactor ask + no plan artifact in the project -> one-line "freeze acceptance criteria first" reminder (max once/day) |

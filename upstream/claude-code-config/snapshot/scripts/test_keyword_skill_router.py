@@ -19,6 +19,9 @@ CASES = [
     ("спроектируй структуру проекта", "architecture-first"),
     ("build a new service for image jobs", "architecture-first"),
     ("куда положить этот код", "architecture-first"),
+    ("сделай новый многостраничный веб-сервис, чтобы код оставался читаемым", "architecture-quality"),
+    ("architecture review: frontend стал нечитаемым", "architecture-quality"),
+    ("keep the web app readable while adding this feature", "architecture-quality"),
     # capacity / data
     ("выдержит ли это нагрузку", "system-and-data-design"),
     ("какую базу данных выбрать", "system-and-data-design"),
@@ -36,6 +39,12 @@ CASES = [
     # unchanged neighbours
     ("упрости этот код", "lean-code"),
     ("почему падает тест, что не так, разберись", "investigate"),
+    # testing strategy
+    ("составь план тестирования для этой фичи", "testing-strategy"),
+    ("which tests should run for this API change", "testing-strategy"),
+    ("how should we evaluate the coding agent trajectory", "testing-strategy"),
+    ("the VM-harness is overloaded and blocks staging smoke", "harness-feedback"),
+    ("слишком жесткий gate блокирует staging smoke", "harness-feedback"),
     ("привет, как дела", None),
 ]
 

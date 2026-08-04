@@ -39,9 +39,23 @@ Env vars через inline `FOO=1 cmd` НЕ видны хуку — нужен m
 - `verify-deleted-guard.py` (PostToolUse) — проверяет, что destructive-операция РЕАЛЬНО завершилась (объект исчез).
 - `api-key-leak-detector.py` (PostToolUse) — detective: сканирует output на API-key паттерны, warning (не блок).
 - `over-engineering-advisor.py` (PostToolUse Write|Edit|MultiEdit) — advisory: большое добавление в код / новая зависимость → нудж «это минимум?» (`quality-code.md`), НЕ блок; bypass `CLAUDE_ALLOW_BLOAT=1`.
+- `module-shape-advisor.py` (PostToolUse Write|Edit|MultiEdit) — advisory: после правки
+  проверяет форму всего исходного файла (строки, определения, mutable state, длинная
+  функция), чтобы локально минимальные правки не наращивали god-module; bypass
+  `CLAUDE_ALLOW_BIG_MODULES=1`. Для всего репозитория запускается
+  `scripts/architecture_audit.py`.
 - `git-auto-backup.py` (PreToolUse) — перед bypass'нутой destructive git-операцией создаёт ветку `claude-backup-<ts>` / stash.
 - `stop-phrase-guard.py` (Stop) — блок завершения при фразах-отговорках («на следующую сессию» и т.п.) → `finish-the-task.md`.
-- `test-gate-stop-hook.py` (Stop) — не даёт закрыть с красными тестами.
+- `test-gate-stop-hook.py` (Stop) — выбирает минимальный test scope по Git-visible
+  изменению: docs-only пропускает, source/tests запускают fast suite, а
+  auth/DB/API/concurrency/deploy boundary добавляет `integration` из
+  `.claude/test-policy.json`. Timeout считается отсутствием proof и блокирует,
+  вместо того чтобы молча пропускать завершение.
+- `harness-load-advisor.py` (Stop) — ловит явный сигнал, что VM/proof/release
+  gate перегружен или блокирует staging smoke; требует назвать профиль, gate,
+  доказательство и исправление маршрутизации. Не отключает security/release
+  проверку и пишет только агрегированные метаданные в
+  `~/.claude/harness-feedback/events.jsonl`.
 - `problems-md-validator.py` (Stop) — блок при OPEN-пунктах в PROBLEMS.md без 5-exception тикета.
 - `session-handoff-reminder.py` (Stop) — напоминает написать handoff в конце длинной сессии.
 - `handoff-closure-audit-guard.py` (PreToolUse) — блокирует запись handoff-файла без `## Closure Audit`: primary task status, acceptance checks, related/scope-adjacent tasks, unfinished related tasks, почему не продолжаем сейчас.

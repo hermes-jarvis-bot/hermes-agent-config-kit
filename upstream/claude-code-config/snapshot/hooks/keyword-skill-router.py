@@ -157,6 +157,32 @@ ROUTES = [
         "skill": "deep-review",
         "description": "Parallel competency-based code review (security, perf, arch)",
     },
+    # Testing strategy: select evidence by changed boundary and risk.
+    {
+        "patterns": [
+            r"\b(план тестирован|стратеги.{0,20}тестирован|как тестирова|уровн.{0,20}тест|матриц.{0,20}тест)",
+            r"\b(test strategy|testing strategy|which tests|what tests|test matrix|test levels)\b",
+            r"\b(unit|integration|contract|end[- ]to[- ]end|e2e|property[- ]based|mutation)\b.{0,60}\b(test|testing|тест)",
+            r"\b(agent eval|agent evaluation|coding agent|trajectory evaluation|agent.{0,20}trajectory|eval suite|оценк.{0,20}агент|тест.{0,20}агент)\b",
+        ],
+        "skill": "testing-strategy",
+        "description": "Choose the smallest evidence set by change risk: fast, focused, boundary, release, and agent-eval checks",
+    },
+    # Harness feedback: report and repair a gate that is too strict or scoped
+    # to the wrong profile. This is deliberately separate from test selection.
+    {
+        "patterns": [
+            r"\b(overload\w*|over[- ]constrain\w*|too (strict|restrictive|heavy)|false[- ]positive|"
+            r"перегруж\w*|слишком (жестк\w*|зажат\w*|тяжел\w*)|избыточн\w*|ложн\w* срабатыван\w*)\b"
+            r".{0,100}\b(harness|gate|тест\w*|провер\w*|хуки|харнесс|smoke|стейдж\w*)\b",
+            r"\b(harness|gate|тест\w*|провер\w*|хуки|харнесс)\b.{0,100}"
+            r"\b(block\w*|блокир\w*|не (да[её]т|позволя\w*|пропуска\w*))\b.{0,100}"
+            r"\b(staging|smoke|стейдж\w*|смоук\w*)\b",
+        ],
+        "skill": "harness-feedback",
+        "description": "Separate staging smoke, security proof, release attestation, and nightly stress when a harness gate is overloaded",
+        "required": True,
+    },
     # Monitoring and observability
     {
         "patterns": [
@@ -240,12 +266,24 @@ ROUTES = [
         "patterns": [
             r"\b(нов(ый|ая|ое)|new)\b.{0,20}\b(проект|сервис|сайт|приложени\w*|project|service|site|app|api)\b",
             r"\b(сделай|создай|напиши|построй|build|create|make|set up|scaffold)\b.{0,30}"
-            r"\b(сервис|сайт|бэкенд|бекенд|фронтенд|приложени\w*|микросервис|service|backend|frontend|app|api|dashboard)\b",
+            r"\b(сервис|сайт|бэкенд|бекенд|фронтенд|приложени\w*|микросервис|service|backend|frontend|app|api)\b",
             r"\b(спроектируй|архитектур\w*|design the|architecture|структур\w* проекта|project structure)\b",
             r"\b(куда положить|где должен жить|where should .{0,20}(live|go))\b",
         ],
         "skill": "architecture-first",
         "description": "Decide the seams BEFORE the first file: dependency rule, module boundaries, domain contexts, where each thing lives",
+    },
+    # Implementation-time companion to architecture-first: keep web/service shape
+    # readable while features and pages accumulate.
+    {
+        "patterns": [
+            r"\b(нов\w*|new|создай|build|create|сделай)\b.{0,60}\b(веб[- ]?сервис\w*|web service\w*|многостраничн\w*|multi[- ]page|frontend|backend|api|приложени\w*|site|app)\b.{0,100}\b(читабель\w*|читаем\w*|нечитаем\w*|архитектур\w*|структур\w*|модул\w*|boundary|dependency|readab\w*|clean)\b",
+            r"\b(architecture review|architecture quality|architectural quality|архитектурн\w* ревью|архитектурн\w* качеств\w*|многостраничн\w* код|код нечитаем\w*|нечитаем\w* код)\b",
+            r"\b(web app|web service|frontend|backend|api)\b.{0,80}\b(readab\w*|unreadab\w*|modul\w* boundar\w*|dependency direction|thin controller)\b",
+        ],
+        "skill": "architecture-quality",
+        "description": "Keep web and service code readable: feature seams, state ownership, thin adapters, dependency direction, and shape checks",
+        "required": True,
     },
     # Will it hold, and where does the data live. Kept separate from the layout question
     # on purpose: capacity and storage are a different decision moment, and merging them
