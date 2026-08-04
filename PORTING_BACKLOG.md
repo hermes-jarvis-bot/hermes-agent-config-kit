@@ -477,11 +477,10 @@ below is eligible for automatic porting without a new operator matrix decision.
   `lean-code` for YAGNI-stripping requests).
 - Queue #4 is complete.
 - **Track A — re-review 13 existing hand-adapted ports (operator-approved 2026-08-03),
-  surfaced by the sync report's `manual-reapproval` bucket**: 12/13 reviewed, 1 pending.
-  Pending source: `skills/development/workflow-orchestration/SKILL.md`. For each, diff the upstream
-  source against the current hand-adaptation and decide whether the change is material;
-  this is a drift assessment, not a mechanical conversion — do not auto-accept or
-  auto-port. One re-review counts as the run's one artefact, same as a queue item.
+  surfaced by the sync report's `manual-reapproval` bucket**: complete, 13/13 reviewed.
+  Each assessment diffs the upstream source against the current hand-adaptation and decides
+  whether the change is material; this is a drift assessment, not a mechanical conversion
+  or auto-acceptance.
 
   Re-review ledger:
   - `rules/agent-docs-freshness.md` → `hermes/skills/documentation-freshness/SKILL.md`:
@@ -543,6 +542,12 @@ below is eligible for automatic porting without a new operator matrix decision.
     adaptation already preserves frozen, testable criteria, builder/verifier separation,
     fresh-context read-only verification, PASS/FAIL/BLOCKED evidence, and narrow authorised
     fixes without prescribing an upstream hidden directory, task-state schema, or agent API.
+  - `skills/development/workflow-orchestration/SKILL.md` →
+    `hermes/skills/workflow-orchestration/SKILL.md`: reviewed, no change needed. The upstream
+    delta removes only a UTF-8 BOM; the Hermes adaptation already preserves bounded protocol
+    selection, stage contracts, visible failure/recovery, cost and concurrency limits,
+    operator-confirmation gates, and independent evidence without importing executable
+    orchestration code, upstream paths, agent APIs, or automatic dispatch.
 - **Domain queue #5 (operator-approved 2026-08-03; vetted clean on 4 axes + leak sweep +
   full-text read; port in order, one per run):**
   1. `rules/rlm-context-as-program.md` → `hermes/skills/rlm-context-as-program/SKILL.md`
@@ -712,7 +717,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.58` |
+| Latest released tag | `v0.3.60` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
