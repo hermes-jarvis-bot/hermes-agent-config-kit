@@ -47,3 +47,30 @@
     returned status "not_configured" (rc=2) on a host with no notebooklm MCP
     server registered, as expected; no filesystem writes or network calls
     were observed.
+
+- path: hermes/skills/distill-feedback/scripts/extract_feedback_queue.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: skills/development/distill-feedback/scripts/extract_feedback_queue.py
+  source_sha256: a1fcf14310e7a224e969d15fb9d4bbfed025c7aa12b20749d18f377500e90732
+  reviewed_at: "2026-08-04"
+  reviewed_by: "operator-approved reviewed-script-lane pilot #2, hermes-agent-config-kit session"
+  summary: >
+    Deterministic, stdlib-only feedback-queue reader (argparse, json, sys,
+    datetime, pathlib; tempfile only inside its own self-test). No network
+    calls, no subprocess/os.system/eval/exec. Reads
+    ~/.claude/feedback/queue.jsonl and the session transcript paths it
+    references; only ever appends to ~/.claude/feedback/processed.jsonl via
+    mkdir(parents=True, exist_ok=True) + open("a") — never rewrites or
+    deletes either file. Depends on an EXTERNAL, non-Hermes prerequisite: the
+    queue file is normally populated by a separate Claude-Code Stop hook that
+    is not part of this adapter and not installed by Hermes; if nothing
+    populates it, this script correctly returns pending: 0 rather than
+    erroring or fabricating data. This external dependency is disclosed in
+    the ported SKILL.md's "Prerequisite" section, not hidden.
+  functional_test: >
+    Ran the script's own built-in --self-test on 2026-08-04 (isolated to a
+    tempdir it creates itself, no interaction with the real
+    ~/.claude/feedback/ directory): passed ("self-test OK"), confirming
+    human-turn extraction excludes tool_result/summary/system-reminder
+    entries and that mark_processed correctly excludes processed sessions
+    from subsequent pending_sessions() calls.

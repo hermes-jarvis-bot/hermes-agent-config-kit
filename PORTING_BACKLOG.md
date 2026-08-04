@@ -165,6 +165,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/quality-over-tokens-independent-verify.md` | `hermes/skills/quality-first-independent-review/SKILL.md` |
 | `skills/ai-ml/notebooklm-grounded-research/SKILL.md` | `hermes/skills/ai-ml/notebooklm-grounded-research/SKILL.md` |
 | `skills/ai-ml/notebooklm-grounded-research/references/workflow.md` | `hermes/skills/ai-ml/notebooklm-grounded-research/references/workflow.md` |
+| `skills/development/distill-feedback/SKILL.md` | `hermes/skills/distill-feedback/SKILL.md` |
 
 These were chosen because they are broadly useful, markdown-centric, and can be adapted without executing upstream code or assuming Claude Code hook APIs.
 
@@ -606,11 +607,23 @@ below is eligible for automatic porting without a new operator matrix decision.
   handling (explicit anti-pattern warnings), but the domain is live remote infrastructure
   (SSH, API tokens, RunPod/Massed Compute billing) with high blast radius, overlap-adjacent
   to `billing-spend-controls`. Needs a separate operator policy decision.
-- `skills/development/distill-feedback/`,
-  `skills/operational/desktop-sessions-discovery/`,
-  `skills/ai-ml/notebooklm-grounded-research/` (a read-only Codex-MCP-config verifier script,
-  low risk but still a script) — carry `.py` scripts; quarantined, manual-review-only
-  (Wave-4 script-research track).
+- `skills/operational/desktop-sessions-discovery/` — carries a `.py` script; still
+  quarantined, manual-review-only (Wave-4 script-research track).
+- `skills/ai-ml/notebooklm-grounded-research/` and `skills/development/distill-feedback/` —
+  **ported** via the reviewed-script lane (see "Ported so far" above and `SECURITY.md`'s
+  "Reviewed-script lane" section); no longer quarantined. `distill-feedback`'s bundled
+  `scripts/extract_feedback_queue.py` is deterministic, stdlib-only, and only ever appends
+  to a local processed-log file; the SKILL.md explicitly discloses that its queue
+  (`~/.claude/feedback/queue.jsonl`) is populated by a separate Claude-Code Stop hook not
+  installed by Hermes, so an operator who runs only Hermes will correctly see zero pending
+  items rather than a broken feature. Porting this exposed a real gap in
+  `scripts/validate_output.py`'s `FORBIDDEN_GENERATED_HARNESS_PATTERNS`: the blanket
+  `.claude[\/]` and `python scripts/` checks predate the reviewed-script lane and would
+  false-positive on any skill that legitimately discloses an external Claude-Code-specific
+  prerequisite or instructs the operator to run its own bundled script (the same pattern
+  Hermes's own official `xlsx` skill uses). Fixed narrowly: those two specific patterns are
+  now skipped only for a SKILL.md whose own skill directory ships an allowlisted reviewed
+  script; every other forbidden-pattern check still applies unconditionally.
 
 ## Agents not yet ported
 
@@ -738,7 +751,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.60` |
+| Latest released tag | `v0.3.64` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |

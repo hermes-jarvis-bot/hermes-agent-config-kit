@@ -34,6 +34,16 @@ FORBIDDEN_GENERATED_HARNESS_PATTERNS = (
     r"\b[A-Za-z0-9_-]+-(?:guard|gate|hook|validator|reminder|check)\.py\b",
     r"\bpython(?:3)?[ \t]+[^\n]*?(?:scripts/|access_inventory)",
 )
+# These two are expected, legitimate text for a skill that ships a reviewed-script-lane
+# script (see mappings/reviewed-scripts.yaml): the SKILL.md tells the operator how to
+# invoke its own bundled script ("python scripts/<name>.py", same convention Hermes's own
+# official skills use), and may disclose a real external Claude-Code-specific path as a
+# documented prerequisite (reviewed-script gate item 4 explicitly allows this). All other
+# FORBIDDEN_GENERATED_HARNESS_PATTERNS entries still apply unconditionally.
+REVIEWED_SCRIPT_EXEMPT_PATTERNS = frozenset({
+    r"\.claude[\\/]",
+    r"\bpython(?:3)?[ \t]+[^\n]*?(?:scripts/|access_inventory)",
+})
 GENERATED_PROVENANCE_MARKERS = (
     "Adapted for Hermes Agent by hermes-agent-config-kit.",
     "Source: AnastasiyaW/claude-code-config/",
@@ -90,6 +100,11 @@ def parse_frontmatter(text: str, path: Path) -> dict[str, str]:
     return result
 
 
+def _skill_ships_reviewed_script(path: Path) -> bool:
+    skill_dir_rel = path.parent.relative_to(ROOT).as_posix()
+    return any(rel.startswith(skill_dir_rel + "/") for rel in reviewed_script_paths())
+
+
 def validate_skills() -> None:
     skills = sorted((ROOT / "hermes" / "skills").glob("**/SKILL.md"))
     if not skills:
@@ -108,8 +123,11 @@ def validate_skills() -> None:
             fail(f"{path} missing metadata.hermes_config_kit mapping")
         if "~/.hermes" in text and "--apply" in text:
             fail(f"{path} appears to encourage live Hermes writes")
+        ships_reviewed_script = _skill_ships_reviewed_script(path)
         for pattern in FORBIDDEN_GENERATED_HARNESS_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
+                if ships_reviewed_script and pattern in REVIEWED_SCRIPT_EXEMPT_PATTERNS:
+                    continue
                 fail(f"{path} retains an upstream harness path or runtime reference")
     references = sorted((ROOT / "hermes" / "skills").glob("**/references/*.md"))
     for path in references:

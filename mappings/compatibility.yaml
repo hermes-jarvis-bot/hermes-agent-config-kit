@@ -288,6 +288,22 @@ skills/development/proof-verify/SKILL.md:
   description: Prepare a frozen acceptance-criteria record and obtain a fresh, read-only verification verdict without activating task state or delegation.
   risk: medium
 
+skills/development/distill-feedback/SKILL.md:
+  status: supported
+  target: hermes/skills/distill-feedback/SKILL.md
+  type: skill
+  name: distill-feedback
+  description: Turn a queued backlog of user-correction signals into durable, human-approved rules. Reads a local feedback queue file, LLM-semantically detects durable corrections, proposes atomic rules, and applies only after explicit operator approval.
+  risk: low
+
+skills/development/distill-feedback/scripts/extract_feedback_queue.py:
+  status: review
+  target: hermes/skills/distill-feedback/scripts/extract_feedback_queue.py
+  type: reviewed-script
+  name: distill-feedback-extract-script
+  description: Deterministic, stdlib-only feedback-queue reader/appender. Governed exclusively by mappings/reviewed-scripts.yaml and validate_reviewed_scripts() — never auto-converted by the SUPPORTED fast lane. status stays "review" because this path is never fed through convert_supported(); the reviewed-script manifest is the actual gate.
+  risk: low
+
 skills/development/deep-review/SKILL.md:
   status: supported
   target: hermes/skills/deep-review/SKILL.md
