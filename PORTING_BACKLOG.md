@@ -778,7 +778,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.70` |
+| Latest released tag | `v0.3.71` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
@@ -1207,6 +1207,14 @@ and `references/element-library-scaling-architecture.md` (Step 8's diagram note)
 `modifications` field convention. Every corresponding `scripts/sync_upstream.py`
 `adapt_source_text()` override was regenerated to match, verified via
 `converted_output_matches_supported()`.
+
+Full verification: `python3 -m py_compile scripts/*.py` OK; `python3 scripts/validate_output.py`
+-> Validation OK; `converted_output_matches_supported()` -> True; disposable
+`install_hermes.py --apply` copied `bake_animation.py` byte-identically (SHA-256 verified against
+the modified script's hash); `remove_hermes.py --apply` removed it cleanly.
+
+Released as **v0.3.71** (commit `a4d8633`, CI `Validate adapter` green, release:
+https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.71).
 
 ## Open decisions
 
