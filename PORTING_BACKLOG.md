@@ -896,6 +896,16 @@ https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.6
 `hermes-config-kit-auto-port` cron job (`aa719369167e`) remains paused per operator instruction
 until explicitly resumed.
 
+A second pilot, `distill-feedback` (see "Ported so far" above), followed immediately using the
+same lane and exposed a real gap in `validate_output.py`'s harness-leak check for skills that
+legitimately disclose an external prerequisite or invoke their own bundled script; fixed and
+released as **v0.3.65** (commit `4cd2714`, CI green:
+https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/actions/runs/30889699624, release:
+https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.65).
+
+Remaining Wave-4 script-research candidate: `skills/operational/desktop-sessions-discovery/`
+(carries a `.py` script; not yet reviewed).
+
 ## Open decisions
 
 1. Should the adapter eventually ship templates, or only skills?
