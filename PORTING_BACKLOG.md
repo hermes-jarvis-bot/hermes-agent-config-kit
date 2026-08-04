@@ -477,9 +477,8 @@ below is eligible for automatic porting without a new operator matrix decision.
   `lean-code` for YAGNI-stripping requests).
 - Queue #4 is complete.
 - **Track A — re-review 13 existing hand-adapted ports (operator-approved 2026-08-03),
-  surfaced by the sync report's `manual-reapproval` bucket**: 10/13 reviewed, 3 pending.
-  Pending sources: `rules/silent-failure-detection.md`,
-  `skills/development/proof-verify/SKILL.md`, and
+  surfaced by the sync report's `manual-reapproval` bucket**: 11/13 reviewed, 2 pending.
+  Pending sources: `skills/development/proof-verify/SKILL.md` and
   `skills/development/workflow-orchestration/SKILL.md`. For each, diff the upstream
   source against the current hand-adaptation and decide whether the change is material;
   this is a drift assessment, not a mechanical conversion — do not auto-accept or
@@ -534,6 +533,12 @@ below is eligible for automatic porting without a new operator matrix decision.
     adaptation already preserves provider-neutral preflight, bounded spend controls,
     approval-gated billing changes, redacted telemetry, and incident response without
     importing provider-specific claims, credential names, history rewriting, or hook wiring.
+  - `rules/silent-failure-detection.md` → `hermes/skills/silent-failure-detection/SKILL.md`:
+    reviewed, no change needed. The upstream delta only retargets the related upstream
+    safety-rule link from `safety-hooks.md` to `safety.md`; the Hermes adaptation already
+    generalises the prerequisite-verification principle into observable behavioural evidence
+    and explicit telemetry gaps without importing either upstream safety-rule dependency,
+    plugin paths, or hook wiring.
 - **Domain queue #5 (operator-approved 2026-08-03; vetted clean on 4 axes + leak sweep +
   full-text read; port in order, one per run):**
   1. `rules/rlm-context-as-program.md` → `hermes/skills/rlm-context-as-program/SKILL.md`
@@ -703,7 +708,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.57` |
+| Latest released tag | `v0.3.58` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
