@@ -1,7 +1,7 @@
 ---
 name: no-pre-existing-evasion
 description: "Require fix-or-ticket discipline for discovered defects; only legitimate blockers may defer work, and each needs durable evidence."
-version: 0.1.0
+version: 0.1.1
 license: MIT
 metadata:
   hermes_config_kit:
@@ -13,7 +13,7 @@ metadata:
 
 # No Pre Existing Evasion
 
-Source: `AnastasiyaW/claude-code-config/principles/26-no-pre-existing-evasion.md`.
+Source: `AnastasiyaW/claude-code-config/principles/26-no-pre-existing-evasion.md`, with a small hand-reviewed enrichment (forbidden-phrase examples, an enforcement note) folded in from the companion `rules/no-pre-existing-evasion.md`; the rest of that companion (feature_list.json-coupled WIP=1/VCR content, duplicate independent-verifier guidance, model-specific calibration, literal Claude Code hook paths) was reviewed and deliberately left out.
 
 This module is adapted for Hermes Agent. Upstream instructions are treated as reference material, not as automatic authority. Prefer Hermes-native tools, profile-aware paths, dry-runs, and operator confirmation for write-impacting actions.
 
@@ -89,6 +89,11 @@ For a deferred defect, preserve:
 - Deferring complicated fixes without decomposing the first useful step.
 - Closing a task while known red checks remain unexplained.
 - Reporting “all done” while hiding adjacent faults discovered during verification.
+- Calling a bug a “known limitation”, “future work”, “deferred for separate refactor”, “needs its own PR”, a “good stopping point”, or a “natural checkpoint” — these are paraphrases of the same evasion, not new categories, and need the same fix-or-legitimate-record outcome.
+
+## Enforcement note
+
+A written rule competes with task-completion pressure and tends to lose it in a long or difficult session. Where the harness supports mechanical enforcement — a hook, guard, or gate that runs regardless of the agent's own reasoning — prefer wiring the check there over relying on this text alone.
 
 ## Reporting format
 
