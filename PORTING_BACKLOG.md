@@ -875,9 +875,13 @@ drift against the pinned lockfile SHA.
 
 The disposable `install_hermes.py --dry-run`/`--apply`/`remove_hermes.py` cycle against a temp
 `HERMES_HOME` has been run and confirms a skill's `scripts/` subfolder copies byte-identically and
-removes cleanly, with no special-casing needed in either script. Remaining before release: commit
-(excluding the externally-modified `hermes/skills/no-pre-existing-evasion/SKILL.md`), push, CI
-green, tag+release following the existing release protocol.
+removes cleanly, with no special-casing needed in either script.
+
+Released as **v0.3.64** (commit `e675abe`, CI `Validate adapter` green:
+https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/actions/runs/30887781264, release:
+https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.64). The
+`hermes-config-kit-auto-port` cron job (`aa719369167e`) remains paused per operator instruction
+until explicitly resumed.
 
 ## Open decisions
 
