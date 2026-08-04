@@ -7,17 +7,14 @@ before use and obtain operator confirmation for write-impacting actions.
 
 # Smoother Animation via Baking
 
-> **Framing note (this port):** the upstream `scripts/bake_animation.py` tool described throughout
-> this file was **fully reviewed and deliberately rejected** for this adapter — it is **not
-> available to invoke here**. It drives a headless Chromium browser via Playwright against a
-> caller-controlled URL, executes JavaScript inside that browser context, shells out to `ffmpeg`
-> for video-format output, and needs a much larger external toolchain (Playwright, a Chromium
-> install, ffmpeg in PATH) than this adapter takes on. The decision, full reasoning, and the
-> conditions under which it could be reconsidered are recorded in
-> `mappings/rejected-scripts.yaml`. What follows is the upstream conceptual/reference material
-> (why baking produces smoother output, sampling density, format trade-offs) kept for its
-> technical value — described in prose rather than as runnable commands, since this tool is
-> not part of this port.
+> **Framing note (this port):** the upstream `pixel-art-studio/scripts/bake_animation.py` tool
+> described throughout this file is available in this adapter, reviewed and accepted with one
+> restriction: the target URL must be `localhost`/`127.0.0.1`/`::1` (the script rejects anything
+> else), and its temp frame directory is always cleaned up afterward. It was initially rejected
+> during review over exactly those two gaps, then reconsidered once both were fixed — see
+> `mappings/reviewed-scripts.yaml` for the current record and `mappings/rejected-scripts.yaml` for
+> the original rejection. The commands below are runnable as shown, invoked from this skill's own
+> directory (`../pixel-art-studio/scripts/bake_animation.py`).
 
 **The trick**: at runtime your animation runs with whatever keyframes you hand-coded (typically 4-8 frames per loop). For archival output (GIF / video), you can **render the same parametric `t`-driven function at any N**, capturing 100-300 frames per loop. The result looks **much smoother** than the live runtime, and costs nothing extra at display time because it's pre-rendered.
 
@@ -100,7 +97,7 @@ For pixel art specifically, lossy q=80 is usually fine — pixel boundaries are 
 
 ---
 
-## 4. The bake script (`scripts/bake_animation.py`) — NOT available in this port
+## 4. The bake script (`pixel-art-studio/scripts/bake_animation.py`)
 
 Built on **Playwright (headless Chromium) + ffmpeg**:
 
@@ -111,19 +108,56 @@ Built on **Playwright (headless Chromium) + ffmpeg**:
 5. Save each frame as PNG to a temp directory
 6. Encode via Pillow (GIF/APNG) or ffmpeg (WebM/MP4)
 
-The steps and commands below are reproduced from upstream as reference for *how the original tool
-worked* — again, this script itself was rejected for this adapter (see the framing note at the
-top of this file and `mappings/rejected-scripts.yaml`) and cannot be invoked through this port.
+Remember the one restriction this port adds: the page URL must be `localhost`/`127.0.0.1`/`::1`
+— the script exits with an error on any other host. Its temp frame directory is always removed
+afterward, success or failure.
 
-### Install (upstream prerequisite — not applicable in this port)
+### Install
 
-The upstream tool needed `pip install playwright Pillow`, a one-time `playwright install
-chromium`, and `ffmpeg` in `PATH` for the WebM/MP4 formats. None of this applies here since the
-script itself is not part of this port.
+```bash
+pip install playwright Pillow
+playwright install chromium  # one-time
+# ffmpeg in PATH (for WebM/MP4)
+```
 
-### Output formats the upstream tool supported
+### Usage
 
-Every invocation took the same shape — a page URL, a canvas element ID, a loop period and target
+```bash
+# RECOMMENDED for web: animated WebP (default)
+python ../pixel-art-studio/scripts/bake_animation.py http://localhost:9132/index-v2.html \
+  --canvas-id c1 --period-ms 4000 --fps 30 \
+  --format web -o twilight.webp
+# (or --format webp, same thing)
+
+# WebP lossless if you need pixel-perfect
+python ../pixel-art-studio/scripts/bake_animation.py http://localhost:9132/index-v2.html \
+  --canvas-id c1 --period-ms 4000 --fps 30 \
+  --format web --lossless -o twilight.webp
+
+# GIF for email / Telegram / chat embeds
+python ../pixel-art-studio/scripts/bake_animation.py http://localhost:9132/index-v2.html \
+  --canvas-id c1 --period-ms 4000 --fps 30 \
+  --format gif -o twilight.gif
+
+# WebM with alpha for video editor import
+python ../pixel-art-studio/scripts/bake_animation.py http://localhost:9132/index-v2.html \
+  --canvas-id c1 --period-ms 4000 --fps 30 \
+  --format webm-alpha -o twilight.webm
+
+# PNG sequence for game engine import
+python ../pixel-art-studio/scripts/bake_animation.py http://localhost:9132/index-v2.html \
+  --canvas-id c1 --period-ms 4000 --fps 30 \
+  --format png-sequence -o frames/
+
+# MP4 universal video (no alpha)
+python ../pixel-art-studio/scripts/bake_animation.py http://localhost:9132/index-v2.html \
+  --canvas-id c1 --period-ms 4000 --fps 30 \
+  --format mp4 -o twilight.mp4
+```
+
+### Output formats
+
+Every invocation takes the same shape — a page URL, a canvas element ID, a loop period and target
 frame rate, and an output format flag — with the format choice determining the deliverable:
 
 | Format flag | Deliverable | Best for |

@@ -281,14 +281,20 @@ The static PNG carries the heavy detail; canvas only animates ~25-50 pixels per 
 
 ## 7. Stage 5: Bake composite to WebP
 
-Upstream's `bake_animation.py`, extended with a `--base-image` flag, composited a static PNG
-underneath a canvas overlay at each captured frame to produce a final animated WebP.
+`pixel-art-studio`'s `bake_animation.py` supports a `--base-image` flag:
 
-**This script was fully read and deliberately not ported to this adapter** (see
-`mappings/rejected-scripts.yaml`): it drives headless Chromium via Playwright against a
-caller-controlled URL and shells out to `ffmpeg`, needing a substantially larger external
-toolchain than this skill's other bundled scripts. The command above is documented as the
-upstream procedure for reference, not something this adapter can currently run.
+```bash
+python ../pixel-art-studio/scripts/bake_animation.py http://localhost:9132/composite-cover.html \
+  --canvas-id overlay \
+  --base-image cover_snapped.png \
+  --period-ms 8000 --fps 30 \
+  --format web -o cover_final.webp
+```
+
+This composites the static PNG underneath the canvas overlay at each captured frame, producing
+the final animated WebP. The script is reviewed and available in this adapter with one
+restriction: the page URL must be `localhost`/`127.0.0.1`/`::1` (as shown above) — see
+`mappings/reviewed-scripts.yaml` for the full record.
 
 ---
 
@@ -351,6 +357,6 @@ For non-commercial / personal / portfolio: full pipeline is ready to use. For co
 - [hitherdither GitHub](https://github.com/hbldh/hitherdither) — advanced dithering
 
 See `references/smoother-animation-baking.md` (bundled with this port) for more on Stage 5 —
-including the same `bake_animation.py` exclusion noted above. Upstream also cites a companion
-tool-catalog file, `image-to-pixel-art-tools-2026.md`, which does not exist anywhere in the
-pinned upstream snapshot and is not part of this port.
+including the full command reference for `bake_animation.py` noted above. Upstream also cites a
+companion tool-catalog file, `image-to-pixel-art-tools-2026.md`, which does not exist anywhere in
+the pinned upstream snapshot and is not part of this port.

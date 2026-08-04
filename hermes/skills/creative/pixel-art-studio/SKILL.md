@@ -19,20 +19,29 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
 
 # Pixel Art Studio
 
-This module ships six reviewed bundled scripts under `scripts/` — `dither.py`, `palette.py`,
-`render.py`, `preprocess.py`, `animate.py`, and `quality_check.py`. Each was read in full and
-reviewed under the reviewed-script lane (see `SECURITY.md` and `mappings/reviewed-scripts.yaml`),
-not through the standard markdown-only fast lane. All six are stdlib plus Pillow and numpy
-(documented external prerequisite below), with no network calls, no `eval`/`exec`/`os.system`,
-and no credential access — they only read a user-supplied input path plus this skill's own
-bundled palette data, and write only to a caller-supplied output path. Run them yourself and read
-them before trusting them; do not assume any bundled script is safe merely because it shipped
-with a skill. A seventh upstream script, `bake_animation.py` (drives a headless browser via
-Playwright against a caller-supplied URL, shells out to `ffmpeg`, and needs Playwright/Chromium
-in addition to Pillow), was deliberately **not** ported in this round — it is a qualitatively
-different risk category (browser automation, an additional heavy external toolchain, and
-uncleaned temp output) from the other six, and deserves its own dedicated review rather than a
-default inclusion.
+This module ships seven reviewed bundled scripts under `scripts/` — `dither.py`, `palette.py`,
+`render.py`, `preprocess.py`, `animate.py`, `quality_check.py`, and `bake_animation.py`. Each was
+read in full and reviewed under the reviewed-script lane (see `SECURITY.md` and
+`mappings/reviewed-scripts.yaml`), not through the standard markdown-only fast lane. Run them
+yourself and read them before trusting them; do not assume any bundled script is safe merely
+because it shipped with a skill.
+
+The first six are stdlib plus Pillow and numpy (documented external prerequisite below), with no
+network calls, no `eval`/`exec`/`os.system`, and no credential access — they only read a
+user-supplied input path plus this skill's own bundled palette data, and write only to a
+caller-supplied output path.
+
+`bake_animation.py` drives a headless Chromium browser via Playwright to capture and bake a
+canvas animation, and shells out to `ffmpeg` for two of its output formats — a qualitatively
+different, heavier dependency surface (Playwright, a Chromium install, `ffmpeg` in `PATH`) than
+the other six need. It was **initially rejected** during review (see
+`mappings/rejected-scripts.yaml`) because the upstream version let the target URL be anything a
+caller supplied, with no restriction, and never cleaned up its own temporary frame directory.
+Both gaps were closed with two deliberate, narrowly-scoped modifications before it was accepted
+— see `mappings/reviewed-scripts.yaml`'s entry for exactly what changed and why: (1) the target
+URL must now be `localhost`/`127.0.0.1`/`::1`, rejected otherwise, and (2) the temp frame
+directory is now always removed after the run, success or failure. Nothing else in the script was
+touched.
 
 This module also ships `elements/elements.js` and `elements/catalog.html` — a canvas-drawing
 helper library and its static preview page. Both were fully read: `elements.js` is inert,

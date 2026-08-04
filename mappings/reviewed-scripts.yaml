@@ -27,6 +27,13 @@
 # longer matches upstream), the change must be re-reviewed by hand and this
 # entry updated deliberately — the same manual-reapproval discipline this
 # adapter already applies to hand-adapted markdown sources.
+#
+# Every entry below is ported byte-for-byte unmodified except where a
+# `modifications` field is present. A modification is only made for a stated,
+# citable reason (usually closing a specific security/hygiene gap found during
+# review) and is never a silent behavioural change — see the entry's own
+# `modifications` text for the exact diff and rationale, and check the
+# script's own header docstring, which restates the same thing inline.
 
 - path: hermes/skills/ai-ml/notebooklm-grounded-research/scripts/verify_notebooklm_setup.py
   source_repo: AnastasiyaW/claude-code-config
@@ -227,3 +234,54 @@
     dimensions match a small power-of-two/common block size with no
     upscale factor; render at a size with some headroom (e.g. logical
     grid x8 or more) instead.
+
+- path: hermes/skills/creative/pixel-art-studio/scripts/bake_animation.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: skills/creative/pixel-art-studio/scripts/bake_animation.py
+  source_sha256: 217c442235f939914fec407bdc3dfb8f92afb0e82896f8ef9f25e48808020213
+  reviewed_at: "2026-08-04"
+  reviewed_by: "operator-approved reviewed-script-lane review, hermes-agent-config-kit session; initially rejected (see mappings/rejected-scripts.yaml), then RECONSIDERED and accepted the same day after the operator directed the two modifications below and separately confirmed the Playwright/Chromium/ffmpeg dependency surface"
+  summary: >
+    Bakes a canvas-rendered HTML animation (opened in a headless Chromium
+    browser via Playwright) into WebP/GIF/WebM/MP4/PNG-sequence, by
+    stepping the animation's own phase-derived draw function at any
+    sampling density and capturing each frame via toDataURL. stdlib
+    (argparse, asyncio, base64, io, json, shutil, subprocess, sys,
+    pathlib, urllib.parse) plus Pillow and Playwright (documented
+    external prerequisite: pip install playwright Pillow; playwright
+    install chromium; ffmpeg in PATH for the webm-alpha/mp4 formats).
+    Shells out to ffmpeg via subprocess.run() with an argv list (not
+    shell=True) for two of the seven output formats — no shell-injection
+    risk from that call. No credential access anywhere in the script.
+  modifications: >
+    Two deliberate changes from the pristine upstream source (source_sha256
+    above is the ORIGINAL upstream hash; this ported file differs from it
+    by exactly these two changes plus the header docstring, verified via
+    a full diff before accepting):
+    (1) added `_require_local_url()`, called at the very start of `main()`,
+    which rejects any URL whose host is not localhost/127.0.0.1/::1 — this
+    closes the original rejection's primary concern (the script would
+    otherwise drive a headless browser, execute arbitrary JavaScript, and
+    submit ffmpeg jobs against a fully caller-controlled URL with no
+    restriction).
+    (2) `bake()`'s frame-capture-and-encode body is now wrapped in
+    try/finally so the `.bake_{canvas_id}_{period_ms}ms_{fps}fps` temporary
+    frame directory is always removed after the run, success or failure —
+    upstream never cleaned this up. No other line was touched; the capture
+    loop, all five encoders, and the full CLI surface are byte-for-byte
+    upstream.
+  functional_test: >
+    The new `_require_local_url()` guard was unit-tested in isolation
+    (extracted logic, no Playwright/Pillow dependency needed) against 7
+    cases on 2026-08-04: localhost, 127.0.0.1, and bracketed IPv6 loopback
+    (::1) URLs are accepted; a non-local hostname, a non-local HTTPS host,
+    a non-http(s) scheme (ftp), and case variation (LOCALHOST) all resolved
+    correctly (accepted only the genuinely-local, case-insensitive matches).
+    Full end-to-end execution (actually driving headless Chromium via
+    Playwright to capture and encode a real animation) was NOT attempted —
+    it requires downloading and installing a Chromium binary (a
+    substantially heavier one-time dependency install than Pillow/numpy),
+    and the two actual modifications above do not touch the capture/encode
+    logic itself, which was already fully read and is unchanged from the
+    original upstream script. Stated plainly rather than fabricating a
+    full-pipeline result.

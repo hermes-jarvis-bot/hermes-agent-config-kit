@@ -434,15 +434,15 @@ USER PROMPT: "snowy fortress on cliff with warm window light at dusk"
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ Step 8: Bake to animated WebP (see note below on bake_animation.py) │
+│ Step 8: Bake to animated WebP (`pixel-art-studio/scripts/bake_animation.py`)     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Step 8's baking tool, `bake_animation.py`, was fully read and deliberately not ported to this
-adapter (see `mappings/rejected-scripts.yaml`): it drives headless Chromium via Playwright
-against a caller-controlled URL and shells out to `ffmpeg`, needing a substantially larger
-external toolchain than this skill's other bundled scripts. It is not available to invoke here;
-see `references/smoother-animation-baking.md` for the conceptual material.
+Step 8's baking tool, `bake_animation.py`, drives headless Chromium via Playwright and shells out
+to `ffmpeg`, needing a substantially larger external toolchain than this skill's other bundled
+scripts — it is reviewed and available in this adapter, restricted to a
+`localhost`/`127.0.0.1`/`::1` target URL (see `mappings/reviewed-scripts.yaml`). See
+`references/smoother-animation-baking.md` for the full command reference.
 
 ---
 

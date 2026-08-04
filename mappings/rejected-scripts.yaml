@@ -21,6 +21,17 @@
   reviewed_at: "2026-08-04"
   reviewed_by: "operator-approved reviewed-script-lane review, hermes-agent-config-kit session (independently characterized by a research subagent, then fully read personally before this decision)"
   decision: rejected
+  superseded_by: >
+    RECONSIDERED the same day (2026-08-04) after the operator explicitly directed both
+    fixes named in revisit_condition below: (1) restrict the target URL to a loopback
+    address, closing the arbitrary-URL exposure that made the JS-execution and ffmpeg
+    subprocess calls a concern by extension, and (2) always clean up the temp frame
+    directory. Both were implemented (see mappings/reviewed-scripts.yaml's entry for the
+    now-ported hermes/skills/creative/pixel-art-studio/scripts/bake_animation.py) and the
+    operator separately confirmed the Playwright/Chromium/ffmpeg dependency surface. This
+    entry is kept, unedited below, as the historical record of what the original,
+    unmodified upstream script looked like and why it was first turned down — it does not
+    describe the script as currently ported.
   context: >
     Reviewed alongside the pixel-art-studio port (v0.3.68). Six sibling
     scripts in the same skill package (dither.py, palette.py, render.py,

@@ -28,12 +28,15 @@ upstream `SKILL.md` referenced a third template, `templates/cover-template.js`, 
 exist anywhere in the pinned upstream snapshot — every code example below points at the two
 templates that actually exist instead.
 
-This skill's own bundled bake-to-video/GIF workflow depended on `pixel-art-studio`'s
-`bake_animation.py`, which was fully read and **deliberately not ported** to this adapter (see
-`mappings/rejected-scripts.yaml`): it drives headless Chromium via Playwright against a
-caller-controlled URL, shells out to `ffmpeg`, and needs a much larger external toolchain than
-the Pillow/numpy `pixel-art-studio` scripts need. The "Baking finished animations" section below
-states this plainly rather than describing a tool that isn't actually available here.
+This skill's own bake-to-video/GIF workflow depends on `pixel-art-studio`'s `bake_animation.py`,
+which drives headless Chromium via Playwright and shells out to `ffmpeg` — a much larger external
+toolchain than the Pillow/numpy `pixel-art-studio` scripts need. It was initially rejected during
+review, then reconsidered and accepted after two modifications closed the gaps that caused the
+rejection: the target URL must now be `localhost`/`127.0.0.1`/`::1` (rejected otherwise), and its
+temp frame directory is always removed afterward. See `mappings/reviewed-scripts.yaml` for the
+full record; `mappings/rejected-scripts.yaml` keeps the original rejection as history. The
+"Baking finished animations" section below reflects it as available, subject to that localhost
+restriction.
 
 Take a short scene description (2–3 paragraphs, one to three elements, mood-driven) and turn it
 into a self-contained HTML file with one or more canvas-rendered seamless-loop pixel-art scenes.
@@ -291,7 +294,7 @@ dedicated named agent, only genuine independence from the generating session.
 | Cover-style canvas templates (single and grid) | `templates/single-cover.html`, `templates/grid-cover.html` |
 | Common animation easing functions for pixel art | `references/easing-curves.md` |
 | Retouch-style production standard (layered composition) | `references/retouch-style-guide.md` |
-| Baking a runtime animation to a video/GIF file | `references/smoother-animation-baking.md` (the underlying `bake_animation.py` tool was reviewed and deliberately not ported — see `mappings/rejected-scripts.yaml`) |
+| Baking a runtime animation to a video/GIF file | `references/smoother-animation-baking.md` (uses `pixel-art-studio`'s `bake_animation.py`, reviewed and accepted with a localhost-only URL restriction — see `mappings/reviewed-scripts.yaml`) |
 | Curating a scene-element dataset toward a reusable library | `references/dataset-to-library-actionable.md` |
 | Scaling a canvas element library as it grows | `references/element-library-scaling-architecture.md` |
 | A higher-detail rendering pipeline for larger canvases | `references/high-detail-pipeline.md` |
@@ -323,15 +326,19 @@ in `pixel-art-studio/scripts/palettes/`.
 ## Baking finished animations
 
 Upstream's own workflow bakes a verified runtime animation to GIF, WebM-with-alpha, MP4, or a PNG
-sequence for archival distribution, using `pixel-art-studio`'s `bake_animation.py`. **That script
-was fully read and deliberately not ported to this adapter** (see `mappings/rejected-scripts.yaml`
-for the full reasoning): it drives a headless Chromium browser via Playwright against a
-caller-supplied URL, shells out to `ffmpeg`, and needs a substantially larger external toolchain
-(Playwright, a Chromium install, and `ffmpeg` in `PATH`) than the Pillow/numpy the other bundled
-scripts need. It is not available to invoke from this adapter. See
-`references/smoother-animation-baking.md` for the conceptual material on why baking produces a
-smoother result than runtime playback — the technique is documented for context, not as something
-this adapter can execute today.
+sequence for archival distribution, using `pixel-art-studio`'s `bake_animation.py`. It drives a
+headless Chromium browser via Playwright, shells out to `ffmpeg`, and needs a substantially larger
+external toolchain (Playwright, a Chromium install, and `ffmpeg` in `PATH`) than the Pillow/numpy
+the other bundled scripts need — reviewed and accepted with one restriction: the target URL must
+be `localhost`/`127.0.0.1`/`::1` (the script rejects anything else), and its temp frame directory
+is always cleaned up afterward. See `mappings/reviewed-scripts.yaml` for the full record and
+`references/smoother-animation-baking.md` for the workflow itself, including the exact command
+form.
+
+```bash
+python ../pixel-art-studio/scripts/bake_animation.py http://localhost:8000/scene.html \
+  --canvas-id scene --period-ms 4000 --fps 30 --format webm-alpha -o scene.webm
+```
 
 ## Companion skill
 

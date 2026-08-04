@@ -630,6 +630,14 @@ skills/creative/pixel-art-studio/scripts/quality_check.py:
   description: Read-only pixel-art quality scoring (orphans, doublies, pillow-shading, hue-rotation, AI-slop signals). Governed exclusively by mappings/reviewed-scripts.yaml - never auto-converted by the SUPPORTED fast lane.
   risk: low
 
+skills/creative/pixel-art-studio/scripts/bake_animation.py:
+  status: review
+  target: hermes/skills/creative/pixel-art-studio/scripts/bake_animation.py
+  type: reviewed-script
+  name: pixel-art-studio-bake-animation-script
+  description: Bakes a canvas HTML animation to WebP/GIF/WebM/MP4/PNG-sequence via headless Chromium. Initially rejected, then accepted with two operator-directed modifications (local-URL guard, temp-dir cleanup) - see mappings/reviewed-scripts.yaml and mappings/rejected-scripts.yaml. Governed exclusively by mappings/reviewed-scripts.yaml - never auto-converted by the SUPPORTED fast lane.
+  risk: medium
+
 skills/operational/gemini-delegate/SKILL.md:
   status: supported
   target: hermes/skills/gemini-delegate/SKILL.md

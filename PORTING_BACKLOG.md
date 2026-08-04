@@ -1168,6 +1168,46 @@ Separately, `python3 scripts/sync_upstream.py --check` on 2026-08-04 shows upstr
 `--check`-only observation (non-mutating); a full `--sync` to review and pull those changes has
 not been run and is separate work from this Wave 3 continuation.
 
+### `bake_animation.py` reconsidered and accepted (2026-08-04)
+
+Following the v0.3.70 release above, the operator gave an explicit 5-point directive reversing
+`bake_animation.py`'s earlier rejection: (1) fix the arbitrary-URL exposure by restricting the
+script to loopback addresses, (2) treat the JS-execution-in-browser concern as resolved once (1)
+is fixed, no separate action needed, (3) approve the ffmpeg-via-`subprocess.run()` pattern as-is,
+(4) fix the temp-directory cleanup so no garbage is left behind, (5) approve the
+Playwright+Chromium+ffmpeg dependency surface.
+
+Two narrow modifications were made to the pristine upstream script (diffed to confirm nothing
+else changed): a new `_require_local_url()` check (rejects any URL whose scheme isn't http/https
+or whose hostname isn't `localhost`/`127.0.0.1`/`::1`), called first thing in `main()`; and the
+`bake()` body wrapped in `try/finally` with `shutil.rmtree(out_dir, ignore_errors=True)` so the
+temp frame directory is always removed. The URL guard was unit-tested in isolation (7/7 cases
+covering allowed and rejected hosts/schemes, case-insensitivity); the full Playwright/Chromium
+capture pipeline was not exercised end-to-end (would require a large Chromium download; the
+capture/encode logic itself was untouched and had already been fully read during the original
+review).
+
+This is the first entry in `mappings/reviewed-scripts.yaml` that is not byte-identical to its
+upstream source — a new `modifications` field was added to the manifest schema for this case.
+`mappings/rejected-scripts.yaml`'s original entry was kept verbatim (not edited or deleted) with a
+new `superseded_by` field explaining the reconsideration, preserving why the script was first
+turned down. `mappings/compatibility.yaml` gained a `status: review`, `risk: medium` entry (the
+other six `pixel-art-studio` scripts are `risk: low`).
+
+Propagated the "now accepted" status across every file that previously described the script as
+excluded: `pixel-art-studio/SKILL.md`'s bundled-scripts disclaimer (now seven scripts, not six);
+`pixel-art-storyboard/SKILL.md`'s "Baking finished animations" section and reference-index table
+row; and three `pixel-art-storyboard` reference files —
+`references/smoother-animation-baking.md` (reverted the "not available" framing note, restored
+the literal upstream example commands with the `../pixel-art-studio/scripts/` relative path and
+`localhost`-only URLs), `references/high-detail-pipeline.md` (Stage 5's `--base-image` example),
+and `references/element-library-scaling-architecture.md` (Step 8's diagram note). `SECURITY.md`'s
+"Reviewed-script lane" and "Rejected scripts" sections were updated to describe the current state
+(one script now standing-rejected — `gemini-switch.sh` — rather than two) and to introduce the
+`modifications` field convention. Every corresponding `scripts/sync_upstream.py`
+`adapt_source_text()` override was regenerated to match, verified via
+`converted_output_matches_supported()`.
+
 ## Open decisions
 
 1. Should the adapter eventually ship templates, or only skills?
