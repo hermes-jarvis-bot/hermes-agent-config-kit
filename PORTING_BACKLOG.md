@@ -623,8 +623,13 @@ below is eligible for automatic porting without a new operator matrix decision.
   extending that architecture for one file — dropped as over-engineering for a single case; the
   enriched body content itself (forbidden-phrase examples, Enforcement note) is fully intact.
   **Lesson:** hand-editing a `SUPPORTED`-lane target file always requires updating its override
-  in the same commit — verify with `converted_output_matches_supported()` before committing, not
-  just `validate_output.py` (which does not check override/disk consistency).
+  in the same commit — verify with `converted_output_matches_supported()` before committing.
+  Fixed the same day: added `validate_conversion_roundtrip()` to `scripts/validate_output.py`,
+  which now checks every `SUPPORTED` entry's generated output against its disk file and fails
+  loudly on any mismatch (negative-tested against a deliberately corrupted target file).
+
+  Released as **v0.3.72** (commit `bfb798b`, CI `Validate adapter` green, release:
+  https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.72).
 - **Not portable (infra-coupled, confirmed source):** `rules/long-run-harness.md` — the
   direct source of the `feature_list.json`/`init.sh` convention already excluded by our
   2026-07-13 general rule on upstream-KB-infrastructure-coupled content.
@@ -797,7 +802,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.71` |
+| Latest released tag | `v0.3.72` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
