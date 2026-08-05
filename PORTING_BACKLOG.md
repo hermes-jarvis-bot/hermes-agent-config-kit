@@ -702,11 +702,30 @@ below is eligible for automatic porting without a new operator matrix decision.
 
   Released as **v0.3.74** (commit `ef24b31`, CI `Validate adapter` green, release:
   https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.74).
-- **Manual-review-only (domain blast-radius, not content), NOT auto-port:**
-  `skills/operational/remote-compute-ops/` — the content itself teaches SAFE credential
-  handling (explicit anti-pattern warnings), but the domain is live remote infrastructure
-  (SSH, API tokens, RunPod/Massed Compute billing) with high blast radius, overlap-adjacent
-  to `billing-spend-controls`. Needs a separate operator policy decision.
+- **Rejected (out of scope, not a content-safety issue), operator decision 2026-08-05:**
+  `skills/operational/remote-compute-ops/` (`SKILL.md` + 3 references —
+  `provider-matrix.md`, `transport-safety.md`, `massed-compute-recipes.md` — plus
+  `agents/openai.yaml`, a Codex-plugin manifest in the same permanently-quarantined class as
+  `.claude-plugin/plugin.json`). Full read confirmed the content itself is careful (explicit
+  "never copy tokens into a handoff/Git/transcript", explicit anti-evasion language, minimal-
+  privilege token guidance, exact-target-plus-confirmation-plus-post-verification before any
+  termination). The blocker was never content quality — it's that this skill's entire subject
+  is operating **live remote GPU infrastructure**: real SSH sessions/bridges to real billed
+  machines, and real API tokens tied to real RunPod/Massed Compute billing accounts (`MC_TOKEN`,
+  RunPod keys). Unlike every other skill reconsidered this session (worst case: bad prose, a
+  wasted image-gen call), a mistake acted on here has a real-world cost or destruction floor —
+  a duplicated launch, a wrongly-reconciled retry, or a mis-targeted termination of an
+  unrecoverable checkpoint. It overlaps in principle with the already-ported
+  `billing-spend-controls` (bounded execution, explicit stop conditions, no billing-settings
+  changes without approval) but is provider-and-mechanism-specific where that skill is
+  deliberately provider-neutral. Also found on close read: `SKILL.md` hardcodes a Claude-Code-
+  specific helper path (`%USERPROFILE%\.claude\scripts\conn_registry.py` /
+  `$HOME/.claude/scripts/conn_registry.py`) with no Hermes equivalent, and
+  `massed-compute-recipes.md` references Codex's `.codex/config.toml` — neither portable as-is
+  regardless of the scope decision. **Decision: reject as out of scope** — `hermes-agent-config-kit`
+  adapts agent configuration, it does not operate GPU fleets, and `billing-spend-controls`
+  already carries the generic spend-discipline principle this package specializes. Not a
+  revisit-when-fixed item like `forensic-prompt-compiler`; this is a standing scope boundary.
 - **Rejected (wrong domain, not a script-safety issue), 2026-08-04:**
   `skills/operational/desktop-sessions-discovery/` — the entire skill package (SKILL.md + 4
   scripts: `sessions_registry.py`, `sessions_inventory.py`, `sessions_find.py`,
