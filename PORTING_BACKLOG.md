@@ -606,6 +606,25 @@ below is eligible for automatic porting without a new operator matrix decision.
   that mechanical/hook-level enforcement holds under context pressure better than prose rules
   (no literal Claude Code hook paths). One commit, a small diff to the existing file, no new
   artefact.
+
+  **Correction (2026-08-05):** the "not through the `convert_supported`/`SUPPORTED` mechanism"
+  framing above was wrong and caused a real bug. `principles/26-no-pre-existing-evasion.md` was
+  already a `SUPPORTED` entry from the original port; the enrichment commit (`856ab78`) edited
+  only the disk `SKILL.md`, never touching its `sync_upstream.py` `adapt_source_text()` override
+  to match. That broke the round-trip invariant (`converted_output_matches_supported()`) for this
+  one file. The very next autopilot cycle (2026-08-04 04:47:54-04:49:37Z, `head=856ab78`, no new
+  commit) exercised the regeneration path and silently reverted the working tree back to the
+  stale pre-enrichment content — confirmed by `converted_output_matches_supported()` returning
+  `True` against the reverted state. Fixed by updating the override to match the enriched body,
+  then regenerating the disk file directly from `make_output()` for a guaranteed byte-exact
+  round-trip. One side effect: `make_skill()`'s prefix template hardcodes `version: 0.1.0` and a
+  generic `Source:` line with no per-file override hook, so the custom `version: 0.1.1` and the
+  enrichment-explaining `Source:` line from the original commit could not be preserved without
+  extending that architecture for one file — dropped as over-engineering for a single case; the
+  enriched body content itself (forbidden-phrase examples, Enforcement note) is fully intact.
+  **Lesson:** hand-editing a `SUPPORTED`-lane target file always requires updating its override
+  in the same commit — verify with `converted_output_matches_supported()` before committing, not
+  just `validate_output.py` (which does not check override/disk consistency).
 - **Not portable (infra-coupled, confirmed source):** `rules/long-run-harness.md` — the
   direct source of the `feature_list.json`/`init.sh` convention already excluded by our
   2026-07-13 general rule on upstream-KB-infrastructure-coupled content.

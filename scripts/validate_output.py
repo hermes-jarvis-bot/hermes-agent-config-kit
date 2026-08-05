@@ -251,6 +251,38 @@ def validate_snapshot() -> None:
         fail("upstream snapshot README.md missing")
 
 
+def validate_conversion_roundtrip() -> None:
+    """Every SUPPORTED target must equal make_output(source, meta, upstream_body) exactly.
+
+    A hand-edit to a generated hermes/ file that isn't mirrored in the matching
+    adapt_source_text() override in sync_upstream.py drifts silently: the file looks fine
+    until the next `--sync` (or any other convert_supported() run) regenerates it from the
+    stale override and clobbers the hand-edit with no warning. Caught this the hard way with
+    hermes/skills/no-pre-existing-evasion/SKILL.md (2026-08-04): an enrichment commit edited
+    only the disk file, and the next autopilot cycle silently reverted it. This check makes
+    that class of bug fail loudly instead.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import sync_upstream as su
+
+    mismatches: list[str] = []
+    for source, meta in su.SUPPORTED.items():
+        target = su.ROOT / meta["target"]
+        src = su.SNAPSHOT / source
+        if not src.is_file() or not target.is_file():
+            mismatches.append(f"{source} -> {meta['target']} (missing source or target file)")
+            continue
+        expected = su.make_output(source, meta, src.read_text(encoding="utf-8", errors="replace"))
+        if target.read_text(encoding="utf-8", errors="replace") != expected:
+            mismatches.append(f"{source} -> {meta['target']}")
+    if mismatches:
+        fail(
+            "generated file(s) do not match their sync_upstream.py adapt_source_text() "
+            "override (hand-edit not mirrored into the override, or override edited without "
+            "regenerating the disk file):\n  " + "\n  ".join(mismatches)
+        )
+
+
 def parse_reviewed_scripts() -> list[dict[str, str]]:
     """Minimal field extractor for mappings/reviewed-scripts.yaml (path, source_sha256
     only) — deliberately not a full YAML parser, so this validator adds no dependency
@@ -364,6 +396,7 @@ def validate_secret_scan() -> None:
 def main() -> int:
     validate_lock()
     validate_snapshot()
+    validate_conversion_roundtrip()
     validate_skills()
     validate_templates()
     validate_no_live_writes_default()

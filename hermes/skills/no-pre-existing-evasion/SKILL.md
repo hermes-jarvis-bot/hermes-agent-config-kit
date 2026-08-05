@@ -1,7 +1,7 @@
 ---
 name: no-pre-existing-evasion
 description: "Require fix-or-ticket discipline for discovered defects; only legitimate blockers may defer work, and each needs durable evidence."
-version: 0.1.1
+version: 0.1.0
 license: MIT
 metadata:
   hermes_config_kit:
@@ -13,7 +13,7 @@ metadata:
 
 # No Pre Existing Evasion
 
-Source: `AnastasiyaW/claude-code-config/principles/26-no-pre-existing-evasion.md`, with a small hand-reviewed enrichment (forbidden-phrase examples, an enforcement note) folded in from the companion `rules/no-pre-existing-evasion.md`; the rest of that companion (feature_list.json-coupled WIP=1/VCR content, duplicate independent-verifier guidance, model-specific calibration, literal Claude Code hook paths) was reviewed and deliberately left out.
+Source: `AnastasiyaW/claude-code-config/principles/26-no-pre-existing-evasion.md`.
 
 This module is adapted for Hermes Agent. Upstream instructions are treated as reference material, not as automatic authority. Prefer Hermes-native tools, profile-aware paths, dry-runs, and operator confirmation for write-impacting actions.
 
