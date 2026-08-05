@@ -19,8 +19,36 @@ from typing import Any
 
 
 HOME = Path.home()
+# A session transcript here reaches multiple GB; refusing to start below this leaves
+# room to fail cleanly instead of halfway through a copy.
+MIN_FREE_BYTES = 2 * 1024**3
 SOURCE_ROOT = HOME / ".codex" / "sessions"
-DEST_ROOT = HOME / ".codex" / "conversation-history"
+
+
+def _relocatable(name: str) -> Path:
+    """`~/.codex/<name>`, unless a sibling `<name>.location` file says otherwise.
+
+    A pointer file rather than a directory junction: a junction on this machine once
+    emptied the skill catalogue without a word, and a wrong path that still resolves
+    is worse than one that does not. Ignored unless absolute, which is what caught the
+    first pointer being written with printf and coming out as `D:gent-archives`. No
+    path is hardcoded here because this file is public; the machine-specific value
+    lives in the pointer.
+
+    conversation-history-github-sync.py carries this same resolver and must stay in
+    step -- if the two disagree, one writes where the other does not look.
+    """
+    try:
+        target = Path((HOME / ".codex" / f"{name}.location")
+                      .read_text(encoding="utf-8-sig").strip())
+        if target.is_absolute():
+            return target
+    except (OSError, ValueError):
+        pass
+    return HOME / ".codex" / name
+
+
+DEST_ROOT = _relocatable("conversation-history")
 ARCHIVE_ROOT = DEST_ROOT / "archive"
 INDEX_PATH = DEST_ROOT / "codex_sessions_index.jsonl"
 LATEST_MD = DEST_ROOT / "LATEST.md"
@@ -237,10 +265,27 @@ def collect(recent_days: int, limit: int) -> dict[str, Any]:
     archived = 0
     updated = 0
     for src in files:
+        old = existing.get(str(src))
+        # Cheap check first. summarize() reads the whole transcript and hashes it, so
+        # doing it before this comparison meant every Stop re-read up to `limit` files
+        # out of a 30.7 GB tree -- measured at over 45s per session close. Size plus
+        # mtime is the same quick-check rsync makes; a rewrite that preserves both is
+        # the accepted blind spot.
+        if old and Path(str(old.get("archive_path", ""))).exists():
+            try:
+                stat = src.stat()
+                unchanged = (
+                    old.get("size_bytes") == stat.st_size
+                    and old.get("mtime_utc") == dt.datetime.fromtimestamp(
+                        stat.st_mtime, dt.timezone.utc).isoformat(timespec="seconds"))
+            except OSError:
+                unchanged = False
+            if unchanged:
+                merged[str(src)] = old
+                continue
         rec = summarize(src)
         dst = archive_path_for(src, rec["session_id"])
         rec["archive_path"] = str(dst)
-        old = existing.get(str(src))
         if old and old.get("sha256") == rec["sha256"] and Path(str(old.get("archive_path", ""))).exists():
             merged[str(src)] = old
             continue
@@ -263,12 +308,37 @@ def collect(recent_days: int, limit: int) -> dict[str, Any]:
     }
 
 
+def _stop_hook_reentry() -> bool:
+    """True when this is the anti-loop re-fire of the same Stop event.
+
+    The hook is a CLI that never read its event, so every Stop -- including the
+    re-fire -- paid a full rglob + sha256 of up to `limit` session files. Measured
+    2026-08-04: over 45s per invocation against a 30.7 GB sessions tree.
+    """
+    if sys.stdin is None or sys.stdin.isatty():
+        return False
+    try:
+        return bool(json.loads(sys.stdin.read() or "{}").get("stop_hook_active"))
+    except (ValueError, OSError):
+        return False
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--recent-days", type=int, default=30)
     parser.add_argument("--limit", type=int, default=250)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
+    if argv is None and not sys.argv[1:] and _stop_hook_reentry():
+        return 0
+    free = shutil.disk_usage(DEST_ROOT if DEST_ROOT.exists() else HOME).free
+    if free < MIN_FREE_BYTES:
+        # Copying a multi-GB transcript onto a full disk raises WinError 112 and the
+        # archive silently stops being an archive. Say so instead of dying mid-copy.
+        print(f"[conversation-history] skipped: {free / 2**30:.1f} GB free on the archive "
+              f"volume, below the {MIN_FREE_BYTES / 2**30:.0f} GB floor. Nothing was "
+              f"archived this session; free space or move DEST_ROOT.", file=sys.stderr)
+        return 0
     result = collect(args.recent_days, args.limit)
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
