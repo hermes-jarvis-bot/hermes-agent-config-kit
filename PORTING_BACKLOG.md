@@ -71,6 +71,11 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/ios/ios-development/references/uikit.md` | `hermes/skills/ios/ios-development/references/uikit.md` |
 | `skills/development/deep-review/SKILL.md` | `hermes/skills/deep-review/SKILL.md` |
 | `skills/development/repo-map/SKILL.md` | `hermes/skills/repo-map/SKILL.md` |
+| `skills/development/verify-this/SKILL.md` | `hermes/skills/verify-this/SKILL.md` |
+| `skills/development/control-cli/SKILL.md` | `hermes/skills/control-cli/SKILL.md` |
+| `skills/development/control-ui/SKILL.md` | `hermes/skills/control-ui/SKILL.md` |
+| `skills/development/deslop/SKILL.md` | `hermes/skills/deslop/SKILL.md` |
+| `skills/development/thermo-nuclear-code-quality-review/SKILL.md` | `hermes/skills/thermo-nuclear-code-quality-review/SKILL.md` |
 | `skills/development/workflow-orchestration/SKILL.md` | `hermes/skills/workflow-orchestration/SKILL.md` |
 | `skills/writing/humanize-russian/SKILL.md` | `hermes/skills/humanize-russian/SKILL.md` |
 | `skills/writing/article-structure-review/SKILL.md` | `hermes/skills/article-structure-review/SKILL.md` |
@@ -1239,6 +1244,50 @@ the modified script's hash); `remove_hermes.py --apply` removed it cleanly.
 
 Released as **v0.3.71** (commit `a4d8633`, CI `Validate adapter` green, release:
 https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.71).
+
+### Upstream sync PR #24 merged; deep-review reapproval folded in; 5 new skills ported (2026-08-05)
+
+Operator asked to check a draft PR that appeared from the scheduled `upstream-watch.yml` sync
+(22 upstream commits, `9807b2d..254edfe`). Investigation found the PR was generated (2026-08-05
+03:31 UTC) **before** the `no-pre-existing-evasion` drift fix above (`bfb798b`, 04:14 UTC) — its
+regenerated `hermes/skills/no-pre-existing-evasion/SKILL.md` proposed reverting that very fix.
+Rebuilt the PR by manually dispatching `Watch upstream claude-code-config` (`gh workflow run`)
+against current `main`; the new commit (`b845d25`) no longer touches that file — confirming the
+override fix works as intended. Its `Validate adapter` check needed manual approval (triggering
+actor was `github-actions[bot]`; approved via `gh api .../actions/runs/<id>/approve`). Verified the
+rebuilt PR only advances `upstream.lock.json` and the read-only `upstream/claude-code-config/snapshot/**`
+mirror — no other `hermes/` output changed. Merged as `1914259`, branch auto-deleted.
+
+The sync's classification surfaced two follow-ups, both actioned in this same pass:
+
+- **`deep-review` manual-reapproval**: upstream added an "Admission — screen each candidate before
+  you publish it" section (5-point gate: authority, reachability, materiality, evidence, remedy
+  cost, plus a "report how many you screened out" discipline) to close the gap where a
+  generalized-but-unverified finding erodes trust in a report. Our existing hand-adaptation
+  (`hermes/skills/deep-review/SKILL.md`) had nothing equivalent — folded in as a new Protocol step
+  5 ("Admit only screened findings"), renumbering the prior step 5 ("Close the loop") to step 6.
+  Both the disk file and its `sync_upstream.py` override were updated together this time (the
+  exact discipline the drift-fix above exists to enforce), verified via
+  `converted_output_matches_supported()`.
+- **5 new Cursor-Team-Kit-derived candidates** (`review` bucket, all MIT-licensed, all markdown-only,
+  no infra-coupling, no duplicate of an existing Hermes module): `control-cli` (interactive CLI/TUI
+  test harness), `control-ui` (browser/Electron UI test harness via CDP), `deslop` (post-hoc AI-slop
+  diff cleanup — narrower/lighter than `lean-code`, which decides before writing code whether work
+  should exist at all), `thermo-nuclear-code-quality-review` (opt-in strict maintainability review
+  for large/spaghetti files — upstream's `disable-model-invocation: true` frontmatter flag has no
+  Hermes equivalent and was expressed as opt-in-only prose instead), and `verify-this` (single
+  falsifiable-claim baseline-vs-treatment verification — explicitly narrower than the already-ported
+  `proof-verify`, which handles frozen multi-criterion acceptance). Ported flat under
+  `hermes/skills/<name>/SKILL.md`, matching the existing flat convention (`deep-review`, `repo-map`,
+  `proof-verify`). Cross-references to two upstream modules this adapter does not port
+  (`bug-reproducer`, `testing-strategy`, from `verify-this`) were dropped rather than left dangling;
+  `deslop`'s reference to a nonexistent `architecture-quality` was retargeted to the actual
+  `architecture-first`.
+
+Full verification: `python3 -m py_compile scripts/*.py` OK; `python3 scripts/validate_output.py`
+-> Validation OK; `converted_output_matches_supported()` -> True (all 6 touched files); disposable
+`install_hermes.py --apply` copied all 6 files byte-identically, `remove_hermes.py --apply` removed
+them cleanly.
 
 ## Open decisions
 

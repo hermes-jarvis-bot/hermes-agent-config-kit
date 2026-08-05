@@ -320,6 +320,46 @@ skills/development/repo-map/SKILL.md:
   description: Prepare a bounded, read-only codebase orientation using existing inspection interfaces without importing or activating the upstream mapper routine.
   risk: medium
 
+skills/development/verify-this/SKILL.md:
+  status: supported
+  target: hermes/skills/verify-this/SKILL.md
+  type: skill
+  name: verify-this
+  description: Prove a concrete behavior, performance, UI, CLI, API, or memory claim with fresh baseline-versus-treatment evidence and one explicit verdict.
+  risk: low
+
+skills/development/control-cli/SKILL.md:
+  status: supported
+  target: hermes/skills/control-cli/SKILL.md
+  type: skill
+  name: control-cli
+  description: Drive and inspect an interactive CLI or TUI with a repeatable local harness, deterministic input, transcripts, and optional profiling.
+  risk: low
+
+skills/development/control-ui/SKILL.md:
+  status: supported
+  target: hermes/skills/control-ui/SKILL.md
+  type: skill
+  name: control-ui
+  description: Drive and inspect a local web, IDE, or Electron UI with browser or CDP automation and evidence.
+  risk: low
+
+skills/development/deslop/SKILL.md:
+  status: supported
+  target: hermes/skills/deslop/SKILL.md
+  type: skill
+  name: deslop
+  description: Remove AI-generated code noise from the current diff while preserving behavior.
+  risk: low
+
+skills/development/thermo-nuclear-code-quality-review/SKILL.md:
+  status: supported
+  target: hermes/skills/thermo-nuclear-code-quality-review/SKILL.md
+  type: skill
+  name: thermo-nuclear-code-quality-review
+  description: Run an opt-in strict maintainability review for giant files, spaghetti growth, misplaced logic, weak boundaries, unnecessary abstractions, and missed structural simplifications.
+  risk: low
+
 skills/development/workflow-orchestration/SKILL.md:
   status: supported
   target: hermes/skills/workflow-orchestration/SKILL.md
