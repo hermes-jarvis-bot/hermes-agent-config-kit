@@ -44,6 +44,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | --- | --- |
 | `skills/ai-ml/ml-research-lab/SKILL.md` | `hermes/skills/ai-ml/ml-research-lab/SKILL.md` |
 | `skills/ai-ml/flux2-lora-training/SKILL.md` | `hermes/skills/ai-ml/flux2-lora-training/SKILL.md` |
+| `skills/ai-ml/flux2-klein-prompting/SKILL.md` | `hermes/skills/ai-ml/flux2-klein-prompting/SKILL.md` |
 | `skills/ai-ml/diffusion-engineering/SKILL.md` | `hermes/skills/ai-ml/diffusion-engineering/SKILL.md` |
 | `skills/ai-ml/diffusion-engineering/references/architectures.md` | `hermes/skills/ai-ml/diffusion-engineering/references/architectures.md` |
 | `skills/ai-ml/diffusion-engineering/references/encoders-data.md` | `hermes/skills/ai-ml/diffusion-engineering/references/encoders-data.md` |
@@ -351,7 +352,6 @@ has not been kept in sync with later domain-queue ports — `agent-harness-desig
 `humanize-russian` are confirmed already ported per the "Ported so far" table above and are
 removed from this list; the remaining entries have not been re-checked this session):
 
-- `skills/ai-ml/flux2-klein-prompting/`
 - `skills/ai-ml/forensic-prompt-compiler/`
 - `skills/architecture/feature-new/`
 - `skills/architecture/harness-design/`
@@ -663,8 +663,24 @@ below is eligible for automatic porting without a new operator matrix decision.
   upstream fixes the source file.** Revisit next time this repo's own `--check`/`--sync` shows
   upstream has touched this path again; re-diff against the then-current HEAD before assuming
   it's fixed.
-- **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/flux2-klein-prompting/`
-  (`api_key` policy flag) needs a product/policy decision before any port.
+- **`skills/ai-ml/flux2-klein-prompting/SKILL.md` — operator approved (2026-08-05), ported.**
+  The original `api_key` policy flag was mechanical (any mention of `api_key` triggers manual
+  review) rather than a real risk: the file's only credential-adjacent content is one example
+  Python snippet reading `os.environ["BFL_API_KEY"]` — a standard env-var idiom, no hardcoded
+  secret, illustrative reference code the operator reads and adapts rather than something Hermes
+  executes. Learning from the `forensic-prompt-compiler` finding earlier the same session,
+  content integrity was checked first: diffed the pinned snapshot against a fresh fetch of the
+  current upstream HEAD via `gh api` — byte-identical, and a full read found no truncation or
+  missing sections (unlike its sibling). Added one clarifying sentence noting the module is
+  data-only and doesn't call the BFL API on the operator's behalf, plus one sentence right above
+  the API-key example reinforcing "never hardcode it, never have Hermes create or store it."
+  Ported to `hermes/skills/ai-ml/flux2-klein-prompting/SKILL.md`, matching the domain convention
+  of its siblings `flux2-lora-training` and `diffusion-engineering`. Full verification:
+  `python3 -m py_compile scripts/*.py` OK; `python3 scripts/validate_output.py` -> Validation OK;
+  `converted_output_matches_supported()` -> True; disposable `install_hermes.py --apply` copied
+  the file byte-identically; `remove_hermes.py --apply` removed it cleanly (and, post-fix, the
+  disposable `/tmp` cleanup itself needed no confirmation prompt at all — confirming the
+  `human-confirmation-guard.py` whitelist fix from earlier in the session works as intended).
 - **Manual-review-only (domain blast-radius, not content), NOT auto-port:**
   `skills/operational/remote-compute-ops/` — the content itself teaches SAFE credential
   handling (explicit anti-pattern warnings), but the domain is live remote infrastructure

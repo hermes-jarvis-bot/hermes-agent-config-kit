@@ -40,6 +40,14 @@ skills/ai-ml/flux2-lora-training/SKILL.md:
   description: Plan and review FLUX.2 and Qwen image-edit LoRA/VAE training with dataset, capacity, licence, and verification gates without starting workloads, downloading models, accepting licences, or changing GPU configuration.
   risk: low
 
+skills/ai-ml/flux2-klein-prompting/SKILL.md:
+  status: supported
+  target: hermes/skills/ai-ml/flux2-klein-prompting/SKILL.md
+  type: skill
+  name: flux2-klein-prompting
+  description: Expert prompt engineering guidance for FLUX.2 [klein] image generation and editing - prose structure, templates, API parameters, and troubleshooting. Data-only; example code reads an API key from an operator-set environment variable and never hardcodes or stores one.
+  risk: low
+
 skills/ai-ml/diffusion-engineering/SKILL.md:
   status: supported
   target: hermes/skills/ai-ml/diffusion-engineering/SKILL.md
