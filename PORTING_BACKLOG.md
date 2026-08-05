@@ -79,6 +79,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/development/thermo-nuclear-code-quality-review/SKILL.md` | `hermes/skills/thermo-nuclear-code-quality-review/SKILL.md` |
 | `skills/development/workflow-orchestration/SKILL.md` | `hermes/skills/workflow-orchestration/SKILL.md` |
 | `skills/writing/humanize-russian/SKILL.md` | `hermes/skills/humanize-russian/SKILL.md` |
+| `skills/writing/humanize-english/SKILL.md` | `hermes/skills/humanize-english/SKILL.md` |
 | `skills/writing/article-structure-review/SKILL.md` | `hermes/skills/article-structure-review/SKILL.md` |
 | `skills/lean-code/SKILL.md` | `hermes/skills/lean-code/SKILL.md` |
 | `skills/plan-to-tickets/SKILL.md` | `hermes/skills/plan-to-tickets/SKILL.md` |
@@ -358,7 +359,6 @@ removed from this list; the remaining entries have not been re-checked this sess
 - `skills/architecture/layer-new/`
 - `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
 - `skills/development/workflow-orchestration/` (the markdown `SKILL.md` is ported; references, JavaScript template, and validation script remain unported and quarantined)
-- `skills/writing/humanize-english/`
 
 Special note: `skills/operational/harness-audit/SKILL.md`, its per-subsystem
 evidence checklist, and its scoring rubric are ported as reviewed, data-only
@@ -387,10 +387,25 @@ below is eligible for automatic porting without a new operator matrix decision.
   operator-approved Wave 3 markdown-only module. The Hermes adaptation retains the
   on-demand, complete-and-verified minimalism boundary and directs routine quality work
   to `code-quality`; no upstream tooling or runtime policy is carried over.
-- `skills/writing/humanize-english/` — **manual-review-only**: detector-evasion
-  framing, volatile word-ban lists, and overlap with the installed builtin
-  `humanizer`. Product/policy decision required; not auto-port. (Mechanically it is a
-  clean single-md conversion, but the framing is the blocker.)
+- `skills/writing/humanize-english/SKILL.md` → `hermes/skills/humanize-english/SKILL.md` —
+  **operator approved (2026-08-05), ported** by applying the exact transformation already
+  used for its sibling `humanize-russian`: content integrity checked first (diffed the pinned
+  snapshot against a fresh fetch of upstream HEAD — identical), then the "must pass AI
+  detectors" framing, the literal Tier-1/2/3 banned-word tables, and the GPTZero/Originality.AI
+  source citations were replaced with a principle-based, read-only editorial protocol (mirroring
+  `humanize-russian`'s structure: intro disclaimer against concealing authorship or evading
+  disclosure/moderation/academic-integrity rules; a "Boundary and overlap" section carving out
+  scope from the installed `humanizer`; a 6-step "Read-only editorial pass"; "Useful review
+  prompts"; "Output shape"). This is a substantive fix, not just relabeling: upstream's own
+  "Dead ends and honesty" section explicitly instructed inventing fake first-person anecdotes
+  ("I tried X but it failed because...", "Honestly? I was skeptical too") to fake authenticity —
+  step 5 of the ported protocol ("Protect evidence") now explicitly forbids exactly that, matching
+  the same prohibition already in `humanize-russian`. A mechanical banned-word blocklist is itself
+  detector-evasion tooling regardless of surrounding prose, so it was not carried over even in
+  reworded form. Full verification: `python3 -m py_compile scripts/*.py` OK;
+  `python3 scripts/validate_output.py` -> Validation OK; `converted_output_matches_supported()`
+  -> True; disposable `install_hermes.py --apply`/`remove_hermes.py --apply` confirmed
+  byte-identical copy and clean removal.
 - `skills/plan-to-tickets/SKILL.md` → `hermes/skills/plan-to-tickets/SKILL.md` —
   ported as the operator-approved Wave 3 markdown-only module. The Hermes adaptation
   retains project-relative ticket output and ticket-contract guidance, replaces the
