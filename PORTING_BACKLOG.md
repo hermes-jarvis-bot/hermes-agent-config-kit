@@ -406,6 +406,9 @@ below is eligible for automatic porting without a new operator matrix decision.
   `python3 scripts/validate_output.py` -> Validation OK; `converted_output_matches_supported()`
   -> True; disposable `install_hermes.py --apply`/`remove_hermes.py --apply` confirmed
   byte-identical copy and clean removal.
+
+  Released as **v0.3.75** (commit `848eb13`, CI `Validate adapter` green, release:
+  https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.75).
 - `skills/plan-to-tickets/SKILL.md` → `hermes/skills/plan-to-tickets/SKILL.md` —
   ported as the operator-approved Wave 3 markdown-only module. The Hermes adaptation
   retains project-relative ticket output and ticket-contract guidance, replaces the
@@ -860,7 +863,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.74` |
+| Latest released tag | `v0.3.75` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
