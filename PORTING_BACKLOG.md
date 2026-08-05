@@ -641,11 +641,30 @@ below is eligible for automatic porting without a new operator matrix decision.
 - After queue #5, Track A, and the `no-pre-existing-evasion` enrichment above, only
   Wave-4 script-research and policy manual-review candidates remain; do not select a
   further port automatically. An operator decision is required.
-- **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/forensic-prompt-compiler/`
-  — a high-fidelity image→prompt reconstructor (risk of replicating third-party images or a
-  specific identity; it carries an "identity-safe" mitigation but the capability is
-  dual-use), and `skills/ai-ml/flux2-klein-prompting/` (`api_key` policy flag). Both need a
-  product/policy decision before any port.
+- **`skills/ai-ml/forensic-prompt-compiler/` — operator approved the policy/dual-use decision
+  (2026-08-05), but the port is BLOCKED on a separate, upstream-side problem, not policy:**
+  the source `SKILL.md` is genuinely incomplete on GitHub itself. Verified by diffing the
+  pinned snapshot against a fresh fetch of the upstream repo's current default-branch HEAD via
+  `gh api repos/AnastasiyaW/claude-code-config/contents/...` (bypassing our own snapshot/sync
+  pipeline entirely to rule out an extraction artifact) — the two are identical except for 2
+  trailing blank lines, confirming the gaps are baked into the file as it actually exists
+  upstream, not something this adapter's tooling broke. 11 separate spots end a sentence with
+  a colon and then give NO content before the next heading/rule, including several that are
+  specifically the identity-safety guardrail text this skill exists to define: the "Mandatory"
+  hair-color placeholder term (Step 3), the Hair Physical Presence Lock's "Add:" instruction
+  (Step 3), the entire "Key Constraints hair template" (Step 3), the comparative color-anchor
+  examples and "Grading bans" list (Step 5), the Collage Integrity Lock's "mandatory phrases"
+  (Step 7), the Step 10 output-format template and the entire "Reference Identity Block (MODE B
+  only)" content, and the whole "## QUICK DECISION TREE" section at the end of the file (header
+  present, zero content under it). Given the whole point of this skill is precise, dual-use-safe
+  guardrail language, silently porting it with these gaps filled by guesswork would fabricate
+  exactly the identity-safety text a careless read might assume was reviewed and intentional —
+  a direct `no-guessing.md` violation, not a stylistic nit. **Decision: do not port until
+  upstream fixes the source file.** Revisit next time this repo's own `--check`/`--sync` shows
+  upstream has touched this path again; re-diff against the then-current HEAD before assuming
+  it's fixed.
+- **Manual-review-only (policy), NOT auto-port:** `skills/ai-ml/flux2-klein-prompting/`
+  (`api_key` policy flag) needs a product/policy decision before any port.
 - **Manual-review-only (domain blast-radius, not content), NOT auto-port:**
   `skills/operational/remote-compute-ops/` — the content itself teaches SAFE credential
   handling (explicit anti-pattern warnings), but the domain is live remote infrastructure
