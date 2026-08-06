@@ -176,6 +176,11 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/operational/gemini-delegate/SKILL.md` | `hermes/skills/gemini-delegate/SKILL.md` |
 | `skills/architecture/plan-swarm-review/SKILL.md` | `hermes/skills/architecture/plan-swarm-review/SKILL.md` |
 | `skills/architecture/plan-swarm-review/references/vulnerability-kb.md` | `hermes/skills/architecture/plan-swarm-review/references/vulnerability-kb.md` |
+| `skills/architecture/layer-new/SKILL.md` | `hermes/skills/architecture/layer-new/SKILL.md` |
+| `skills/architecture/feature-new/SKILL.md` | `hermes/skills/architecture/feature-new/SKILL.md` |
+| `templates/kb-skeleton/` (18 files: README/AGENTS + `docs/kb/*` + `docs/layers/**`) | `hermes/templates/kb-skeleton/` (same tree, preserved) |
+| `templates/kb-skeleton/scripts/validate_kb.py` | `hermes/templates/kb-skeleton/scripts/validate_kb.py` (reviewed-script lane) |
+| `templates/kb-skeleton/scripts/build_kb_graph.py` | `hermes/templates/kb-skeleton/scripts/build_kb_graph.py` (reviewed-script lane) |
 | `skills/creative/pixel-art-studio/SKILL.md` | `hermes/skills/creative/pixel-art-studio/SKILL.md` |
 | `skills/creative/pixel-art-studio/references/01-techniques.md` | `hermes/skills/creative/pixel-art-studio/references/01-techniques.md` |
 | `skills/creative/pixel-art-studio/references/02-palette-theory.md` | `hermes/skills/creative/pixel-art-studio/references/02-palette-theory.md` |
@@ -354,9 +359,7 @@ has not been kept in sync with later domain-queue ports — `agent-harness-desig
 removed from this list; the remaining entries have not been re-checked this session):
 
 - `skills/ai-ml/forensic-prompt-compiler/`
-- `skills/architecture/feature-new/`
 - `skills/architecture/harness-design/`
-- `skills/architecture/layer-new/`
 - `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
 - `skills/development/workflow-orchestration/` (the markdown `SKILL.md` is ported; references, JavaScript template, and validation script remain unported and quarantined)
 
@@ -415,16 +418,13 @@ below is eligible for automatic porting without a new operator matrix decision.
   harness-specific validation command with project-applicable checks or an explicit
   manual-review gate, and positions the module as complementary to builtin `plan` /
   local `writing-plans`, not a duplicate.
-- `skills/architecture/feature-new/`, `skills/architecture/layer-new/` — **not
-  portable to Hermes (review-lane, not auto-port)**. Their substance depends on
-  upstream-specific KB infrastructure Hermes does not have and cannot reproduce by
-  adaptation: `docs/layers/<layer>/features/`, `feature_list.json`,
-  `templates/kb-skeleton/`, `build_kb_graph.py`/`validate_kb_links.py`, ULTRAPACK, and
-  `<claude-code-skills>` checkout paths (a pure conversion also fails the validator on
-  the `claude-code-skills` reference). **General rule (2026-07-13):** any skill whose
-  mechanics depend on concrete upstream artefacts/paths/tooling (kb-skeleton,
-  docs/layers, feature_list.json, claude-code-skills/config checkout, kb-graph scripts)
-  is not portable to Hermes-specifics — classify review-lane, do not auto-port.
+- **General rule (2026-07-13), amended 2026-08-06:** a skill whose mechanics depend on
+  concrete upstream artefacts/paths/tooling (kb-skeleton, docs/layers, feature_list.json,
+  claude-code-skills/config checkout, kb-graph scripts) is *not auto-portable* — it needs
+  a deliberate operator decision to port the underlying infrastructure too, not a routine
+  markdown conversion. It was not, and is still not, a blanket "never portable" rule. See
+  the `layer-new`/`feature-new`/`kb-skeleton` entry below for the case where the operator
+  made exactly that call.
 - **Domain-skill scope applied (operator, 2026-07-13):** the agent-harness pool is
   exhausted; the approved five-file **`skills/frontend/frontend-design/`** package is
   ported to `hermes/skills/frontend/frontend-design/`, retaining the domain directory.
@@ -1366,6 +1366,94 @@ them cleanly.
 
 Released as **v0.3.73** (commit `dfa1292`, CI `Validate adapter` green, release:
 https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.73).
+
+### `layer-new`/`feature-new` and the `kb-skeleton` template tree ported (2026-08-06)
+
+Operator explicitly reversed the 2026-07-13 "not portable" classification for
+`skills/architecture/feature-new/`, `skills/architecture/layer-new/`, and their
+underlying `templates/kb-skeleton/` infrastructure — the general rule about
+infra-coupled skills governs *auto-port eligibility*, not a permanent ban; a deliberate
+operator decision to port the infrastructure too is exactly the escape hatch that rule
+always allowed. Directive: port the `kb-skeleton` tree, review and port its two
+companion scripts (`build_kb_graph.py`, `validate_kb.py`) after validating them, and
+port both scaffolding skills.
+
+**Schema conflict found and resolved before writing any code.** The already-ported
+`long-run-feature-tracking` skill (principle 27) defines its own `feature_list.json`
+schema (`id: "feat-NNN"`, `evidence` as an accumulating L1/L2/L3 string, WIP=1 across
+the whole file). Upstream's `feature-new` writes a different, incompatible shape to
+the same filename (`id: "F-NNN"`, `evidence` as an array, plus `layer`/`doc`/`branch`
+fields) — the already-ported `feature-layer-architecture` skill (principle 28) itself
+says the two "should cite each other, but not duplicate each other," but the concrete
+tooling had never been reconciled against that stated intent. Operator chose: extend
+the existing schema. `feature-new` now writes `id: "feat-NNN"` (matching
+`long-run-feature-tracking`'s own convention) with `evidence: ""` (string, not array),
+adding `layer`/`doc`/`branch` as purely additive fields — a tool that only reads the
+base six fields still works correctly. The human-readable `F-NNN` spelling (doc H1
+titles, in-prose cross-references) is kept as-is; it is a different, coexisting-by-design
+convention for a different audience (markdown prose vs. the JSON id field).
+
+**A real functional bug was caught by testing this reconciliation, not just reading
+the code.** `build_kb_graph.py`'s health check compared `feature_list.json`'s `id`
+field against its own doc-filename-derived `F-NNN` ids as raw strings — with the
+reconciled schema, `feat-042` (JSON) and `F-042` (doc) would never string-match,
+producing a permanent false-positive sync error for every single feature. Built a
+disposable fixture project and ran the script twice (before/after) to confirm: added
+`_normalize_feature_id()` and used it only in the `feature_list.json` sync check (Check 2,
+dangling-cross-reference checking between feature docs, is untouched and stays on the
+`F-NNN` convention throughout, since that never involves `feature_list.json`). Verified
+the fix reconciles the true match (`feat-001`/`F-001`) while still correctly flagging a
+genuinely absent feature (a deliberately planted `feat-999` "ghost" entry with no doc).
+
+**Scope of the port:**
+- 18 markdown files under `templates/kb-skeleton/` (`docs/kb/*`, `docs/layers/**`,
+  README/AGENTS.md), preserving the upstream directory tree rather than the flat
+  single-file convention used for `templates/agent-task/*`/`templates/long-run-project/*`
+  — deliberate deviation, because `layer-new` copies this tree wholesale and flattening
+  it would break that copy-semantics. `install_hermes.py`'s existing `copy_tree()` already
+  supports nested trees with no code change needed.
+- `templates/kb-skeleton/.github/workflows/kb.yml` **not ported** — harmless content
+  (just runs `validate_kb.py` on push/PR), excluded purely because this repo never
+  auto-converts anything under `.github/workflows/**` regardless of content. Documented
+  in the ported `kb-skeleton/README.md` as a manual copy-in-yourself item, and given its
+  own `status: unsupported` entry in `mappings/compatibility.yaml` for the record.
+- 2 reviewed scripts (`validate_kb.py`, `build_kb_graph.py`) — a **new sub-case** of the
+  reviewed-script lane: template-distributed scripts meant to be copied into and run
+  within an *operator's own project*, not invoked by this adapter or its skills at all.
+  `SECURITY.md` updated to document this explicitly (the existing 7-point gate applies
+  unchanged; "invoked... at runtime" means runtime of the project the script is copied
+  into). Both functionally tested against a disposable fixture project, not just read —
+  see `mappings/reviewed-scripts.yaml` for the full test transcripts.
+- `layer-new` and `feature-new` ported to `hermes/skills/architecture/` (nested, matching
+  the `plan-swarm-review` precedent for first ports from the `skills/architecture/`
+  upstream domain). Upstream's `user-invocable`/`model` frontmatter dropped (matching
+  every other port's convention); `<claude-code-skills-checkout>/templates/kb-skeleton/...`
+  path references retargeted to this adapter's own installed template location
+  (`templates/config-kit/kb-skeleton/`, sibling to `skills/config-kit/`, with a repo-checkout
+  fallback); raw upstream GitHub principle URLs retargeted to the installed
+  `feature-layer-architecture`/`knowledge-base-enforcement` skills.
+- **Both already-ported skills that reference this pattern were updated for consistency**,
+  each with its own regenerated `sync_upstream.py` override (the exact discipline the
+  `no-pre-existing-evasion` drift fix from earlier this session exists to enforce):
+  `feature-layer-architecture` (principle 28) no longer claims the concrete tooling was
+  deliberately left out; `long-run-feature-tracking` (principle 27) now documents the
+  `layer`/`doc`/`branch` extension. The latter had never had a `sync_upstream.py` override
+  before (it matched pristine upstream) — this edit gave it its first one.
+- A real gap found in `scripts/validate_output.py`'s `validate_templates()`: it used
+  `glob("*.md")` (flat, top-level only), so a nested template tree like `kb-skeleton/`
+  would have silently skipped the provenance-marker check entirely. Fixed to `rglob("*.md")`.
+- One `FORBIDDEN_GENERATED_HARNESS_PATTERNS` false-positive fixed narrowly: `layer-new`'s
+  Troubleshooting table said "Run `python scripts/build_kb_graph.py`..." — this doesn't
+  resolve to a real path relative to the skill's own directory (it is describing the
+  *operator's own future project's* copy of the script, not a path in this repo), so it
+  was reworded to avoid the executable-looking pattern rather than forcing a resolution
+  that doesn't semantically apply.
+
+Full verification: `python3 -m py_compile scripts/*.py` OK; `python3 scripts/validate_output.py`
+-> Validation OK; `converted_output_matches_supported()` -> True (all 22 touched/new
+SUPPORTED entries); disposable `install_hermes.py --apply` copied the entire `kb-skeleton`
+tree (20 files) and both skills byte-identically (verified via `diff -r`); `remove_hermes.py --apply`
+removed everything cleanly.
 
 ## Open decisions
 

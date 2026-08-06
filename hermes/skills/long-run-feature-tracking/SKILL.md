@@ -68,6 +68,13 @@ Features and incidents and health checks were the missing layer.
 }
 ```
 
+If a project also adopts the installed `feature-layer-architecture` skill's
+`docs/layers/` tree, its `feature-new` skill appends entries here with three
+additional fields — `layer`, `doc`, `branch` — using this same base schema and the
+same `feat-NNN` id format (not a second, incompatible file). A tool that only reads
+the six base fields above still works correctly. See `feature-new` for the exact
+reconciled shape.
+
 ### Four states
 
 - `not-started` — defined, not yet picked up

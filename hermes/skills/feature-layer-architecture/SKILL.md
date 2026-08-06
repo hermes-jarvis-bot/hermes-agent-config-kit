@@ -19,7 +19,9 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
 
 # Feature Layer Architecture
 
-Upstream source policy describes a three-tier knowledge model for long-running projects. Hermes adaptation keeps the architectural pattern — global principles, project layers, and feature narratives — while removing product-specific templates, command names, raw URL prescriptions, and automatic tooling assumptions.
+Upstream source policy describes a three-tier knowledge model for long-running projects. Hermes adaptation keeps the architectural pattern — global principles, project layers, and feature narratives.
+
+Concrete scaffolding tooling for this pattern is also ported: the `layer-new` and `feature-new` skills mechanically create the directory tree and feature narratives described below, drawing from the installed `kb-skeleton` template; `build_kb_graph.py` and `validate_kb.py` (reviewed scripts bundled with that template) check consistency once a project adopts it. This module stays the conceptual/adoption-judgment layer — use `layer-new`/`feature-new` for the mechanical part, and see this module for whether and how to structure it.
 
 ## Principle
 

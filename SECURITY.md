@@ -31,15 +31,24 @@ Quarantined files may be included in the upstream snapshot for review, but they 
 
 ## Reviewed-script lane
 
-A narrow, explicitly-allowlisted exception to the quarantine lane exists for **skill-bundled**
-scripts — a script that ships inside a generated skill's own `scripts/` subfolder and is invoked
-by the operator or agent at runtime, the same way Hermes's own official skills (`xlsx`, `pdf`,
-`linear`) ship and invoke their bundled scripts. This is not the same thing as a Claude-Code
-`hooks/**` file: a hook has a harness-lifecycle I/O contract (stdin JSON, exit codes) that Hermes
-has no equivalent for, and stays fully quarantined.
+A narrow, explicitly-allowlisted exception to the quarantine lane exists for two cases:
 
-A script may exist under `hermes/skills/**/scripts/` only if every one of these has been done, in
-order, by a human (or an agent acting under explicit human authorisation for this exact script):
+- **Skill-bundled scripts** — a script that ships inside a generated skill's own `scripts/`
+  subfolder and is invoked by the operator or agent at runtime, the same way Hermes's own
+  official skills (`xlsx`, `pdf`, `linear`) ship and invoke their bundled scripts.
+- **Template-distributed scripts** — a script that ships inside a generated template tree's own
+  `scripts/` subfolder (e.g. `hermes/templates/kb-skeleton/scripts/*.py`), meant to be copied by
+  the operator into their **own** project and run there, not invoked by this adapter or its skills
+  at all. The same review gate applies; "invoked by the operator or agent at runtime" in that gate
+  means runtime **of the project the script was copied into**, not of this adapter.
+
+Neither case is the same thing as a Claude-Code `hooks/**` file: a hook has a harness-lifecycle
+I/O contract (stdin JSON, exit codes) that Hermes has no equivalent for, and stays fully
+quarantined.
+
+A script may exist under `hermes/skills/**/scripts/` or `hermes/templates/**/scripts/` only if
+every one of these has been done, in order, by a human (or an agent acting under explicit human
+authorisation for this exact script):
 
 1. Read the entire script by hand — not a grep-only pass.
 2. Check its dependencies — prefer stdlib; document any external dependency as an explicit

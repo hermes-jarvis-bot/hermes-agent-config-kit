@@ -185,7 +185,11 @@ def validate_skills() -> None:
 
 
 def validate_templates() -> None:
-    templates = sorted((ROOT / "hermes" / "templates").glob("*.md"))
+    # rglob, not glob: a nested template tree (e.g. hermes/templates/kb-skeleton/**)
+    # must get the same provenance check as a flat top-level template file. A plain
+    # glob("*.md") silently skipped everything under a subdirectory here until this
+    # was noticed while porting kb-skeleton (2026-08-06).
+    templates = sorted((ROOT / "hermes" / "templates").rglob("*.md"))
     if not templates:
         return
     for path in templates:

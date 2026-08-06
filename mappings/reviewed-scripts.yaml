@@ -285,3 +285,89 @@
     logic itself, which was already fully read and is unchanged from the
     original upstream script. Stated plainly rather than fabricating a
     full-pipeline result.
+
+- path: hermes/templates/kb-skeleton/scripts/validate_kb.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: templates/kb-skeleton/scripts/validate_kb.py
+  source_sha256: 4e3da28adaa0428223630850d51591c3b874207a9ed02f29c592663eb4c801f2
+  reviewed_at: "2026-08-06"
+  reviewed_by: "operator-approved reviewed-script-lane review, hermes-agent-config-kit session; full manual read plus functional test against a disposable fixture project before acceptance"
+  summary: >
+    A drop-in knowledge-base validator, distributed as part of the kb-skeleton
+    template tree (not a skill-bundled script invoked by this adapter itself —
+    the operator copies it into their OWN project's scripts/ and runs it there,
+    or wires it into their own CI). Checks that every source-code area under a
+    configurable SOURCE_ROOTS list has a matching docs/kb/modules/<area>.md,
+    that path references inside kb docs still resolve, that INVARIANTS.md's
+    test references (path::name) exist and name a real function, and that
+    AGENTS.md's docs/kb/*.md pointers are not dangling. stdlib only (re, sys,
+    pathlib, __future__). Fully read-only: no network calls, no subprocess, no
+    eval/exec, no credential access — it only reads text files under the
+    project it is copied into and prints findings to stdout/stderr.
+  modifications: >
+    Byte-identical to upstream below the module docstring (source_sha256 above
+    is the pristine upstream hash). The only change is a "Reviewed-script lane"
+    provenance paragraph inserted inside the existing docstring, matching this
+    manifest's own convention for every reviewed script — no functional line
+    was touched.
+  functional_test: >
+    Built a disposable fixture project (a temp directory with docs/kb/,
+    docs/kb/modules/, AGENTS.md, and a tests/ directory) on 2026-08-06 and ran
+    the script directly. First run correctly FAILED with a real, expected
+    finding (a source area with no matching modules/<area>.md doc); after
+    adding the missing doc, a second run passed cleanly ("[OK] KB consistent").
+    This exercises the module-coverage check, the path-reference resolver, and
+    the INVARIANTS.md test-reference check end-to-end against real filesystem
+    state, not just a syntax read.
+
+- path: hermes/templates/kb-skeleton/scripts/build_kb_graph.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: templates/kb-skeleton/scripts/build_kb_graph.py
+  source_sha256: aaedc96e4cd677bb9a9304f0d5a41810110150c2880f9a3021ed0e3dd89306a1
+  reviewed_at: "2026-08-06"
+  reviewed_by: "operator-approved reviewed-script-lane review, hermes-agent-config-kit session; full manual read plus functional test against a disposable fixture project before acceptance"
+  summary: >
+    Builds a feature/layer cross-reference graph for a project that has
+    adopted the kb-skeleton's docs/layers/ tree, distributed as part of the
+    kb-skeleton template tree (not invoked by this adapter itself — the
+    operator copies it into their OWN project and runs it there). Scans
+    docs/layers/**/features/feat-*.md and feature_list.json, and writes
+    docs/_graph/tree.md (a Mermaid graph), docs/_graph/backlinks.json (a
+    reverse cross-reference index), and docs/_graph/health.md (a consistency
+    report: dangling F-NNN references, features missing a title/status, and
+    feature_list.json sync). stdlib only (argparse, json, re, sys,
+    collections.defaultdict, pathlib, typing, __future__). Fully read-only
+    against the project it is copied into except for its own designated
+    output directory (docs/_graph/ under that project's own repo root): no
+    network calls, no subprocess, no eval/exec, no credential access.
+  modifications: >
+    Two changes from the pristine upstream source (source_sha256 above is the
+    ORIGINAL upstream hash): (1) the standard "Reviewed-script lane" provenance
+    paragraph inside the existing module docstring, and (2) a real functional
+    fix found via the functional test below — added `_normalize_feature_id()`
+    and used it in `gen_health_report()`'s feature_list.json sync check.
+    Upstream compared feature_list.json's `id` field directly against this
+    script's own doc-derived `F-NNN` ids as raw strings; this adapter's
+    feature-new skill reconciles feature_list.json with the already-ported
+    long-run-feature-tracking skill's `feat-NNN` id convention (see that
+    skill and feature-new for why), which upstream's raw-string comparison
+    would always report as a false mismatch between `F-042` and `feat-042`
+    for the same feature. The fix normalizes both spellings to the same
+    zero-padded numeric key before comparing, and only for this one sync
+    check — Check 2 (dangling F-NNN references between feature docs, which
+    never involves feature_list.json) is untouched. No other line was
+    touched; the graph/backlinks generation and the CLI surface are otherwise
+    byte-for-byte upstream.
+  functional_test: >
+    Built a disposable fixture project on 2026-08-06 with one layer, one
+    feature doc (feat-001-audit-log.md, H1 "# F-001: ..."), and a
+    feature_list.json containing a matching feat-001 entry (reconciled
+    schema, with layer/doc/branch fields) plus a deliberately unmatched
+    feat-999 "ghost" entry with no doc. Before the fix: build_kb_graph.py
+    reported BOTH feat-001 (false positive — the doc exists, id format just
+    differed) and feat-999 (correct) as sync errors. After the fix: feat-001
+    correctly reconciles with F-001 and produces no finding; feat-999 is
+    still correctly reported as a real error. Confirms the fix closes exactly
+    the false-positive gap without hiding a genuine mismatch. tree.md and
+    backlinks.json outputs were also inspected and matched the fixture's
+    actual structure.

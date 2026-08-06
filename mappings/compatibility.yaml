@@ -478,6 +478,22 @@ skills/architecture/plan-swarm-review/references/vulnerability-kb.md:
   description: Condensed CWE Top 25 detection heuristics for use during plan-swarm-review's code-mode focused review rounds.
   risk: medium
 
+skills/architecture/layer-new/SKILL.md:
+  status: supported
+  target: hermes/skills/architecture/layer-new/SKILL.md
+  type: skill
+  name: layer-new
+  description: Scaffold a new layer in a project's docs/layers/ tree following the feature-layer architecture.
+  risk: low
+
+skills/architecture/feature-new/SKILL.md:
+  status: supported
+  target: hermes/skills/architecture/feature-new/SKILL.md
+  type: skill
+  name: feature-new
+  description: Scaffold a new feature narrative document in an existing layer, and add a reconciled entry to feature_list.json using the same base schema as long-run-feature-tracking.
+  risk: low
+
 skills/creative/pixel-art-studio/SKILL.md:
   status: supported
   target: hermes/skills/creative/pixel-art-studio/SKILL.md
@@ -1196,6 +1212,175 @@ templates/long-run-project/README.md:
   name: long-run-project-overview
   description: Assess whether a long-running project needs reviewed feature tracking and health evidence without installing state or automation.
   risk: low
+
+templates/kb-skeleton/README.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/README.md
+  type: template
+  name: kb-skeleton-overview
+  description: Drop-in knowledge base and feature-layer template tree - adoption steps, what is and is not included.
+  risk: low
+
+templates/kb-skeleton/AGENTS.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/AGENTS.md
+  type: template
+  name: kb-skeleton-agents
+  description: Fill-in-the-blank AGENTS.md entry point template for a project adopting the kb-skeleton knowledge base.
+  risk: low
+
+templates/kb-skeleton/docs/index.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/index.md
+  type: template
+  name: kb-skeleton-docs-index
+  description: Map of a project's docs/kb versus docs/layers knowledge tree.
+  risk: low
+
+templates/kb-skeleton/docs/kb/README.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/kb/README.md
+  type: template
+  name: kb-skeleton-kb-readme
+  description: Meta-rules for a project's docs/kb knowledge base.
+  risk: low
+
+templates/kb-skeleton/docs/kb/INVARIANTS.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/kb/INVARIANTS.md
+  type: template
+  name: kb-skeleton-invariants
+  description: Empty invariants table template with format and example entry.
+  risk: low
+
+templates/kb-skeleton/docs/kb/conventions.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/kb/conventions.md
+  type: template
+  name: kb-skeleton-conventions
+  description: Empty coding-conventions template with section stubs to fill per stack.
+  risk: low
+
+templates/kb-skeleton/docs/kb/patterns.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/kb/patterns.md
+  type: template
+  name: kb-skeleton-patterns
+  description: Empty recipes template for common tasks.
+  risk: low
+
+templates/kb-skeleton/docs/kb/gotchas.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/kb/gotchas.md
+  type: template
+  name: kb-skeleton-gotchas
+  description: Empty known-foot-guns template.
+  risk: low
+
+templates/kb-skeleton/docs/kb/decisions.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/kb/decisions.md
+  type: template
+  name: kb-skeleton-decisions
+  description: Empty ADR-style decision log template.
+  risk: low
+
+templates/kb-skeleton/docs/kb/modules/example.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/kb/modules/example.md
+  type: template
+  name: kb-skeleton-module-example
+  description: Per-module API-contract template.
+  risk: low
+
+templates/kb-skeleton/docs/layers/README.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/layers/README.md
+  type: template
+  name: kb-skeleton-layers-readme
+  description: Layer-tree index template - quick adoption, layer structure, layer index table.
+  risk: low
+
+templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/README.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/README.md
+  type: template
+  name: kb-skeleton-layer-readme
+  description: Per-layer README template.
+  risk: low
+
+templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/history.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/history.md
+  type: template
+  name: kb-skeleton-layer-history
+  description: Per-layer reverse-chronological evolution log template.
+  risk: low
+
+templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/invariants.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/invariants.md
+  type: template
+  name: kb-skeleton-layer-invariants
+  description: Layer-scoped invariants template.
+  risk: low
+
+templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/decisions.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/decisions.md
+  type: template
+  name: kb-skeleton-layer-decisions
+  description: Layer-scoped ADR log template.
+  risk: low
+
+templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/gotchas.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/gotchas.md
+  type: template
+  name: kb-skeleton-layer-gotchas
+  description: Layer-scoped known-foot-guns template.
+  risk: low
+
+templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/patterns.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/patterns.md
+  type: template
+  name: kb-skeleton-layer-patterns
+  description: Layer-scoped reusable-recipe template.
+  risk: low
+
+templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/features/_FEATURE-TEMPLATE.md:
+  status: supported
+  target: hermes/templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/features/_FEATURE-TEMPLATE.md
+  type: template
+  name: kb-skeleton-feature-template
+  description: ULTRAPACK-style feature narrative template (Design / Plan / Verify / Conclusion).
+  risk: low
+
+templates/kb-skeleton/scripts/validate_kb.py:
+  status: review
+  target: hermes/templates/kb-skeleton/scripts/validate_kb.py
+  type: reviewed-script
+  name: kb-skeleton-validate-kb-script
+  description: Drop-in knowledge-base validator distributed with the kb-skeleton template, meant to be copied into and run within an operator's own project. Governed exclusively by mappings/reviewed-scripts.yaml - never auto-converted by the SUPPORTED fast lane.
+  risk: low
+
+templates/kb-skeleton/scripts/build_kb_graph.py:
+  status: review
+  target: hermes/templates/kb-skeleton/scripts/build_kb_graph.py
+  type: reviewed-script
+  name: kb-skeleton-build-kb-graph-script
+  description: Feature/layer cross-reference graph builder distributed with the kb-skeleton template, meant to be copied into and run within an operator's own project. Fixed a real ID-format mismatch against the reconciled feature_list.json schema (see mappings/reviewed-scripts.yaml). Governed exclusively by mappings/reviewed-scripts.yaml - never auto-converted by the SUPPORTED fast lane.
+  risk: medium
+
+templates/kb-skeleton/.github/workflows/kb.yml:
+  status: unsupported
+  type: github_workflow
+  risk: low
+  notes:
+    - Harmless GitHub Actions workflow that only runs validate_kb.py on push/PR, but
+      this repo never auto-converts anything under .github/workflows/** regardless of
+      content. Documented in templates/kb-skeleton/README.md as a manual copy-in-yourself item.
 
 principles/01-harness-design.md:
   status: supported
