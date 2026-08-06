@@ -1455,20 +1455,25 @@ SUPPORTED entries); disposable `install_hermes.py --apply` copied the entire `kb
 tree (20 files) and both skills byte-identically (verified via `diff -r`); `remove_hermes.py --apply`
 removed everything cleanly.
 
-**CI note:** GitHub Actions' `Validate adapter` workflow did not trigger for this push (commit
-`7abc583`) — confirmed absent via the workflow-runs API, not merely slow (checked repeatedly over
-~9 minutes). A follow-up empty commit (`f07e2fb`) meant to re-trigger it also produced no run
-after ~80 seconds of checking, ruling out a one-off webhook delivery glitch. Other workflows
-(`Watch upstream claude-code-config`, scheduled) ran successfully in the same window, so Actions
-infrastructure was not globally down for the repo — the most likely explanation is an Actions-
-minutes/billing limit on the account, which this session's tooling has no scope to inspect
-(`user` OAuth scope required, not granted). This is the first gap in an otherwise unbroken
-CI-confirmation streak this entire session. Operator explicitly approved releasing on local
-verification alone this time (the exact checks `scripts/validate_adapter.py` runs in CI, run
-directly instead). Released as **v0.3.76** (commit `f07e2fb`, tag points at the empty
-re-trigger commit on top of the real change in `7abc583`; CI status: not confirmed, see note
-above; release: https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.76).
-Revisit whether CI is healthy again before assuming future releases can skip this check.
+**CI note (corrected after the fact — see below):** at release time, `Validate adapter` showed
+no run at all for this push (commit `7abc583`) after ~9 minutes of checking, nor for a follow-up
+empty re-trigger commit (`f07e2fb`) after ~80 seconds more. The working guess at the time was an
+Actions-minutes/billing limit. **That guess was wrong.** A run for `7abc583` did eventually appear
+(just delayed well past the window checked) and completed with `conclusion: failure` — but the
+failure annotation was `"The job was not acquired by Runner of type hosted even after multiple
+attempts"`, i.e. a GitHub-side hosted-runner capacity shortage, not a code defect or a billing
+gate. Corroborated by two unrelated `sync/upstream-claude-code-config` PR runs stuck in `queued`
+for 30-40+ minutes in the same window, and by a `gh run rerun` of the failed run still showing
+`status: queued` with zero jobs assigned 5+ minutes later — a sustained runner-availability
+incident on GitHub's side, outside this repo's or the operator's control. Operator had already
+explicitly approved releasing on local verification alone before this was known; that approval
+stands and turns out to have been the right call for an unrelated-to-the-code reason. Released as
+**v0.3.76** (commit `f07e2fb`, tag points at the empty re-trigger commit on top of the real change
+in `7abc583`; release:
+https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.76). Re-run the
+workflow for `7abc583` (or push a trivial commit) once GitHub's hosted-runner capacity recovers to
+get a real pass/fail signal for this change; do not treat the `queued`/`failure`-to-acquire state
+as a validation result either way.
 
 ## Open decisions
 
