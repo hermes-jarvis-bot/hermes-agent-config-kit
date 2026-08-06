@@ -882,7 +882,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.75` |
+| Latest released tag | `v0.3.76` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
@@ -1454,6 +1454,21 @@ Full verification: `python3 -m py_compile scripts/*.py` OK; `python3 scripts/val
 SUPPORTED entries); disposable `install_hermes.py --apply` copied the entire `kb-skeleton`
 tree (20 files) and both skills byte-identically (verified via `diff -r`); `remove_hermes.py --apply`
 removed everything cleanly.
+
+**CI note:** GitHub Actions' `Validate adapter` workflow did not trigger for this push (commit
+`7abc583`) — confirmed absent via the workflow-runs API, not merely slow (checked repeatedly over
+~9 minutes). A follow-up empty commit (`f07e2fb`) meant to re-trigger it also produced no run
+after ~80 seconds of checking, ruling out a one-off webhook delivery glitch. Other workflows
+(`Watch upstream claude-code-config`, scheduled) ran successfully in the same window, so Actions
+infrastructure was not globally down for the repo — the most likely explanation is an Actions-
+minutes/billing limit on the account, which this session's tooling has no scope to inspect
+(`user` OAuth scope required, not granted). This is the first gap in an otherwise unbroken
+CI-confirmation streak this entire session. Operator explicitly approved releasing on local
+verification alone this time (the exact checks `scripts/validate_adapter.py` runs in CI, run
+directly instead). Released as **v0.3.76** (commit `f07e2fb`, tag points at the empty
+re-trigger commit on top of the real change in `7abc583`; CI status: not confirmed, see note
+above; release: https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.76).
+Revisit whether CI is healthy again before assuming future releases can skip this check.
 
 ## Open decisions
 
