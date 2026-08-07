@@ -746,9 +746,53 @@ below is eligible for automatic porting without a new operator matrix decision.
   and override for the reference file, plus a regenerated override for the hand-touched
   `SKILL.md`; both verified via `converted_output_matches_supported()`. `mappings/
   compatibility.yaml` updated with the matching `status: supported` entry.
-- After queue #5, Track A, Track A2, and the `no-pre-existing-evasion` enrichment above, only
-  Wave-4 script-research and policy manual-review candidates remain; do not select a
-  further port automatically. An operator decision is required.
+- **Wave-4 script-research + policy manual-review candidates — discussion pass and 2 concept
+  fold-ins, 2026-08-07.** Reconciled the `.claude/wave4-script-porting-analysis.md` scratch
+  doc (2026-07-14, stale in one place: it called `kb-skeleton`'s scripts "not portable", which
+  the operator later reversed in v0.3.76) against the current `manual-review` bucket surfaced by
+  PR #25's sync (11 hook/script files: `dependency-currency-guard.py`,
+  `dependency-provenance-guard.py`, `handoff-closure-audit-guard.py`, `launch-watch-guard.py`,
+  `live-tree-guard.py`, `open-items-are-work-orders.py`, `unbuffered-progress-advisor.py`,
+  `dependency-alternatives.py`, `install_hooks.py`, `replay_retry_guard_keys.py`,
+  `test_dependency_provenance_guard.py`) and its `review` bucket (4 new top-level docs:
+  `docs/runtime-wiring.md`, `docs/starting-from-what-you-remember.md`,
+  `docs/finishing-what-you-started.md`, `docs/a-launch-is-a-promise.md`). Read all 4 docs in
+  full — they are design-rationale write-ups for specific new hooks, not standalone principles.
+  `runtime-wiring.md` is pure Claude-Code/Codex cross-client plumbing, not portable.
+  `starting-from-what-you-remember.md`'s numeric thresholds (120-day name age, 500 weekly
+  downloads, 12-minor-version staleness) and the `react-codeshift` case study sharpen but do not
+  add new concepts beyond the already-folded v0.3.79 `supply-chain-defense` enrichment — left as
+  a future sharpening, not done this pass. Two genuinely new, vendor-neutral, code-free concepts
+  were folded into already-ported skills:
+  - `finishing-what-you-started.md` → `hermes/skills/no-pre-existing-evasion/SKILL.md`: added
+    "Deferral migrates to whichever form isn't checked" — successive closes of one evasion form
+    (wording, then unstructured labels) push evasion into the next unchecked form
+    (`arch-decision` specifically, measured at >50% of one project's backlog, median age over a
+    week); the fix is checking a fact (does this session's own new finding survive into its own
+    closing report), not another label.
+  - `a-launch-is-a-promise.md` → `hermes/skills/deterministic-orchestration/SKILL.md`: added a
+    "Special case: a launched background job" under Anti-Fabrication — three independent
+    liveness questions (process exists / work advancing / output landing) that each fail
+    silently on their own, and the task-watchdog-vs-scheduled-check distinction.
+  - The 11 hook/script files and `runtime-wiring.md` remain quarantined/unported; no code was
+    read line-by-line this pass (only characterized by their design-rationale docs, `hooks/
+    README.md`'s summary table, and line counts) — a future pass reading
+    `handoff-closure-audit-guard.py`/`live-tree-guard.py`/`open-items-are-work-orders.py` in
+    full would be needed before any Hermes-native guard implementation is attempted.
+
+  **Versioning note:** this stayed on the **0.3.x line (v0.3.81)**, not `0.4.0`. Per the
+  Release and Wave state ledger below, Wave 4's exact trigger is a Hermes-native **guard**
+  implementation (plugin, validator, cron/scheduled protocol) with a `SECURITY.md` threat model
+  and disposable-VM testing — not merely reading or discussing Wave-4-labelled source material.
+  Folding two paragraphs of prose into two already-ported Wave 3 skills is markdown-only
+  guidance work, the same class as every other change this session; rule 3 in the ledger
+  ("do not start Wave 2 merely because a template was previously ported") applies by direct
+  analogy. Opening Wave 4 for real requires the ledger's trigger to be added first, in the
+  commit that actually satisfies it.
+- After queue #5, Track A, Track A2, and the `no-pre-existing-evasion` enrichment above, the
+  remaining Wave-4 hook/script candidates and `runtime-wiring.md` need a further operator
+  decision (which guard, if any, to actually implement Hermes-native) before more work there;
+  do not select one automatically.
 - **`skills/ai-ml/forensic-prompt-compiler/` — operator approved the policy/dual-use decision
   (2026-08-05), but the port is BLOCKED on a separate, upstream-side problem, not policy:**
   the source `SKILL.md` is genuinely incomplete on GitHub itself. Verified by diffing the

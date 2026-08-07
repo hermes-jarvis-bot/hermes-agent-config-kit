@@ -27,6 +27,8 @@ The fundamental problem: LLMs are poor executors of deterministic processes. The
 
 The principle is simple: **mechanical tasks must not pass through the LLM.** Tests, linters, formatters, stack detectors -- these are deterministic. Run them as scripts. Feed the results as structured input to the next step. Reserve the LLM for reasoning, creativity, and judgment.
 
+A companion upstream design note (`docs/a-launch-is-a-promise.md`) extends Anti-Fabrication with the specific case of a launched background job; that case is folded into the Anti-Fabrication section below in vendor-neutral form, without the specific hook implementation it describes.
+
 ---
 
 ## Shell Bypass Principle
@@ -171,6 +173,22 @@ When using sub-agents or parallel execution:
 - Before accepting a sub-agent's result, **verify that the child process actually completed**
 - Check the output artifacts, not the status claim
 - A sub-agent saying "I finished successfully" is not evidence -- the output file it was supposed to produce IS evidence
+
+### Special case: a launched background job
+
+A background launch -- a training run, a scrape, a long batch, a detached process -- can fail in its first second and look identical to one running quietly: no output can mean buffered progress or a dead process, and an empty log can mean the writer never opened it. Before treating a launch as handled, answer three independent questions, because each fails on its own:
+
+| Question | What proves it | What can pass while broken |
+|---|---|---|
+| Does the process exist? | A process-status check (`pgrep`, `docker ps`, an equivalent) | Alive and doing nothing |
+| Is work advancing? | A growing log, a moving step counter, active resource use | Busy on a loop that never commits |
+| Is output landing? | Files appearing, rows written, size increasing | Every earlier check green while the destination silently rejects the write |
+
+A liveness check answers only the first question and is routinely mistaken for an answer to the third.
+
+Distinguish a *task watchdog* -- something inside the job announcing "still working" -- from a *scheduled check* that wakes something outside the job to inspect, decide, and possibly act. Only the second catches a job that stopped announcing because it stopped existing. For a launch reachable only over an unreliable remote link, put the check on the machine actually running the job rather than relying on a foreground probe across that link -- an unanswered remote probe is not evidence the job is dead, but it is not evidence it is alive either.
+
+This does not replace verifying the actual result once the job finishes; it only prevents walking away from something that died before doing any work.
 
 ---
 

@@ -21,6 +21,8 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
 
 Upstream source policy describes a common agent failure: discovering a defect, labelling it as pre-existing or out of scope, and then reporting the current task complete. Hermes adaptation keeps the ownership and deferral discipline, while removing product-specific issue links, model claims, and enforcement code.
 
+A companion upstream design note (`docs/finishing-what-you-started.md`) tracks what happened after this exact discipline was enforced on one project over time — evasion did not stop, it moved to whichever form was not yet checked. That finding is folded in below in vendor-neutral form, without the specific enforcement-hook implementation it describes.
+
 ## Principle
 
 A discovered defect needs one of two outcomes: fix it, or create a durable blocker record with a legitimate reason.
@@ -90,6 +92,14 @@ For a deferred defect, preserve:
 - Closing a task while known red checks remain unexplained.
 - Reporting “all done” while hiding adjacent faults discovered during verification.
 - Calling a bug a “known limitation”, “future work”, “deferred for separate refactor”, “needs its own PR”, a “good stopping point”, or a “natural checkpoint” — these are paraphrases of the same evasion, not new categories, and need the same fix-or-legitimate-record outcome.
+
+## Deferral migrates to whichever form isn't checked
+
+A written rule closes one *form* of evasion; the behaviour tends to move to the next form nobody is checking yet — not because anyone is cheating, but because each new instance can look correct in isolation. A project's own successive tightening of this exact discipline shows the pattern: blocking evasive wording pushed it into an unstructured label, and requiring a legitimate reason from the taxonomy above pushed it toward `arch-decision` specifically, because that is the one reason that means "someone must decide" without attaching a deadline to the decision. Measured on one project's own backlog: `arch-decision` carried more than half of everything currently deferred, at a median age over a week — every individual entry looked correct, and the distribution is what gave the pattern away.
+
+A gate that reads the label cannot catch this, because the label is now the disguise; it has to check a fact instead. The narrowest fact available is whether a blocker this session opened is actually named in this session's own closing report or handoff — not full backlog triage, just whether a finding survived from discovery to being reported, or quietly vanished in between. Scope the check to the current session's own new findings: a check that holds every open item accountable regardless of who opened it or when floods with unrelated noise and gets switched off, while one scoped to what this session itself found and did not carry forward stays narrow enough to survive.
+
+This does not close an inherited backlog of old `arch-decision` entries — those still need deciding, not a new gate — and it does not prove the work was finished, only that a finding was not dropped silently. Expect the next disguise to be a mention that says nothing; that failure mode needs a different check.
 
 ## Enforcement note
 
