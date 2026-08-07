@@ -793,6 +793,50 @@ below is eligible for automatic porting without a new operator matrix decision.
   remaining Wave-4 hook/script candidates and `runtime-wiring.md` need a further operator
   decision (which guard, if any, to actually implement Hermes-native) before more work there;
   do not select one automatically.
+- **Wave 3 completeness check + `architecture-quality` ported, 2026-08-07.** Operator asked
+  directly whether Wave 3 could be considered closed. Cross-referenced all 47 upstream
+  `skills/**/SKILL.md` packages against `sync_upstream.py:SUPPORTED` mechanically: 40 already
+  ported, 4 of the remaining 7 already individually resolved with full backlog entries
+  (`forensic-prompt-compiler` blocked-on-upstream, `skills/architecture/harness-design/`
+  duplicate-folded-in, `desktop-sessions-discovery` and `remote-compute-ops` rejected). The other
+  **3 had never been individually evaluated** — only casually name-dropped as "cross-reference
+  this adapter does not port" while adapting `deslop`/`verify-this` (v0.3.73): `architecture-
+  quality`, `harness-feedback`, `testing-strategy`. Verified content-integrity of all 3 against
+  fresh upstream HEAD (identical to the pinned snapshot, no drift) and read each in full:
+  - `architecture-quality` — **not a duplicate**: its own frontmatter positions it as the
+    missing 5th member of the already-ported "architecture cluster" ("Load architecture-first
+    first for a new system, and refactoring-safely for an existing oversized module"). **Ported**
+    this pass (below).
+  - `harness-feedback` — **not a duplicate** of the already-ported `harness-audit` (that scores
+    a whole project's conventions; this is a narrow feedback loop for one reported
+    "gate is overloaded" signal, with its own 4-profile taxonomy). Operator chose to defer —
+    remains an open, evaluated (not just name-dropped) candidate.
+  - `testing-strategy` — **not a duplicate** of the already-ported `proof-verify` (that handles
+    the freeze-AC/build/fresh-verify cycle regardless of test level; this decides *which* test
+    level a change's risk calls for). Cross-references `harness-feedback` (open, see above) and
+    a phantom `bug-reproducer` (confirmed: no such package exists anywhere in the upstream
+    snapshot — a dangling reference in upstream's own text, drop it if ported). Operator chose to
+    defer — remains an open, evaluated candidate.
+
+  **`skills/development/architecture-quality/SKILL.md` → `hermes/skills/architecture-quality/
+  SKILL.md`** ported as a flat, markdown-only module: working contract (5 facts to record before
+  a non-trivial change), web-application shape rules, shape checks, review questions, gotchas,
+  and troubleshooting. Generalized upstream's specific `scripts/architecture_audit.py` invocation
+  and `module-shape-advisor.py` live hook to "whatever repository-level architecture audit /
+  live per-edit advisory check the project already has" (matching this adapter's established
+  vendor-neutral convention), and its `CLAUDE_ALLOW_BIG_MODULES=1` env-var escape hatch to
+  a generic "explicit, reviewable, project-level exemption." Added a "Relationship to other
+  modules" section cross-linking the full architecture cluster. New `SUPPORTED` entry + override
+  in `sync_upstream.py`, matching `compatibility.yaml` entry, verified via
+  `converted_output_matches_supported()` across all supported sources (this catches a real
+  mid-edit bug this pass: an override insertion accidentally landed inside `architecture-first`'s
+  own triple-quoted block rather than after it, corrupting it silently until the roundtrip check
+  caught the mismatch before any commit).
+
+  Full verification: `python3 -m py_compile scripts/*.py` OK; `python3 scripts/validate_output.py`
+  -> Validation OK; `converted_output_matches_supported()` -> True; disposable
+  `install_hermes.py --apply` copied the file byte-identically; `remove_hermes.py --apply`
+  removed it cleanly.
 - **`skills/ai-ml/forensic-prompt-compiler/` — operator approved the policy/dual-use decision
   (2026-08-05), but the port is BLOCKED on a separate, upstream-side problem, not policy:**
   the source `SKILL.md` is genuinely incomplete on GitHub itself. Verified by diffing the
@@ -1024,6 +1068,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | First Wave 2 version | `v0.2.0`, with `adapter.version` updated to `0.2.0` in that same commit |
 | Wave 3 trigger | Satisfied by the accepted and verified markdown-only `skills/development/proof-verify/SKILL.md` adaptation to `hermes/skills/proof-verify/SKILL.md`; its `references/kb-aware-verification.md` companion is also ported (2026-08-07). |
 | Wave 3 first version | `v0.3.0`, with `adapter.version` updated to `0.3.0` in this trigger commit |
+| Wave 3 completeness (2026-08-07) | Trigger was satisfied long ago; the candidate pool is not exhausted. `architecture-quality` ported. `harness-feedback` and `testing-strategy` individually evaluated (not duplicates, content-integrity-checked against fresh upstream) and operator-deferred, not ported. |
 | Next Wave | Not prepared; a later transition commit must add its exact trigger and release line before any minor-version change. |
 
 Release decision rules:

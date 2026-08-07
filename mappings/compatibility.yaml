@@ -750,6 +750,14 @@ skills/development/architecture-first/SKILL.md:
   description: Design module boundaries, dependency direction, state ownership, and domain vocabulary before implementation without prescribing premature layers or infrastructure choices.
   risk: medium
 
+skills/development/architecture-quality/SKILL.md:
+  status: supported
+  target: hermes/skills/architecture-quality/SKILL.md
+  type: skill
+  name: architecture-quality
+  description: Keep a web application, API, or service readable as it grows, verified with a repeatable delivery contract.
+  risk: medium
+
 skills/development/architecture-first/references/clean-architecture-original.md:
   status: supported
   target: hermes/skills/architecture-first/references/clean-architecture-original.md
