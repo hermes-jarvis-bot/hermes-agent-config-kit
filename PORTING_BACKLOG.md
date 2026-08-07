@@ -431,11 +431,24 @@ below is eligible for automatic porting without a new operator matrix decision.
   `validate_output.py` now recursively validates nested `SKILL.md` and `references/*.md`
   paths, including frontmatter and harness-leak sweeps, so this package cannot bypass
   the validation boundary.
-- `skills/architecture/harness-design/` — **not a candidate (duplicate)**: same
-  Anthropic source, same core (Generator-Evaluator / Sprint-Contract / Context /
-  Assumption / Quality) and the same `name: harness-design` as the already-ported
-  `harness-design` (principle 01). Its unique operational bits are a manual merge
-  decision, not an auto-port.
+- `skills/architecture/harness-design/` — **not a candidate (duplicate), confirmed and
+  the flagged manual-merge decision executed 2026-08-07**: full read of both sources
+  found genuine, substantial overlap with the already-ported `harness-design`
+  (principle 01) — same Anthropic source, near-verbatim Quality Criteria table (same
+  4 dimensions, same "purple gradients on white cards" example) and identical
+  cost/quality figures (~$9/20min solo vs ~$100-200+/6h harness, "20x cost... qualitative
+  leap"). Porting it as a separate module would duplicate roughly 60% of its content.
+  But the skill also names two genuinely non-duplicate practices the principle lacks:
+  a third **Planner** role (vs the principle's 2-role Generator/Evaluator split) and an
+  explicit recommendation to verify the evaluator's judgment against the actual running
+  system (screenshots/live requests), not a code read alone — the principle in turn has
+  content the skill lacks (the SEMAG trace-similarity escalation section, already
+  de-cited into our port's "Stagnation signals"). Folded both non-duplicate practices
+  into `hermes/skills/harness-design/SKILL.md` in vendor-neutral form (no literal
+  "Claude Agent SDK"/"Playwright MCP" naming, matching this adapter's convention) as new
+  "Optional planner role" and "Verify against the running system" sections, with a
+  provenance note crediting the sibling skill. `sync_upstream.py`'s override regenerated
+  to match, verified via `converted_output_matches_supported()`.
 - **Domain queue (operator-approved 2026-07-13, all vetted clean on 4 axes; port in
   order, one per run, keep the `hermes/skills/<domain>/<skill>/` folder):**
   1. `skills/ai-ml/ml-research-lab/SKILL.md` → `hermes/skills/ai-ml/ml-research-lab/SKILL.md`

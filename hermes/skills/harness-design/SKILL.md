@@ -21,6 +21,8 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
 
 Upstream source policy describes how to improve an existing agent harness once a simple agent or MVP already works. Hermes adaptation keeps the durable architecture pattern — independent generation and evaluation, explicit success contracts, context reset discipline, stagnation detection, and measured complexity — while removing vendor anecdotes, paper-specific formulas, and fixed multi-agent machinery.
 
+A sibling upstream skill, `skills/architecture/harness-design/`, covers mostly the same source material (same Quality Criteria dimensions, same cost/quality figures) and was judged a near-duplicate rather than a separate port — but it also names two genuinely non-duplicate practices, folded in below in vendor-neutral form: an optional planner role for turning a terse request into a spec, and verifying an evaluator's judgment against the actual running system rather than a code read alone.
+
 ## Principle
 
 Separate creation from judgment when quality matters.
@@ -45,6 +47,16 @@ The evaluator should have:
 - permission to reject plausible-looking work.
 
 Self-review is useful as a quick pass. It is not independent verification.
+
+## Optional planner role
+
+For work that starts as a short, ambiguous request, add a third role before generation begins:
+
+- **Planner** — expands a terse request into a detailed, ambitious specification: what should exist, not how to build it. Looks for opportunities the literal request did not spell out, without inventing scope the operator did not ask for.
+
+Use a planner when the request is a few sentences and the target is a multi-feature product. Skip it when the request is already a concrete, bounded change — planning a one-line fix only adds a role with nothing to plan.
+
+The planner's output becomes the sprint contract's raw material, not the contract itself: the generator and evaluator still need to agree on concrete, testable criteria before work starts.
 
 ## Sprint contract
 
@@ -84,6 +96,12 @@ Calibrate the evaluator with examples or explicit criteria:
 - what evidence is required for a pass.
 
 For subjective work, use dimensions such as coherence, originality, craft, functionality, and operator fit. For testable work, prefer `proof-loop` and durable evidence.
+
+## Verify against the running system
+
+For work with a real running surface — a UI, an API, a service — judgment from reading code alone misses what only the running system reveals: a screen that renders but does not respond, an endpoint that returns the wrong shape, a feature with no wiring behind its call site.
+
+Use whatever browser-automation, API-client, or app-launch tooling the project already has to let the evaluator exercise the actual running application — a screenshot or a real request before grading, not a diff read alone. Do not add a new automation dependency merely to gold-plate this check; use what the project already provides.
 
 ## Stagnation signals
 
