@@ -758,6 +758,14 @@ skills/development/architecture-quality/SKILL.md:
   description: Keep a web application, API, or service readable as it grows, verified with a repeatable delivery contract.
   risk: medium
 
+skills/development/harness-feedback/SKILL.md:
+  status: supported
+  target: hermes/skills/harness-feedback/SKILL.md
+  type: skill
+  name: harness-feedback
+  description: Treat a harness-overload complaint as an engineering finding and correct the smallest scope instead of disabling the check.
+  risk: medium
+
 skills/development/architecture-first/references/clean-architecture-original.md:
   status: supported
   target: hermes/skills/architecture-first/references/clean-architecture-original.md

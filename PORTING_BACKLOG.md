@@ -837,6 +837,26 @@ below is eligible for automatic porting without a new operator matrix decision.
   -> Validation OK; `converted_output_matches_supported()` -> True; disposable
   `install_hermes.py --apply` copied the file byte-identically; `remove_hermes.py --apply`
   removed it cleanly.
+- **`skills/development/harness-feedback/SKILL.md` → `hermes/skills/harness-feedback/SKILL.md`
+  ported (2026-08-07)**, the second of the two Wave 3 completeness-audit candidates the operator
+  chose to port. Content-integrity-checked against fresh upstream HEAD (identical, no drift) and
+  confirmed not a duplicate of the already-ported `harness-audit` (that scores a whole project's
+  conventions holistically; this is a narrow feedback loop for one specific reported "gate is
+  overloaded" signal). Ported flat, keeping the 4-profile taxonomy (`staging-smoke`/
+  `security-proof`/`release-attestation`/`nightly-stress`), the feedback-loop recording steps,
+  and the required-report format verbatim in substance. Generalized upstream's specific
+  `harness-load-advisor.py` intake-signal hook to "if the harness has a deterministic
+  overload-signal mechanism, use it... where no such mechanism exists, record the same fields by
+  hand", matching this adapter's established vendor-neutral convention. Added a "Relationship to
+  other modules" section cross-linking `harness-audit`, `harness-design`, and `proof-verify` (not
+  `testing-strategy`, since that candidate remains unported — no dangling skill reference). New
+  `SUPPORTED` entry + override in `sync_upstream.py`, matching `compatibility.yaml` entry,
+  verified via `converted_output_matches_supported()` across all supported sources.
+
+  Full verification: `python3 -m py_compile scripts/*.py` OK; `python3 scripts/validate_output.py`
+  -> Validation OK; `converted_output_matches_supported()` -> True; disposable
+  `install_hermes.py --apply` copied the file byte-identically; `remove_hermes.py --apply`
+  removed it cleanly.
 - **`skills/ai-ml/forensic-prompt-compiler/` — operator approved the policy/dual-use decision
   (2026-08-05), but the port is BLOCKED on a separate, upstream-side problem, not policy:**
   the source `SKILL.md` is genuinely incomplete on GitHub itself. Verified by diffing the
@@ -1068,7 +1088,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | First Wave 2 version | `v0.2.0`, with `adapter.version` updated to `0.2.0` in that same commit |
 | Wave 3 trigger | Satisfied by the accepted and verified markdown-only `skills/development/proof-verify/SKILL.md` adaptation to `hermes/skills/proof-verify/SKILL.md`; its `references/kb-aware-verification.md` companion is also ported (2026-08-07). |
 | Wave 3 first version | `v0.3.0`, with `adapter.version` updated to `0.3.0` in this trigger commit |
-| Wave 3 completeness (2026-08-07) | Trigger was satisfied long ago; the candidate pool is not exhausted. `architecture-quality` ported. `harness-feedback` and `testing-strategy` individually evaluated (not duplicates, content-integrity-checked against fresh upstream) and operator-deferred, not ported. |
+| Wave 3 completeness (2026-08-07) | Trigger was satisfied long ago; the candidate pool is not exhausted. `architecture-quality` and `harness-feedback` ported. `testing-strategy` individually evaluated (not a duplicate, content-integrity-checked against fresh upstream) and remains open. |
 | Next Wave | Not prepared; a later transition commit must add its exact trigger and release line before any minor-version change. |
 
 Release decision rules:
