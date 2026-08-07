@@ -766,6 +766,14 @@ skills/development/harness-feedback/SKILL.md:
   description: Treat a harness-overload complaint as an engineering finding and correct the smallest scope instead of disabling the check.
   risk: medium
 
+skills/development/testing-strategy/SKILL.md:
+  status: supported
+  target: hermes/skills/testing-strategy/SKILL.md
+  type: skill
+  name: testing-strategy
+  description: Classify a code change's risk and select the smallest test-level evidence set that can falsify the changed behaviour.
+  risk: medium
+
 skills/development/architecture-first/references/clean-architecture-original.md:
   status: supported
   target: hermes/skills/architecture-first/references/clean-architecture-original.md

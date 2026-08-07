@@ -857,6 +857,31 @@ below is eligible for automatic porting without a new operator matrix decision.
   -> Validation OK; `converted_output_matches_supported()` -> True; disposable
   `install_hermes.py --apply` copied the file byte-identically; `remove_hermes.py --apply`
   removed it cleanly.
+- **`skills/development/testing-strategy/SKILL.md` → `hermes/skills/testing-strategy/SKILL.md`
+  ported (2026-08-07)**, the third and last of the Wave 3 completeness-audit candidates —
+  **Wave 3 completeness is now closed.** Content-integrity-checked against fresh upstream HEAD
+  (identical, no drift) and confirmed not a duplicate of the already-ported `proof-verify` (that
+  handles the freeze-AC/build/fresh-verify cycle regardless of test level; this decides *which*
+  test level a change's risk calls for). Ported flat, keeping the risk-based compact matrix,
+  the test-kind taxonomy (unit/focused-regression/integration/contract/smoke-E2E/property/
+  performance-security/agent-eval), the agent evidence contract, and the anti-duplication rules
+  verbatim in substance. Generalized upstream's "Stop hook" session-close gate and its specific
+  `.claude/test-policy.json` path to a project-level test-policy record with no prescribed
+  location, matching `proof-verify`'s own "does not prescribe a hidden directory" convention.
+  Dropped the cross-reference to `bug-reproducer` — confirmed (again, as with `verify-this`
+  earlier this session) that no such package exists anywhere in the upstream snapshot; folded
+  its one useful instruction ("reproduce first, then fix, then rerun") directly into the
+  Workflow step instead of a dangling reference. Kept and properly wired the cross-reference to
+  `harness-feedback`, now portable since it was ported in the previous commit. Added a
+  "Relationship to other modules" section cross-linking `harness-feedback`, `proof-verify`, and
+  `refactoring-safely`. New `SUPPORTED` entry + override in `sync_upstream.py`, matching
+  `compatibility.yaml` entry, verified via `converted_output_matches_supported()` across all
+  supported sources.
+
+  Full verification: `python3 -m py_compile scripts/*.py` OK; `python3 scripts/validate_output.py`
+  -> Validation OK; `converted_output_matches_supported()` -> True; disposable
+  `install_hermes.py --apply` copied the file byte-identically; `remove_hermes.py --apply`
+  removed it cleanly.
 - **`skills/ai-ml/forensic-prompt-compiler/` — operator approved the policy/dual-use decision
   (2026-08-05), but the port is BLOCKED on a separate, upstream-side problem, not policy:**
   the source `SKILL.md` is genuinely incomplete on GitHub itself. Verified by diffing the
@@ -1088,7 +1113,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | First Wave 2 version | `v0.2.0`, with `adapter.version` updated to `0.2.0` in that same commit |
 | Wave 3 trigger | Satisfied by the accepted and verified markdown-only `skills/development/proof-verify/SKILL.md` adaptation to `hermes/skills/proof-verify/SKILL.md`; its `references/kb-aware-verification.md` companion is also ported (2026-08-07). |
 | Wave 3 first version | `v0.3.0`, with `adapter.version` updated to `0.3.0` in this trigger commit |
-| Wave 3 completeness (2026-08-07) | Trigger was satisfied long ago; the candidate pool is not exhausted. `architecture-quality` and `harness-feedback` ported. `testing-strategy` individually evaluated (not a duplicate, content-integrity-checked against fresh upstream) and remains open. |
+| Wave 3 completeness (2026-08-07) | Closed. All 3 candidates found by the completeness audit (`architecture-quality`, `harness-feedback`, `testing-strategy`) individually evaluated, confirmed non-duplicate, content-integrity-checked, and ported. |
 | Next Wave | Not prepared; a later transition commit must add its exact trigger and release line before any minor-version change. |
 
 Release decision rules:
