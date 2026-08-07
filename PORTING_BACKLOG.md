@@ -669,9 +669,30 @@ below is eligible for automatic porting without a new operator matrix decision.
 
   Released as **v0.3.72** (commit `bfb798b`, CI `Validate adapter` green, release:
   https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.72).
-- **Not portable (infra-coupled, confirmed source):** `rules/long-run-harness.md` — the
-  direct source of the `feature_list.json`/`init.sh` convention already excluded by our
-  2026-07-13 general rule on upstream-KB-infrastructure-coupled content.
+- **Not portable as a standalone module (duplicate, confirmed and the flagged manual-merge
+  decision executed 2026-08-07):** `rules/long-run-harness.md` — full read of both sources found
+  substantial real overlap with the already-ported `long-run-feature-tracking` (principle 27):
+  same course source (walkinglabs/learn-harness-engineering, same lectures), identical
+  `feature_list.json` schema/example, identical 4-state + WIP=1 + transition rules, identical
+  `init.sh` constraints (3-min target, non-interactive, free, local), identical "when to
+  apply/skip" criteria, identical anti-patterns, and a near-identical bootstrap-existing-project
+  procedure (7 steps vs our 6, same content). Porting it separately would duplicate essentially
+  all of it. But it also named one genuinely non-duplicate practice: a formal 15-point **First
+  Release Checklist** gating a project's adoption of the `[LONG-RUN]` convention (code/process/
+  knowledge/safety-level checks — `init.sh` green, `feature_list.json` ≥5 features, WIP=1,
+  `PROBLEMS.md` exists, autonomy level stated, risk classes named, budgets declared, trust labels
+  applied, guidance file short, session-handoff workflow in place, validation signals declared,
+  secrets scanned). Neither `long-run-feature-tracking` (only an informal 5-bullet "when to
+  apply" heuristic) nor the already-ported `mvp-agent-blueprint` (whose own "15. First release
+  checklist" section is an empty template slot, no concrete items) captured this. Folded it in as
+  a new "Readiness Gate" section in `hermes/skills/long-run-feature-tracking/SKILL.md`, adapted
+  vendor-neutral (no `[LONG-RUN]`/MEMORY.md tagging, no Claude-Code hook references — those stay
+  correctly excluded as infra-coupled), referencing the already-ported `agent-harness-design` and
+  `mvp-agent-blueprint` skills. Also added one supply-chain anti-pattern item (unpinned heavy
+  deps in `init.sh`) the sibling rule named but our port lacked, and a cross-reference to
+  `mvp-agent-blueprint` in "Relationship to Other Principles". `sync_upstream.py`'s override for
+  `principles/27-feature-tracking.md` regenerated to match, verified via
+  `converted_output_matches_supported()`.
 - After queue #5, Track A, and the `no-pre-existing-evasion` enrichment above, only
   Wave-4 script-research and policy manual-review candidates remain; do not select a
   further port automatically. An operator decision is required.

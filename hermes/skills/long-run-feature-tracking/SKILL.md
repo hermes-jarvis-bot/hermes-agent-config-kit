@@ -29,6 +29,8 @@ A `feature_list.json` with a strict schema fixes this. Each feature is an object
 
 Combined with a minimal `init.sh` (canonical "is the project healthy?" check) and the existing `PROBLEMS.md` (incident log), these three artifacts form the standard harness for long-run projects.
 
+A sibling upstream rule, `rules/long-run-harness.md`, auto-triggers on these same artifacts and covers the same schema, WIP=1 invariant, and bootstrap procedure — a near-total duplicate of this module. It also names one genuinely non-duplicate practice, folded in below: a readiness gate to run before adopting this convention on a project, rather than skipping straight to the label.
+
 ---
 
 ## The Three-Artifact Harness
@@ -203,6 +205,40 @@ For skipped projects, free-form notes in handoffs are fine. The overhead of main
 
 ---
 
+## Readiness Gate
+
+Before adopting this convention on a project — not after — confirm the following, rather than adding `feature_list.json` and `init.sh` to a project whose foundations are still shaky. Adapted from `mvp-agent-blueprint`'s first-release-checklist pattern, narrowed to the specific artifacts this module owns.
+
+Artifact-level:
+
+- [ ] One primary job-to-be-done is stated at the top of the project's guidance file.
+- [ ] `init.sh` exists and exits 0 on a clean checkout in under 3 minutes.
+- [ ] `feature_list.json` exists with at least 5 features, including one `done` with populated evidence.
+- [ ] WIP=1 holds — exactly 0 or 1 feature `in-progress`.
+- [ ] `PROBLEMS.md` exists (even empty) as the incident log.
+- [ ] `.gitignore` covers regenerable output, secrets, and heavy binaries.
+
+Process-level:
+
+- [ ] Autonomy level is stated explicitly (answer-only / draft-only / approval-gated / autonomous-within-policy).
+- [ ] High-risk actions are draft-only or approval-gated, with risk classes named (see `agent-harness-design`).
+- [ ] Step/cost/time budgets are declared for any agents the project runs (see `agent-harness-design`).
+- [ ] Trust labels are applied to external content the project consumes (see `agent-harness-design`).
+
+Knowledge-level:
+
+- [ ] Project guidance stays a short map, not an encyclopedia — detail moves to rules or docs.
+- [ ] A session-handoff workflow is in place between sessions.
+- [ ] Validation signals are declared — what "this feature works" means concretely (a named test, probe, or check).
+
+Safety-level:
+
+- [ ] Secrets are out of git, out of the guidance file, and out of scripts; a push-time scan is configured.
+
+Work through this iteratively — close one item, check it, move to the next. If it is not fully green, keep working in the ordinary mode instead: a project can go a long time without needing this convention. Adopting the convention and finishing the checklist "later" inverts the gate into decoration — the label should follow real readiness, not substitute for it.
+
+---
+
 ## Mechanical Enforcement (Optional)
 
 A session-finish routine concept can verify the invariants automatically:
@@ -245,6 +281,7 @@ This takes 30-60 minutes for a typical 3-month-old project. The payoff is that e
 
 - **50+ entries** in feature_list.json — this is a backlog, not a working list. Move non-active items to `BACKLOG.md`.
 - **`init.sh` that downloads multi-GB models or trains** — exceeds 3-minute target. Split: `init.sh` for quick health, `setup.sh` for one-time heavy lifting.
+- **`init.sh` that installs unpinned heavy dependencies without a locked version/index** — supply-chain risk and environment mismatch; pin exact versions.
 - **`done` with vague evidence** — "tests pass" is not evidence. The file path of the test output is.
 - **Two in-progress** to avoid blocking — name the actual blocker, set `blocked` honestly.
 - **Editing `feature_list.json` to silently roll back `done` → `in-progress`** — this hides regressions. Create a new fix feature instead.
@@ -257,6 +294,7 @@ This takes 30-60 minutes for a typical 3-month-old project. The payoff is that e
 - **04 Deterministic Orchestration** — `feature_list.json` is the state file the relay pattern reads. WIP=1 is a deterministic constraint a hook can verify mechanically.
 - **07 Codified Context** — `feature_list.json` is the canonical structured handoff between sessions; it survives compaction.
 - **16 Project Chronicles** — chronicles capture **why** decisions were made. feature_list captures **what** is currently done. Both are needed for long-run projects.
+- **MVP Agent Blueprint** — this module's Readiness Gate adapts its first-release-checklist pattern to the specific artifacts `feature_list.json` / `init.sh` / `PROBLEMS.md` own.
 
 ---
 
