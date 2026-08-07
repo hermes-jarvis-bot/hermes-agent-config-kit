@@ -40,6 +40,10 @@ Use when acceptance criteria can be frozen before implementation and checked aft
 - Keep verification records in a project-approved location; this module does not prescribe a hidden directory, a file schema, or a task lifecycle.
 - Never write a verdict or modify project state without the normal operator confirmation required by that project.
 
+## Knowledge-base conformance (optional)
+
+If the project keeps a knowledge base — docs, a wiki, `.kb/`, project rule files, or a project guidance file — extend step 4 with a conformance check against it, not only the frozen criteria: acceptance criteria test functionality, not whether the change follows the project's stated conventions and boundaries. See `references/kb-aware-verification.md` for the acceptance-record field, the verifier check, and the record format. Skip it for a marked prototype/spike, a stale KB, or a greenfield project with no KB yet.
+
 ## Verdict format
 
 Record the frozen criteria reference, verifier identity or separation boundary, date, evidence for each criterion, residual risk, and an overall PASS, FAIL, or BLOCKED result. PASS requires positive evidence for every criterion; uncertainty is BLOCKED or FAIL according to the stated acceptance boundary.

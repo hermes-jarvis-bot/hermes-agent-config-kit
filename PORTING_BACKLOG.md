@@ -90,6 +90,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/frontend/frontend-design/references/performance-a11y.md` | `hermes/skills/frontend/frontend-design/references/performance-a11y.md` |
 | `skills/frontend/frontend-design/references/visual-styles.md` | `hermes/skills/frontend/frontend-design/references/visual-styles.md` |
 | `skills/development/proof-verify/SKILL.md` | `hermes/skills/proof-verify/SKILL.md` |
+| `skills/development/proof-verify/references/kb-aware-verification.md` | `hermes/skills/proof-verify/references/kb-aware-verification.md` |
 | `skills/operational/harness-audit/SKILL.md` | `hermes/skills/harness-audit/SKILL.md` |
 | `skills/operational/harness-audit/references/checklist-per-subsystem.md` | `hermes/skills/harness-audit/references/checklist-per-subsystem.md` |
 | `skills/operational/harness-audit/references/scoring-rubric.md` | `hermes/skills/harness-audit/references/scoring-rubric.md` |
@@ -360,7 +361,6 @@ removed from this list; the remaining entries have not been re-checked this sess
 
 - `skills/ai-ml/forensic-prompt-compiler/`
 - `skills/architecture/harness-design/`
-- `skills/development/proof-verify/references/kb-aware-verification.md` (reference remains separately reviewed and unported)
 - `skills/development/workflow-orchestration/` (the markdown `SKILL.md` is ported; references, JavaScript template, and validation script remain unported and quarantined)
 
 Special note: `skills/operational/harness-audit/SKILL.md`, its per-subsystem
@@ -728,6 +728,24 @@ below is eligible for automatic porting without a new operator matrix decision.
 
   `sync_upstream.py`'s overrides for both material sources regenerated to match, verified via
   `converted_output_matches_supported()`. Released as **v0.3.79**.
+- **`skills/development/proof-verify/references/kb-aware-verification.md` — ported 2026-08-07
+  (operator-directed re-check).** An earlier session's backlog note guessed by filename alone
+  that this was tied to `kb-skeleton`/`docs/layers` (the same infra-coupled class as
+  `feature-new`/`layer-new`) and left it "separately reviewed and unported" without actually
+  reading it. Full read found the guess was wrong: the file is a generic extension to
+  `proof-verify`'s verifier step — checking a changed file against *whatever* knowledge base a
+  project happens to keep (`docs/`, `.kb/`, a project guidance file, wiki, generated code-KB) —
+  with no reference anywhere to `docs/layers/`, `feature_list.json`, `feat-NNN` IDs, or any part
+  of the specific kb-skeleton tree. Ported as a new `type: reference` entry,
+  `hermes/skills/proof-verify/references/kb-aware-verification.md`, generalizing upstream's
+  literal `PLAN.md`/`VERDICT.md`/`.claude/rules/` naming to match `proof-verify`'s own
+  terminology (acceptance record / verification record / project rule files), consistent with
+  that module's existing "does not prescribe a hidden directory, a file schema" stance. Added a
+  short pointer section, "Knowledge-base conformance (optional)", to
+  `hermes/skills/proof-verify/SKILL.md` itself. `sync_upstream.py` gained a new SUPPORTED entry
+  and override for the reference file, plus a regenerated override for the hand-touched
+  `SKILL.md`; both verified via `converted_output_matches_supported()`. `mappings/
+  compatibility.yaml` updated with the matching `status: supported` entry.
 - After queue #5, Track A, Track A2, and the `no-pre-existing-evasion` enrichment above, only
   Wave-4 script-research and policy manual-review candidates remain; do not select a
   further port automatically. An operator decision is required.
@@ -811,7 +829,8 @@ below is eligible for automatic porting without a new operator matrix decision.
   subject matter itself is out of scope, not something a rewording could fix. (Note in passing,
   not evaluated further: `sessions_restore.py` also copies session files between account
   folders, which would need its own credential/data-safety review if this were ever revisited
-  for a different reason.)
+  for a different reason.) **Operator-confirmed final 2026-08-07: do not re-raise this
+  candidate in future sessions.**
 - `skills/ai-ml/notebooklm-grounded-research/` and `skills/development/distill-feedback/` —
   **ported** via the reviewed-script lane (see "Ported so far" above and `SECURITY.md`'s
   "Reviewed-script lane" section); no longer quarantined. `distill-feedback`'s bundled
@@ -959,7 +978,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
 | First Wave 2 version | `v0.2.0`, with `adapter.version` updated to `0.2.0` in that same commit |
-| Wave 3 trigger | Satisfied by the accepted and verified markdown-only `skills/development/proof-verify/SKILL.md` adaptation to `hermes/skills/proof-verify/SKILL.md`; its reference remains separately reviewed and unported. |
+| Wave 3 trigger | Satisfied by the accepted and verified markdown-only `skills/development/proof-verify/SKILL.md` adaptation to `hermes/skills/proof-verify/SKILL.md`; its `references/kb-aware-verification.md` companion is also ported (2026-08-07). |
 | Wave 3 first version | `v0.3.0`, with `adapter.version` updated to `0.3.0` in this trigger commit |
 | Next Wave | Not prepared; a later transition commit must add its exact trigger and release line before any minor-version change. |
 

@@ -296,6 +296,14 @@ skills/development/proof-verify/SKILL.md:
   description: Prepare a frozen acceptance-criteria record and obtain a fresh, read-only verification verdict without activating task state or delegation.
   risk: medium
 
+skills/development/proof-verify/references/kb-aware-verification.md:
+  status: supported
+  target: hermes/skills/proof-verify/references/kb-aware-verification.md
+  type: reference
+  name: proof-verify-kb-aware-verification
+  description: Extend verification with a knowledge-base conformance check alongside frozen acceptance criteria.
+  risk: low
+
 skills/development/distill-feedback/SKILL.md:
   status: supported
   target: hermes/skills/distill-feedback/SKILL.md
