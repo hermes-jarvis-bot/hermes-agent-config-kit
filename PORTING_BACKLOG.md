@@ -693,7 +693,42 @@ below is eligible for automatic porting without a new operator matrix decision.
   `mvp-agent-blueprint` in "Relationship to Other Principles". `sync_upstream.py`'s override for
   `principles/27-feature-tracking.md` regenerated to match, verified via
   `converted_output_matches_supported()`.
-- After queue #5, Track A, and the `no-pre-existing-evasion` enrichment above, only
+- **Track A2 — re-review the 3 `manual-reapproval` sources surfaced by PR #25's sync
+  (range `254edfe..32e06ff`, 2026-08-07), same drift-assessment method as Track A:** diffed
+  each upstream source at that exact commit range (not the full pinned file) against its
+  current hand-adaptation.
+  - `principles/09-supply-chain-defense.md` → `hermes/skills/supply-chain-defense/SKILL.md`:
+    **material, folded in.** Upstream added a "What Is Enforced At Runtime" section (two
+    Claude-Code hooks — correctly excluded, quarantined class) plus a "Version Selection
+    Policy" — the runtime-enforcement *principle* (registry silence = block not warning,
+    hash/lock-file requirements, "don't infer safety from a URL/publisher string alone",
+    search-for-alternatives-on-typo guidance) and the version-selection guidance (prefer
+    newest stable + test; an older pin needs a stated compatibility reason, not familiarity;
+    record the failing test before rolling back) were genuinely new, not covered by our
+    port's thinner "Defense in depth" section. Added as two new sections, "Runtime
+    enforcement posture" and "Version selection policy", vendor-neutral (no literal hook
+    filenames, no `# claude-bypass:` marker syntax).
+  - `rules/quality-over-tokens-independent-verify.md` → `hermes/skills/quality-first-independent-review/SKILL.md`:
+    **material, folded in.** Upstream added "Автор находки НЕ закрывает её сам" — the finder
+    of a defect is not authorized to report the class closed until an independent reviewer's
+    verdict is attached, illustrated with a measured case (self-test passed 32/32 clean;
+    independent fresh-context review found a second, differently-named call path exploiting
+    the same leak, plus 18 more untested forms). This was a real gap — our port implied
+    independent review but never stated the "green suite is evidence about anticipated forms,
+    not the whole class" principle or that the finder cannot self-close. Added as a new "The
+    finder does not close their own finding" section, with the case study generalized (kept
+    the measured shape — 32-case suite, second call path, 18 untested forms — dropped the
+    specific private-plugin/exploit implementation detail).
+  - `rules/learn-from-corrections.md` → `hermes/skills/learning-from-corrections/SKILL.md`:
+    **not material, no change.** The only upstream delta is replacing a citation to a private
+    local path (`knowledge/agent-systems/self-learning-agents/effectiveness-test/`) with a
+    generic "held-out evidence lives in a private research archive" sentence — our
+    hand-adaptation never carried that path reference to begin with (already generalized
+    during the original port), so there is nothing to update.
+
+  `sync_upstream.py`'s overrides for both material sources regenerated to match, verified via
+  `converted_output_matches_supported()`. Released as **v0.3.79**.
+- After queue #5, Track A, Track A2, and the `no-pre-existing-evasion` enrichment above, only
   Wave-4 script-research and policy manual-review candidates remain; do not select a
   further port automatically. An operator decision is required.
 - **`skills/ai-ml/forensic-prompt-compiler/` — operator approved the policy/dual-use decision

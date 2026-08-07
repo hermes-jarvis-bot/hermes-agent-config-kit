@@ -45,6 +45,16 @@ Before a high-impact action:
 
 An independent reviewer should inspect alternative failure hypotheses, boundary conditions, access assumptions, and the consumer-facing result. A successful command or confident status message is evidence, not a verdict.
 
+## The finder does not close their own finding
+
+The agent that found a defect and wrote the fix is not authorized to report the defect class closed until an independent reviewer's verdict is attached to it — not out of formality, but because self-review is systematically blind to failure shapes the author never imagined. A self-written test only exercises the model of the problem already in the author's head, and it shares that same blind spot with the fix it is grading.
+
+A measured case: an author closed a process-authority leak by patching one call path, and their own 32-case test suite passed clean. An independent reviewer in a fresh context, given only the fix and the original defect, found a second call path using a differently-named but functionally identical primitive — invisible to the author's test because the test enumerated the forms the author had thought of, not the forms that existed. Eighteen more untested forms of the same leak turned up once someone looked without the author's mental model attached.
+
+Report the distinction explicitly: "fixed" without an attached independent verdict is "wrote a fix", not "closed the class". A green test suite is evidence about the forms someone already anticipated — it is not evidence about the whole defect class. The finder's job stops at a verdict plus the smallest pointer toward a fix; closing the class is handed to a different context, or the same fix goes back through independent review before anyone calls it done.
+
+This sharpens the read-only review protocol above for one specific case: self-authored verification of a self-authored fix, on a security- or correctness-critical defect, is never sufficient on its own — route it through independent review even when the fix "obviously" works.
+
 ## Scope control
 
 - Keep review proportional. A trivial read-only lookup does not need a separate session.

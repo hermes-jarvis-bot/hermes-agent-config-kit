@@ -45,6 +45,23 @@ Do not write global package-manager configuration without operator approval. Pre
 - Inspect package names, scopes, publishers, and typosquatting risk before adding new packages.
 - Treat install scripts and postinstall hooks as executable code.
 
+## Runtime enforcement posture
+
+Treat a dependency-manifest edit and an install/download command as boundaries worth checking mechanically, not just documenting:
+
+- On a manifest edit, check candidate names against a typosquat/slopsquat profile, reject releases younger than the freshness gate, and flag stale exact pins that could be updated.
+- Before an install/download runs, require the canonical registry — not a direct wheel/archive/Git URL, an extra index, or a find-links source — unless that source has been reviewed and recorded independently. Require an artifact digest for pinned versions, and prefer hash-locked installs (`pip install --require-hashes`, `uv sync --locked`, `npm ci` with install scripts disabled) over unlocked ones.
+- **Registry silence is a block, not a warning.** If the canonical registry cannot be reached, do not assume the package is fine — use a previously verified record only if one exists and is recent, and stop the install otherwise. A lockfile hash is independent offline proof for an already-reviewed lock; it is not permission to add a new, unreviewed package.
+- Do not infer safety from a URL or publisher string alone. A private mirror, a direct artifact, or a Git revision needs the same independent review as a fresh package name.
+
+When a requested package name looks mistyped or fails to resolve, search the official registry surface for close matches rather than guessing a substitute. A candidate is only worth considering if its stable release clears the same freshness gate and has a verifiable artifact digest — it still needs the project's normal compatibility testing before adoption.
+
+## Version selection policy
+
+For a new dependency, prefer the newest stable version the canonical registry offers, tested against the actual project. Treat a deliberately older pin as an exception that needs a stated reason — a supported runtime version, an ABI/CUDA boundary, a failing test — not a default choice made out of familiarity.
+
+If an upgrade breaks something, record the failing test and roll back to the last known-good pin rather than silently keeping the old version. The goal is not an automatic, unverified upgrade or rollback — that just trades one supply-chain risk for an untested compatibility change; a human or a tested CI run should confirm the new pin.
+
 ## Hermes adapter boundary
 
 For adapter repositories such as this kit:
