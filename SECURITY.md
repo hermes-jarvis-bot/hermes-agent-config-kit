@@ -42,9 +42,17 @@ A narrow, explicitly-allowlisted exception to the quarantine lane exists for two
   at all. The same review gate applies; "invoked by the operator or agent at runtime" in that gate
   means runtime **of the project the script was copied into**, not of this adapter.
 
-Neither case is the same thing as a Claude-Code `hooks/**` file: a hook has a harness-lifecycle
-I/O contract (stdin JSON, exit codes) that Hermes has no equivalent for, and stays fully
-quarantined.
+Neither case is the same thing as a Claude-Code `hooks/**` file on its own: a hook has a
+harness-lifecycle I/O contract (stdin JSON, a stdout-JSON decision) that stays fully quarantined
+by default. **Update, 2026-08-07:** Hermes Agent does have a structurally equivalent shell-hook
+system (`~/.hermes/config.yaml`'s `hooks:` block — verified against the live
+`agent/shell_hooks.py` source and
+https://hermes-agent.nousresearch.com/docs/user-guide/features/hooks), so a hook is no longer
+inherently unportable — it can be **deliberately reimplemented** for Hermes's contract under the
+narrow reviewed-hook lane below. Direct copy-paste of an upstream hook file remains forbidden
+either way: the two contracts differ enough (tool names, block-JSON shape, and critically —
+Hermes never blocks on exit code, only on stdout JSON) that a byte-identical copy would silently
+misbehave.
 
 A script may exist under `hermes/skills/**/scripts/` or `hermes/templates/**/scripts/` only if
 every one of these has been done, in order, by a human (or an agent acting under explicit human
@@ -93,6 +101,66 @@ so far). `skills/creative/pixel-art-studio/scripts/bake_animation.py` was reject
 pass (headless-browser automation against an unrestricted caller-controlled URL, plus an
 uncleaned temp directory) and later reconsidered and accepted into the reviewed-script lane once
 both gaps were closed — see its `modifications` field in `mappings/reviewed-scripts.yaml`.
+
+## Reviewed-hook lane
+
+A narrow, explicitly-allowlisted exception to the hook-quarantine boundary above, opened
+2026-08-07 once Hermes's shell-hook system was verified to have a structurally equivalent I/O
+contract to the Claude-Code hooks this adapter's upstream ships (see the "Update, 2026-08-07"
+note above). Mirrors the reviewed-script lane's rigor, with hook-specific additions:
+
+A hook may exist under `hermes/hooks/**` only if every one of these has been done, in order, by
+a human (or an agent acting under explicit human authorisation for this exact hook):
+
+1. Read the entire upstream source hook by hand — not a grep-only pass.
+2. **Reimplement it, never copy-paste it.** The two contracts differ enough (tool names,
+   block-JSON shape, and Hermes never blocking on exit code) that a byte-identical copy would
+   silently misbehave. The decision logic (regex/heuristics) usually carries over unchanged; only
+   the I/O contract needs translating.
+3. Check dependencies — stdlib only for a guard hook; no external packages.
+4. Confirm it performs no destructive filesystem operation, reads or logs no credential/secret
+   beyond what its own guard logic needs, and makes no undisclosed network call.
+5. **Check for a policy conflict** against this kit's own already-ported operator-facing
+   guidance before accepting. A hook's *decision logic itself* can be technically clean and still
+   the wrong thing to port if it mechanically enforces a stance this kit's ported skills, or the
+   operator's own stated policy, explicitly rejects (e.g. a guard that blocks reading `.env`/key
+   files conflicts with an operator policy that treats secrets as working data with a
+   push-to-public-repo boundary, not a read boundary — recorded as a rejected hook, see below, the
+   first time this came up).
+6. Confirm it passes a syntax check (`python3 -m py_compile`).
+7. Confirm it passes this repo's automated dangerous-pattern and secret scans
+   (`validate_reviewed_hooks()` in `scripts/validate_output.py`) — checked for `os.system`,
+   `shell=True` subprocess calls, `eval`/`exec`, raw socket creation, credential-looking patterns,
+   and any live-write pattern that would let the hook silently register itself into a real Hermes
+   profile.
+8. Confirm it is functionally verified against Hermes's real hook-dispatch code path
+   (`agent.shell_hooks.run_once`, from the installed `hermes-agent` package) on an isolated
+   `ShellHookSpec` object that never reads or writes `~/.hermes/config.yaml` or
+   `~/.hermes/shell-hooks-allowlist.json` — record the exact test cases and results in the
+   manifest entry's `functional_test` field.
+9. Confirm the installer (`scripts/install_hermes.py`) only ever *copies* the hook file — it must
+   never write a `hooks:` entry into `~/.hermes/config.yaml` itself. Activation (adding that entry,
+   approving the first-use consent prompt) stays an explicit, manual, operator-performed step,
+   documented in `hermes/hooks/README.md`.
+
+The allowlist lives in `mappings/reviewed-hooks.yaml`. Unlike the reviewed-script lane, an entry
+here is *never* byte-identical to its upstream source — the `source_sha256` records what was
+reviewed and reimplemented from, for drift detection, not what should match on disk. If the
+upstream source later changes, the change must be re-reviewed by hand against the same 9 steps
+before the manifest entry is updated.
+
+### Rejected hooks
+
+A hook that was read in full under this gate and turned down is recorded explicitly in
+`mappings/rejected-hooks.yaml`, the same durable-rejection discipline as `rejected-scripts.yaml`
+above (concrete reason, `revisit_condition`, never silently deleted). One hook is currently
+recorded as rejected and standing: `hooks/secret-leak-guard.py` — its code is clean (no external
+dependencies, no destructive operations), but its decision logic (block reading `.env`/`*.key`/
+`~/.ssh/id_*`/`~/.secrets/*` files) mechanically enforces a stance this operator has explicitly
+and repeatedly rejected: secrets are treated as working data to be read and used freely, with the
+only hard boundary being a scan at the public-repository push point, not a read-time block. This
+is a standing policy boundary, not a revisit-when-fixed item — the code isn't broken, the policy
+it implements is the wrong one for this operator.
 
 ## Reporting a vulnerability
 

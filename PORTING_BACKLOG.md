@@ -1104,16 +1104,18 @@ number; do not infer a Wave transition from an artefact's category alone.
 
 | Field | Current value |
 | --- | --- |
-| Active Wave | Wave 3 — skill package review |
-| Active release line | `0.3` |
+| Active Wave | Wave 4 — hook and workflow redesign |
+| Active release line | `0.4` |
 | Latest released tag | `v0.3.84` |
-| `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
+| `upstream.lock.json` `adapter.version` | `0.4.0` (Wave 4 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
 | First Wave 2 version | `v0.2.0`, with `adapter.version` updated to `0.2.0` in that same commit |
 | Wave 3 trigger | Satisfied by the accepted and verified markdown-only `skills/development/proof-verify/SKILL.md` adaptation to `hermes/skills/proof-verify/SKILL.md`; its `references/kb-aware-verification.md` companion is also ported (2026-08-07). |
 | Wave 3 first version | `v0.3.0`, with `adapter.version` updated to `0.3.0` in this trigger commit |
 | Wave 3 completeness (2026-08-07) | Closed. All 3 candidates found by the completeness audit (`architecture-quality`, `harness-feedback`, `testing-strategy`) individually evaluated, confirmed non-duplicate, content-integrity-checked, and ported. |
+| Wave 4 trigger | Satisfied 2026-08-07 by the accepted, verified, Hermes-native `hooks/destructive-command-guard.py` reimplementation at `hermes/hooks/destructive-command-guard.py` — a real guard (not markdown), with a documented threat model in `SECURITY.md`'s "Reviewed-hook lane" and functional verification against Hermes's actual dispatch code path (see `mappings/reviewed-hooks.yaml`), satisfying the Wave 4 acceptance criteria below in full for the first time. |
+| Wave 4 first version | `v0.4.0`, with `adapter.version` updated to `0.4.0` in this trigger commit |
 | Next Wave | Not prepared; a later transition commit must add its exact trigger and release line before any minor-version change. |
 
 Release decision rules:
@@ -1215,21 +1217,102 @@ Acceptance criteria:
 
 Goal: decide which upstream guards deserve Hermes-native implementations.
 
+Status: **open, trigger fired 2026-08-07.** Before this, Wave 4 was widely misunderstood by
+prior scratch analysis (`.claude/wave4-script-porting-analysis.md`, non-git) as blocked on
+"Hermes has no equivalent hook contract" — verified false 2026-08-07 against the live official
+docs and the installed `agent/shell_hooks.py` source: Hermes's shell-hook system
+(`~/.hermes/config.yaml`'s `hooks:` block) is structurally equivalent (event + matcher + command
++ stdin JSON + stdout-JSON decision), with one load-bearing difference — Hermes never blocks on
+exit code, only on the stdout JSON decision.
+
 Candidate groups:
 
-- secret/credential guards;
-- destructive command guards;
-- handoff/session guards;
-- docs freshness and KB validation;
-- task inbox and feedback display;
-- long-run feature validators.
+- secret/credential guards — **`secret-leak-guard.py` evaluated 2026-08-07 and REJECTED**, not
+  deferred: its decision logic (block reading `.env`/key files) mechanically enforces a stance
+  this operator has explicitly rejected (secrets are working data, the only hard boundary is a
+  public-repo push scan). See `mappings/rejected-hooks.yaml` and `SECURITY.md`'s "Rejected
+  hooks".
+- destructive command guards — **`destructive-command-guard.py` ported 2026-08-07** as the first
+  reviewed hook (see below). `git-destructive-guard.py`, `self-harm-guard.py`,
+  `command-injection-guard.py`, `verify-deleted-guard.py`, `over-engineering-advisor.py` remain
+  unevaluated Tier-1 candidates.
+- handoff/session guards — unevaluated (`handoff-closure-audit-guard.py`,
+  `launch-watch-guard.py`, `live-tree-guard.py`, `open-items-are-work-orders.py`).
+- docs freshness and KB validation — unevaluated.
+- task inbox and feedback display — unevaluated (`unbuffered-progress-advisor.py`).
+- long-run feature validators — unevaluated.
 
 Acceptance criteria:
 
 - no direct upstream hook execution;
 - each guard has a Hermes-native target: plugin, validator script, cron/scheduled protocol, skill guidance, or rejection;
 - threat model is documented in `SECURITY.md`;
-- disposable VM testing covers install, activation, failure mode, and removal.
+- disposable VM testing covers install, activation, failure mode, and removal. **Adapted
+  2026-08-07** for this environment's real constraint: the installed Hermes CLI's `hooks`
+  subcommand does not honour a `HERMES_HOME` override and always reads the live
+  `~/.hermes/config.yaml`, so "activation" cannot be safely exercised through `hermes hooks
+  test/list/doctor` without risking the production profile. Substituted: (a) a CI-friendly
+  stdlib-only subprocess test of the guard's own stdin/stdout contract
+  (`hermes/hooks/tests/test_destructive_command_guard.py`), (b) direct verification against
+  Hermes's real dispatch code path via an isolated `ShellHookSpec` +
+  `agent.shell_hooks.run_once()` object, which never reads or writes `~/.hermes/config.yaml` or
+  its allowlist — this exercises the exact same `_spawn`/`_parse_response` code the live CLI
+  uses, just without touching the live config, and (c) a disposable
+  `install_hermes.py --apply`/`remove_hermes.py --apply` cycle proving copy/removal. "Activation"
+  in the strict sense (registering into a real isolated `~/.hermes/config.yaml` and confirming
+  `hermes hooks list` sees it) remains unverified in this environment — a genuine disposable VM
+  with its own fresh Hermes install would close that gap; noted, not fabricated as done.
+
+#### `destructive-command-guard.py` ported (2026-08-07) — first Wave 4 guard
+
+Operator-directed prototype, chosen from the Tier-1 candidate list after reading
+`hooks/safety_common.py` and 3 candidate guards (`destructive-command-guard.py`,
+`secret-leak-guard.py`) in full. Reimplemented (never copied) for Hermes's shell-hook contract:
+
+- `hermes/hooks/hermes_hook_common.py` — shared I/O adapter, reimplemented from
+  `hooks/safety_common.py`. Translates: log path (`~/.claude/logs` -> `~/.hermes/logs`),
+  block-JSON shape (Hermes-canonical `{"action":"block","message":...}` instead of
+  `{"decision":"block","reason":...}`), bypass env-var prefix (`HERMES_ALLOW_*` not
+  `CLAUDE_ALLOW_*`) and in-command marker (`# hermes-bypass:` not `# claude-bypass:`). Deliberately
+  drops the upstream Stop-hook rejection-budget mechanism (`stop_hook_active` loop guard) — Hermes's
+  `pre_verify` event does not share the same re-invocation-loop shape, so the mechanism it exists
+  to prevent does not apply.
+- `hermes/hooks/destructive-command-guard.py` — same regex decision logic as upstream (harness-
+  agnostic), tool-name check changed from `Bash` to `terminal` (Hermes's shell-tool name,
+  confirmed against the live docs).
+- `hermes/hooks/README.md` — manual activation instructions (exact `config.yaml` snippet,
+  bypass mechanisms, `hermes hooks list/test/doctor` verification commands). The installer
+  copies files only; it never writes a `hooks:` entry into `~/.hermes/config.yaml` — activation
+  stays an explicit, operator-performed step.
+- `hermes/hooks/tests/test_destructive_command_guard.py` — stdlib-only subprocess smoke test,
+  runs in CI with no Hermes dependency.
+- `scripts/install_hermes.py`/`remove_hermes.py` extended with a third copy/removal target,
+  `hooks/config-kit`, mirroring the existing `skills/config-kit`/`templates/config-kit` pattern.
+  `copy_tree()` also fixed to skip `__pycache__`/`.pyc` regardless of what happens to exist on
+  disk at install time (a real gap found while building this: running the guard's own test
+  before installing left a `.pyc` that the old `copy_tree()` would have copied verbatim).
+- `scripts/validate_output.py` extended with `parse_reviewed_hooks()`/`reviewed_hook_paths()`
+  and `validate_reviewed_hooks()`, mirroring the reviewed-script lane's mechanical gate plus one
+  hook-specific check: no live-write-to-`~/.hermes` pattern (a reviewed hook must never
+  self-register).
+- `mappings/reviewed-hooks.yaml` — new allowlist, `source_sha256` of both upstream files
+  reviewed, full functional-test evidence (8/8 cases via `run_once`, plus a separate 3/3
+  targeted regression test on the single most important correctness invariant found this
+  session: Hermes never blocks on exit code, only on stdout JSON — verified in both directions:
+  exit 2 + stderr with no stdout JSON does NOT block; exit 1 WITH a valid block JSON on stdout
+  still blocks).
+- `mappings/rejected-hooks.yaml` — new negative-decision manifest; first entry is
+  `secret-leak-guard.py` (see above).
+- `SECURITY.md` — corrected the now-false "Hermes has no equivalent" claim, added "Reviewed-hook
+  lane" (9-point gate, mirroring the reviewed-script lane) and "Rejected hooks" sections.
+  `AGENTS.md`'s matching stale claim corrected too.
+
+Full verification: `python3 -m py_compile scripts/*.py hermes/hooks/*.py
+hermes/hooks/tests/*.py` OK; `python3 scripts/validate_output.py` -> Validation OK; disposable
+`install_hermes.py --apply` -> byte-identical diff for all 4 files -> functional re-verification
+of the *installed* copy via `run_once` (block + allow cases both correct) ->
+`remove_hermes.py --apply` -> confirmed all 3 config-kit targets (`skills`, `templates`,
+`hooks`) removed -> disposable home directory deleted and absence confirmed.
 
 ## Reviewed-script lane pilot — status (2026-08-04)
 

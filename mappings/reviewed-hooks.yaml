@@ -1,0 +1,108 @@
+# Reviewed-hook lane (see SECURITY.md "Reviewed-hook lane" for the full policy this
+# manifest implements, and PORTING_BACKLOG.md's "Wave 4" section for how a Wave-4 guard
+# earns its acceptance criteria).
+#
+# Unlike the reviewed-script lane (mappings/reviewed-scripts.yaml), a hook here is NEVER
+# byte-identical to its upstream source: Hermes's shell-hook I/O contract differs from
+# Claude Code's in ways that require a real reimplementation, not a copy-paste — different
+# tool names (terminal/read_file/write_file/patch, not Bash/Read/Write/Edit), the
+# Hermes-canonical block-JSON shape ({"action":"block","message":...}), and critically:
+# Hermes never blocks on exit code, only on a stdout JSON decision (verified 2026-08-07
+# against the live agent/shell_hooks.py source and
+# https://hermes-agent.nousresearch.com/docs/user-guide/features/hooks).
+#
+# Every entry here required, before being added:
+#   1. a full manual read of the entire upstream source hook (not a grep-only pass);
+#   2. a Hermes-native reimplementation — decision logic carried over, I/O contract
+#      translated deliberately (documented in the file's own header and this entry's
+#      `summary`);
+#   3. a dependency check (stdlib only — no external packages for a guard hook);
+#   4. confirmation of no destructive filesystem operation, no credential/secret reads or
+#      logging beyond what the guard's own logic needs, and no undisclosed network call;
+#   5. a policy-conflict check against this kit's own already-ported operator-facing
+#      guidance (e.g. a guard that blocks reading secret files would conflict with a
+#      secrets-as-data-style policy if this kit ever ports one — checked before accepting);
+#   6. `python3 -m py_compile` passing cleanly;
+#   7. this repo's own automated dangerous-pattern and secret scans
+#      (validate_reviewed_hooks() in scripts/validate_output.py) passing cleanly;
+#   8. functional verification against Hermes's real hook-dispatch code path
+#      (agent.shell_hooks.run_once), on an isolated ShellHookSpec object that never reads
+#      or writes ~/.hermes/config.yaml or the shell-hooks allowlist — recorded below;
+#   9. never auto-registered into ~/.hermes/config.yaml by this adapter's installer: the
+#      installer only copies the script file (see scripts/install_hermes.py); wiring the
+#      hooks: entry into config.yaml remains an explicit, operator-performed step,
+#      documented in hermes/hooks/README.md.
+#
+# `files` lists every path that belongs to this hook's package (the guard script, its
+# shared common module if not already listed under a separate entry, and any
+# non-executable documentation/test file bundled alongside it) — all of them are exempted
+# from the quarantine-leak check together, but only `.py` files are run through the
+# dangerous-pattern/marker checks in validate_reviewed_hooks().
+
+- path: hermes/hooks/hermes_hook_common.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/safety_common.py
+  source_sha256: 1c4823c06984e767d19a0363361b3374875a56ac305d9eb6471350b727acbb18
+  reviewed_at: "2026-08-07"
+  reviewed_by: "operator-directed Wave 4 prototype, hermes-agent-config-kit session b45ab3c7"
+  summary: >
+    Shared I/O-contract adapter, reimplemented (not copied) from
+    hooks/safety_common.py for Hermes's shell-hook wire protocol. stdlib only
+    (json, os, re, sys, datetime, pathlib). No network calls, no
+    subprocess/os.system/eval/exec, no destructive filesystem operations.
+    Read from stdin, appends only to its own JSONL audit log under
+    ~/.hermes/logs/. Deliberate translations from the upstream module: log
+    path (~/.claude/logs -> ~/.hermes/logs), block() emits
+    {"action":"block","message":...} (Hermes-canonical) instead of
+    {"decision":"block","reason":...} (both are accepted by Hermes, but the
+    canonical shape needs no internal translation), bypass env-var prefix
+    (HERMES_ALLOW_* not CLAUDE_ALLOW_*) and in-command marker
+    (# hermes-bypass: not # claude-bypass:). The upstream Stop-hook rejection
+    budget (stop_hook_active loop guard) was NOT ported: Hermes's pre_verify
+    event does not have the same re-invocation-loop shape, so the mechanism
+    it exists to guard against does not apply here.
+  functional_test: >
+    See the destructive-command-guard.py entry below — this module has no
+    independent entry point, so it is exercised only through that guard's
+    tests.
+
+- path: hermes/hooks/destructive-command-guard.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/destructive-command-guard.py
+  source_sha256: 51f39f0cc4edec5ef6a2965c25bc47bf95958b9b073adebb23496ac62d1b95e7
+  reviewed_at: "2026-08-07"
+  reviewed_by: "operator-directed Wave 4 prototype, hermes-agent-config-kit session b45ab3c7"
+  summary: >
+    Blocks catastrophically destructive shell commands (rm -rf on
+    root/home/wildcards, DROP/TRUNCATE without WHERE, kubectl delete --all,
+    docker prune --volumes, mkfs/dd on a block device, fork bomb) on the
+    `terminal` tool. Decision logic (the regex pattern list) is carried over
+    unchanged from upstream — it is harness-agnostic. Only the I/O contract
+    was translated: tool_name check is "terminal" not "Bash" (Hermes's
+    tool-name for shell execution, confirmed against
+    https://hermes-agent.nousresearch.com/docs/user-guide/features/hooks),
+    and it uses hermes_hook_common instead of safety_common. stdlib only
+    (re, sys, pathlib). No network calls, no subprocess/os.system/eval/exec,
+    no destructive filesystem operations of its own. Not policy-conflicting
+    with any already-ported skill in this kit (checked against
+    autonomy-risk-tiers/deletion-confirm-and-verify — this guard's stance
+    "destructive+irreversible -> block, confirm, or explicit bypass" matches
+    those already-ported modules' own stance, unlike the sibling
+    secret-leak-guard.py, which was reviewed and NOT ported this pass because
+    it would conflict with this operator's own secrets-as-data policy).
+  functional_test: >
+    Verified 2026-08-07 against Hermes's real dispatch code path
+    (agent.shell_hooks.run_once, /usr/local/lib/hermes-agent, Hermes Agent
+    v0.19.0) using an isolated ShellHookSpec that never touched
+    ~/.hermes/config.yaml or the shell-hooks allowlist. 8/8 functional cases
+    passed (benign command allowed; rm -rf /, rm -rf ~, DROP TABLE, kubectl
+    delete --all all blocked; a `# hermes-bypass: destructive` marker
+    allowed; a non-`terminal` tool call allowed; an unprotected rm -rf on a
+    project-local path allowed). A separate targeted regression test (3/3
+    passed) confirmed the load-bearing invariant this whole reimplementation
+    depends on: exit 2 + stderr with no stdout JSON does NOT block under
+    Hermes (unlike Claude Code), and exit 1 WITH a valid block JSON on
+    stdout still blocks (exit code is irrelevant to Hermes's decision).
+  files:
+    - hermes/hooks/README.md
+    - hermes/hooks/tests/test_destructive_command_guard.py

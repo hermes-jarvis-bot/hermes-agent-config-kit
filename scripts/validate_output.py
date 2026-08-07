@@ -63,6 +63,7 @@ SCRIPT_DANGER_PATTERNS = (
     r"\bsocket\.socket\(",
 )
 REVIEWED_SCRIPT_MANIFEST = ROOT / "mappings" / "reviewed-scripts.yaml"
+REVIEWED_HOOK_MANIFEST = ROOT / "mappings" / "reviewed-hooks.yaml"
 
 
 def fail(msg: str) -> None:
@@ -314,12 +315,60 @@ def reviewed_script_paths() -> set[str]:
     return {e["path"] for e in parse_reviewed_scripts() if "path" in e}
 
 
+def parse_reviewed_hooks() -> list[dict[str, object]]:
+    """Minimal field extractor for mappings/reviewed-hooks.yaml (path, source_sha256,
+    and any nested `files:` list entries) — deliberately not a full YAML parser, for the
+    same no-added-dependency reason as parse_reviewed_scripts()."""
+    if not REVIEWED_HOOK_MANIFEST.is_file():
+        return []
+    entries: list[dict[str, object]] = []
+    current: dict[str, object] = {}
+    in_files = False
+    for line in read_text(REVIEWED_HOOK_MANIFEST).splitlines():
+        m = re.match(r"^- path:\s*(\S+)\s*$", line)
+        if m:
+            if current:
+                entries.append(current)
+            current = {"path": m.group(1), "files": []}
+            in_files = False
+            continue
+        if re.match(r"^  files:\s*$", line):
+            in_files = True
+            continue
+        m = re.match(r"^    - (\S+)\s*$", line)
+        if m and in_files and current:
+            current["files"].append(m.group(1))
+            continue
+        m = re.match(r"^  source_sha256:\s*(\S+)\s*$", line)
+        if m and current:
+            current["source_sha256"] = m.group(1)
+            in_files = False
+            continue
+        if re.match(r"^  \S", line):
+            in_files = False
+    if current:
+        entries.append(current)
+    return entries
+
+
+def reviewed_hook_paths() -> set[str]:
+    """Every path a reviewed-hooks.yaml entry accounts for: the entry's own `path` plus
+    every path listed in its `files:` sub-list (docs/tests bundled alongside the script)."""
+    paths: set[str] = set()
+    for e in parse_reviewed_hooks():
+        if "path" in e:
+            paths.add(str(e["path"]))
+        for f in e.get("files", []) or []:
+            paths.add(str(f))
+    return paths
+
+
 def validate_quarantine_policy() -> None:
     compat = read_text(ROOT / "mappings" / "compatibility.yaml")
     for prefix in QUARANTINE_PREFIXES:
         if prefix not in compat:
             fail(f"compatibility mapping does not mention quarantine prefix {prefix}")
-    allowed_scripts = reviewed_script_paths()
+    allowed_scripts = reviewed_script_paths() | reviewed_hook_paths()
     generated_paths = [p.relative_to(ROOT).as_posix() for p in (ROOT / "hermes").rglob("*") if p.is_file()]
     leaked = [
         p
@@ -361,6 +410,37 @@ def validate_reviewed_scripts() -> None:
             fail(f"{rel} is missing the 'Reviewed-script lane' provenance marker")
 
 
+def validate_reviewed_hooks() -> None:
+    """Every hook script that lives under hermes/hooks/**/ must be explicitly allowlisted
+    in mappings/reviewed-hooks.yaml (validate_quarantine_policy enforces that) AND pass
+    this mechanical gate. This never executes the hook — it only checks static properties
+    and, additionally, that the hook contains no live-write pattern that would let it
+    silently self-register into a real Hermes profile."""
+    for entry in parse_reviewed_hooks():
+        rel = entry.get("path")
+        if not rel or not str(rel).endswith(".py"):
+            continue
+        path = ROOT / str(rel)
+        if not path.is_file():
+            fail(f"reviewed-hooks.yaml entry has no file at {rel}")
+        text = read_text(path)
+        try:
+            compile(text, str(path), "exec")
+        except SyntaxError as exc:
+            fail(f"{rel} failed syntax check: {exc}")
+        for pattern in SCRIPT_DANGER_PATTERNS:
+            if re.search(pattern, text):
+                fail(f"{rel} matches a disallowed dangerous pattern ({pattern}); reviewed hooks may not use it")
+        for pattern in SENSITIVE_PATTERNS:
+            if re.search(pattern, text):
+                fail(f"{rel} matches a credential-looking pattern")
+        for pattern in FORBIDDEN_INSTALLER_PATTERNS:
+            if re.search(pattern, text):
+                fail(f"{rel} matches a live-Hermes-write pattern ({pattern}); a reviewed hook must never self-register")
+        if "Reviewed-hook lane" not in text:
+            fail(f"{rel} is missing the 'Reviewed-hook lane' provenance marker")
+
+
 def validate_docs() -> None:
     for rel in ["INSTALL.md", "SECURITY.md", "README.md", "PORTING_BACKLOG.md"]:
         if not (ROOT / rel).exists():
@@ -374,6 +454,8 @@ def validate_docs() -> None:
         fail("INSTALL.md must warn against production profile testing")
     if "treated as data, not as executable authority" not in security:
         fail("SECURITY.md must document upstream trust model")
+    if "Reviewed-hook lane" not in security:
+        fail("SECURITY.md must document the reviewed-hook lane")
     if "Porting backlog and handoff" not in backlog:
         fail("PORTING_BACKLOG.md must document omitted artefacts and handoff")
     if "Wave 4 — hook and workflow redesign" not in backlog:
@@ -408,6 +490,7 @@ def main() -> int:
     validate_remover_contract()
     validate_quarantine_policy()
     validate_reviewed_scripts()
+    validate_reviewed_hooks()
     validate_docs()
     validate_secret_scan()
     print("Validation OK")

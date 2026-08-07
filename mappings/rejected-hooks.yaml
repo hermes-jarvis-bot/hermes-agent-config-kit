@@ -1,0 +1,41 @@
+# Explicit, durable record of upstream Claude-Code/Codex hooks that were fully read and
+# reviewed under the reviewed-hook lane's own 9-point gate (see SECURITY.md "Reviewed-hook
+# lane" and mappings/reviewed-hooks.yaml) and then DELIBERATELY REJECTED, rather than being
+# silently omitted or forgotten in commit-message prose.
+#
+# This is the negative-decision counterpart to mappings/reviewed-hooks.yaml. Fields mirror
+# rejected-scripts.yaml where they apply.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/secret-leak-guard.py
+  source_sha256: 9f52dd4ef583979541fda54e23aa9a4f061adfc46315cceb5abed96532a1deb5
+  reviewed_at: "2026-08-07"
+  reviewed_by: "operator-directed Wave 4 discussion, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  decision: rejected
+  context: >
+    Read alongside destructive-command-guard.py while discussing which
+    Tier-1 guard to prototype first for the newly-opened reviewed-hook
+    lane. Both are structurally similar, harness-agnostic regex guards
+    with zero external dependencies.
+  reason: >
+    Its code is clean by the gate's technical criteria (stdlib only, no
+    destructive filesystem operation, no network call, no eval/exec). It
+    is rejected on step 5 of the gate: a policy conflict. The hook blocks
+    Read/Edit/Write/Bash-cat access to `.env`/`*.key`/`*.pem`/
+    `~/.ssh/id_*`/`~/.secrets/*` paths, treating a plain read as the risk
+    to guard against. This operator has an explicit, repeatedly-stated
+    policy that secrets are working data to be read and used freely
+    during a session — the only hard boundary is a scan at the point a
+    push would reach a PUBLIC repository, not a read-time block. Porting
+    this hook as-is would mechanically enforce, on every session, exactly
+    the caution this operator has already told this adapter to stop
+    applying. This is not a defect in the hook's code; it is the wrong
+    default behaviour for this operator.
+  revisit_condition: >
+    Could reasonably be reconsidered if rewritten to match the operator's
+    actual boundary instead of the upstream one: a pre-push/pre-publish
+    check that a change is about to reach a PUBLIC repository (not a
+    private one, and not a local read/edit), rather than a guard that
+    fires on Read/Edit/Bash-cat access to secret-shaped paths. That would
+    be a materially different hook, not a tweak to this one, so it would
+    need its own review entry rather than an edit to this rejection.

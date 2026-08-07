@@ -10,6 +10,7 @@ from hermes_home_safety import validate_hermes_home
 TARGETS = (
     Path("skills") / "config-kit",
     Path("templates") / "config-kit",
+    Path("hooks") / "config-kit",
 )
 
 

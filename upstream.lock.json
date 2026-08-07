@@ -7,7 +7,7 @@
     "latest_seen_sha": "32e06ff346899ac7ad62332e70c8bd79057ffd1f"
   },
   "adapter": {
-    "version": "0.3.0",
+    "version": "0.4.0",
     "schema": 1
   }
 }

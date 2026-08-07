@@ -43,7 +43,11 @@ Expected behaviour:
 - does not create `/tmp/hermes-config-kit-home`;
 - does not write to `~/.hermes`;
 - does not start `hermes gateway`;
-- does not execute upstream hooks, scripts, workflows, or plugin metadata.
+- does not execute upstream hooks, scripts, workflows, or plugin metadata;
+- copies any `hermes/hooks/` reviewed-hook files (see `SECURITY.md`'s "Reviewed-hook lane")
+  alongside skills/templates, but never writes a `hooks:` entry into
+  `~/.hermes/config.yaml` — activation stays a manual, operator-performed step documented in
+  `hermes/hooks/README.md`.
 
 ## Disposable VM protocol
 
@@ -86,6 +90,7 @@ The remover only targets:
 
 - `/tmp/hermes-config-kit-home/skills/config-kit`
 - `/tmp/hermes-config-kit-home/templates/config-kit`
+- `/tmp/hermes-config-kit-home/hooks/config-kit`
 
 It does not remove the whole Hermes home.
 

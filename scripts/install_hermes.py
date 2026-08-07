@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def copy_tree(src: Path, dst: Path, apply: bool) -> list[str]:
     actions: list[str] = []
     for path in sorted(src.rglob("*")):
+        if "__pycache__" in path.parts or path.suffix == ".pyc":
+            continue
         if path.is_file():
             rel = path.relative_to(src)
             target = dst / rel
@@ -45,6 +47,13 @@ def main() -> int:
     templates_src = ROOT / "hermes" / "templates"
     if templates_src.exists():
         actions.extend(copy_tree(templates_src, hermes_home / "templates" / "config-kit", apply))
+    hooks_src = ROOT / "hermes" / "hooks"
+    if hooks_src.exists():
+        actions.extend(copy_tree(hooks_src, hermes_home / "hooks" / "config-kit", apply))
+        print(
+            "NOTE: copied hook scripts are not registered anywhere. Add a `hooks:` entry to "
+            "your own ~/.hermes/config.yaml by hand — see hermes/hooks/config-kit/README.md."
+        )
     for action in actions:
         print(action)
     print(f"Actions: {len(actions)}")
