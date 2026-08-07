@@ -449,6 +449,9 @@ below is eligible for automatic porting without a new operator matrix decision.
   "Optional planner role" and "Verify against the running system" sections, with a
   provenance note crediting the sibling skill. `sync_upstream.py`'s override regenerated
   to match, verified via `converted_output_matches_supported()`.
+
+  Released as **v0.3.77** (commit `efcbe0e`, CI `Validate adapter` green, release:
+  https://github.com/hermes-jarvis-bot/hermes-agent-config-kit/releases/tag/v0.3.77).
 - **Domain queue (operator-approved 2026-07-13, all vetted clean on 4 axes; port in
   order, one per run, keep the `hermes/skills/<domain>/<skill>/` folder):**
   1. `skills/ai-ml/ml-research-lab/SKILL.md` → `hermes/skills/ai-ml/ml-research-lab/SKILL.md`
@@ -895,7 +898,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 3 — skill package review |
 | Active release line | `0.3` |
-| Latest released tag | `v0.3.76` |
+| Latest released tag | `v0.3.77` |
 | `upstream.lock.json` `adapter.version` | `0.3.0` (Wave 3 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
