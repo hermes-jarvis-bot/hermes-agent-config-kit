@@ -107,3 +107,44 @@
     - hermes/hooks/README.md
     - hermes/hooks/README_RU.md
     - hermes/hooks/tests/test_destructive_command_guard.py
+
+- path: hermes/hooks/git-destructive-guard.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/git-destructive-guard.py
+  source_sha256: 5844a7dca375fb603c94a6ea6f3954c2654de7380c48c370df0573ad88dc41b1
+  reviewed_at: "2026-08-07"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7"
+  summary: >
+    Blocks destructive git operations (reset --hard, push --force,
+    branch -D, clean -fdx, checkout -- ., filter-branch/filter-repo,
+    deleting a main/master/production ref, interactive rebase of HEAD,
+    aggressive reflog/gc expiry) on the `terminal` tool. Decision logic
+    (the regex pattern list, including the deliberate case-sensitive
+    -D vs -d distinction) carried over unchanged from upstream —
+    harness-agnostic. Only the I/O contract was translated (tool name,
+    hermes_hook_common instead of safety_common, HERMES_ALLOW_* instead
+    of CLAUDE_ALLOW_*). stdlib only (re, sys, pathlib). No network
+    calls, no subprocess/os.system/eval/exec, no destructive filesystem
+    operations of its own. Not policy-conflicting: this operator's own
+    global git-source-of-truth.md rule already states an equivalent
+    "never run destructive git commands... unless explicitly requested"
+    protocol naming the exact same commands (push --force, reset --hard,
+    checkout ., restore ., clean -f, branch -D) — this hook mechanically
+    enforces a policy this operator already holds, unlike the rejected
+    secret-leak-guard.py.
+  functional_test: >
+    Verified 2026-08-07 two ways. (1) stdlib-only subprocess test
+    (hermes/hooks/tests/test_git_destructive_guard.py, runs in CI):
+    10/10 cases passed (benign git status allowed; reset --hard,
+    push --force, branch -D, clean -fdx, filter-branch all blocked;
+    push --force-with-lease and branch -d, the recommended safe
+    alternatives, both allowed; bypass marker allowed; non-terminal
+    tool call allowed). (2) Direct verification against Hermes's real
+    dispatch code path (agent.shell_hooks.run_once, Hermes Agent
+    v0.19.0) using an isolated ShellHookSpec that never touched
+    ~/.hermes/config.yaml or the shell-hooks allowlist: 5/5 cases
+    passed, including the same exit-code-never-blocks regression check
+    established for destructive-command-guard.py (exit 2 with no
+    stdout JSON does not block).
+  files:
+    - hermes/hooks/tests/test_git_destructive_guard.py

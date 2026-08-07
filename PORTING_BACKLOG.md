@@ -1225,22 +1225,46 @@ docs and the installed `agent/shell_hooks.py` source: Hermes's shell-hook system
 + stdin JSON + stdout-JSON decision), with one load-bearing difference — Hermes never blocks on
 exit code, only on the stdout JSON decision.
 
+**Inventory note (2026-08-07):** the upstream `hooks/` directory has grown to 57 files (the
+2026-07-14 scratch analysis catalogued 43) — the candidate groups below are not exhaustive of
+every file, only the ones characterized so far by name/README table/prior reading. A future pass
+should re-survey `ls upstream/claude-code-config/snapshot/hooks/` rather than trusting this list
+as complete.
+
 Candidate groups:
 
 - secret/credential guards — **`secret-leak-guard.py` evaluated 2026-08-07 and REJECTED**, not
   deferred: its decision logic (block reading `.env`/key files) mechanically enforces a stance
   this operator has explicitly rejected (secrets are working data, the only hard boundary is a
   public-repo push scan). See `mappings/rejected-hooks.yaml` and `SECURITY.md`'s "Rejected
-  hooks".
-- destructive command guards — **`destructive-command-guard.py` ported 2026-08-07** as the first
-  reviewed hook (see below). `git-destructive-guard.py`, `self-harm-guard.py`,
-  `command-injection-guard.py`, `verify-deleted-guard.py`, `over-engineering-advisor.py` remain
-  unevaluated Tier-1 candidates.
+  hooks". `api-key-leak-detector.py` is an unevaluated sibling that may share the same conflict —
+  check before porting, not after.
+- destructive command guards — **`destructive-command-guard.py` and `git-destructive-guard.py`
+  both ported 2026-08-07** (see below). `self-harm-guard.py`, `command-injection-guard.py`,
+  `verify-deleted-guard.py`, `over-engineering-advisor.py` remain unevaluated Tier-1 candidates
+  (the last two have an already-ported skill companion — `safe-deletion` and `lean-code`/
+  `code-quality` respectively — a hook here would be mechanical enforcement of guidance that
+  already exists as prose).
 - handoff/session guards — unevaluated (`handoff-closure-audit-guard.py`,
-  `launch-watch-guard.py`, `live-tree-guard.py`, `open-items-are-work-orders.py`).
-- docs freshness and KB validation — unevaluated.
-- task inbox and feedback display — unevaluated (`unbuffered-progress-advisor.py`).
-- long-run feature validators — unevaluated.
+  `launch-watch-guard.py`, `live-tree-guard.py`, `open-items-are-work-orders.py`,
+  `session-handoff-check.py`, `session-handoff-reminder.py` — the last two have an already-ported
+  skill companion, `session-handoff`).
+- docs freshness and KB validation — unevaluated (`docs-staleness-guard.py`, `kb-validate-gate.py`
+  — `docs-staleness-guard.py` has an already-ported skill companion, `documentation-freshness`).
+- task inbox and feedback display — unevaluated (`unbuffered-progress-advisor.py`,
+  `task-inbox-show.py`, `feedback-pending-show.py`).
+- long-run feature validators — unevaluated (`feature-list-validator.py`, `long-run-detector.py`
+  — `feature-list-validator.py` has an already-ported skill companion, `long-run-feature-tracking`).
+- dependency/supply-chain guards — unevaluated (`dependency-currency-guard.py`,
+  `dependency-provenance-guard.py` — both already informed a prose enrichment of
+  `supply-chain-defense` in v0.3.79; a real guard here would formalize that enrichment
+  mechanically).
+- test/quality gates — unevaluated (`test-gate-stop-hook.py`, `test-muting-guard.py` — the former
+  has an already-ported skill companion, `testing-strategy`).
+- likely not portable (Claude-Code-specific, no Hermes equivalent concept identified) —
+  `claude-attribution-guard.py`, `pre-push-claude-attribution.py`, `keyword-skill-router.py`
+  (explicitly redundant given Hermes's own semantic skill loader, per `runtime-wiring.md`),
+  `ask-question-guard.py` (specific to Claude Code's `AskUserQuestion` tool).
 
 Acceptance criteria:
 
@@ -1306,6 +1330,29 @@ Operator-directed prototype, chosen from the Tier-1 candidate list after reading
 - `SECURITY.md` — corrected the now-false "Hermes has no equivalent" claim, added "Reviewed-hook
   lane" (9-point gate, mirroring the reviewed-script lane) and "Rejected hooks" sections.
   `AGENTS.md`'s matching stale claim corrected too.
+
+#### `git-destructive-guard.py` ported (2026-08-07) — second Wave 4 guard
+
+Operator-directed continuation from the Tier-1 candidate list. Content-integrity-checked
+against fresh upstream HEAD (identical, no drift) before reading. Reimplemented
+`hermes/hooks/git-destructive-guard.py`: same regex decision logic as upstream (reset --hard,
+push --force, branch -D with the deliberate case-sensitive -D-vs-d distinction preserved,
+clean -fdx, checkout -- ., filter-branch/filter-repo, deleting a main/master/production ref,
+interactive rebase of HEAD, aggressive reflog/gc expiry), tool-name and I/O contract translated
+the same way as the first guard. Confirmed no policy conflict — this operator's own global
+`git-source-of-truth.md` rule already states an equivalent "never run destructive git commands...
+unless explicitly requested" protocol naming the exact same command set, so this hook
+mechanically enforces a policy already held, unlike the rejected `secret-leak-guard.py`.
+
+New `hermes/hooks/tests/test_git_destructive_guard.py` (stdlib-only, 10/10 cases). Verified a
+second time directly against Hermes's real dispatch code path (`agent.shell_hooks.run_once`,
+isolated `ShellHookSpec`, no touch to `~/.hermes/config.yaml`/allowlist): 5/5 cases including a
+repeat of the exit-code-never-blocks regression check. `mappings/reviewed-hooks.yaml` gained a
+matching entry.
+
+Full verification: `python3 scripts/validate_adapter.py` (the actual CI entry point) passes
+end to end — both hook test suites now run automatically (18/18 combined cases), plus the full
+install/remove cycle covering `hooks/config-kit`. CI `Validate adapter` green.
 
 Full verification: `python3 -m py_compile scripts/*.py hermes/hooks/*.py
 hermes/hooks/tests/*.py` OK; `python3 scripts/validate_output.py` -> Validation OK; disposable
