@@ -6,6 +6,8 @@ import re
 import sys
 from pathlib import Path
 
+import generate_skills_catalog
+
 ROOT = Path(__file__).resolve().parents[1]
 QUARANTINE_PREFIXES = (
     "hooks/",
@@ -190,7 +192,16 @@ def validate_templates() -> None:
     # must get the same provenance check as a flat top-level template file. A plain
     # glob("*.md") silently skipped everything under a subdirectory here until this
     # was noticed while porting kb-skeleton (2026-08-06).
-    templates = sorted((ROOT / "hermes" / "templates").rglob("*.md"))
+    # The top-level README.md/README_RU.md are adapter-authored catalog docs, not content
+    # adapted from an upstream source -- they carry no upstream provenance to claim, unlike
+    # every other file here (including kb-skeleton's own, legitimately-adapted README.md
+    # files nested deeper in the tree, which stay covered by this check).
+    templates_root = ROOT / "hermes" / "templates"
+    catalog_exempt = {templates_root / "README.md", templates_root / "README_RU.md"}
+    templates = [
+        p for p in sorted(templates_root.rglob("*.md"))
+        if p not in catalog_exempt
+    ]
     if not templates:
         return
     for path in templates:
@@ -445,6 +456,22 @@ def validate_reviewed_hooks() -> None:
             fail(f"{rel} is missing the 'Reviewed-hook lane' provenance marker")
 
 
+def validate_skills_catalog() -> None:
+    """hermes/skills/README.md is generated, not hand-written -- catch drift the same way
+    validate_conversion_roundtrip() catches drift in adapted skill bodies."""
+    expected = generate_skills_catalog.render(generate_skills_catalog.collect_skills())
+    actual = try_read_text(generate_skills_catalog.OUTPUT)
+    if actual != expected:
+        fail("hermes/skills/README.md is stale; run scripts/generate_skills_catalog.py")
+    for readme_ru in (
+        ROOT / "hermes" / "skills" / "README_RU.md",
+        ROOT / "hermes" / "templates" / "README_RU.md",
+        ROOT / "hermes" / "hooks" / "README_RU.md",
+    ):
+        if not readme_ru.is_file():
+            fail(f"missing hand-maintained translation: {readme_ru.relative_to(ROOT)}")
+
+
 def validate_docs() -> None:
     for rel in ["INSTALL.md", "SECURITY.md", "README.md", "PORTING_BACKLOG.md"]:
         if not (ROOT / rel).exists():
@@ -495,6 +522,7 @@ def main() -> int:
     validate_quarantine_policy()
     validate_reviewed_scripts()
     validate_reviewed_hooks()
+    validate_skills_catalog()
     validate_docs()
     validate_secret_scan()
     print("Validation OK")

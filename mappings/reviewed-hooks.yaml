@@ -105,4 +105,5 @@
     stdout still blocks (exit code is irrelevant to Hermes's decision).
   files:
     - hermes/hooks/README.md
+    - hermes/hooks/README_RU.md
     - hermes/hooks/tests/test_destructive_command_guard.py

@@ -1,5 +1,8 @@
 # hermes-agent-config-kit hooks
 
+A Russian translation of this file is maintained by hand at `README_RU.md` — update it when
+adding or materially changing a hook listed here.
+
 Reviewed-hook lane (see `SECURITY.md`). These are Hermes-native reimplementations of
 selected upstream Claude-Code/Codex guard hooks — never a copy-paste of the upstream file,
 because the I/O contract differs (tool names, block-JSON shape, and critically: **Hermes
