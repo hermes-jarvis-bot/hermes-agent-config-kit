@@ -44,6 +44,7 @@ python scripts/harness_feedback_report.py
 | Concern | Primary scripts | Event |
 |---|---|---|
 | Destructive commands and Git operations | `destructive-command-guard.py`, `git-destructive-guard.py`, `human-confirmation-guard.py` | `PreToolUse` |
+| Dependency freshness and artifact provenance | `dependency-currency-guard.py`, `dependency-provenance-guard.py` | `PreToolUse` |
 | Shell injection and self-damage | `command-injection-guard.py`, `self-harm-guard.py` | `PreToolUse` |
 | GitHub Actions workflow injection | `github-workflow-security.py` | `PreToolUse` |
 | Git source-of-truth adoption | `git-source-gate.py` | `Stop` |
@@ -77,6 +78,23 @@ seams before a new system exists; `architecture-quality` keeps those seams reada
 while web/service code grows; `module-shape-advisor.py` is a live advisory hook after
 code edits; and `architecture_audit.py` is a deterministic repository-level report.
 The hook is not a substitute for project-specific dependency contracts.
+
+The dependency boundary is split deliberately. `dependency-currency-guard.py`
+checks a manifest edit against the public registry: existence, release age,
+adoption, and the slopsquat profile. `dependency-provenance-guard.py` runs at
+the download boundary: it rejects direct wheels/archives/Git sources and extra
+indexes, requires hash- or lock-aware install modes, and checks exact package
+versions for explicit installs. A registry digest binds the fetched artifact to
+the registry metadata; it does not prove that a maintainer account was never
+compromised, so lockfile review and vulnerability scanning remain separate
+controls.
+
+Registry unavailability is fail-closed for new dependency edits and installs. A
+24-hour verified provenance cache or an already reviewed lockfile with artifact
+integrity may keep a known-good repeat install moving; otherwise use
+`scripts/dependency-alternatives.py`, which searches official PyPI/npm metadata
+and returns only age- and digest-verified candidates. It never installs or edits
+the manifest automatically.
 
 See the current [Claude Code hooks reference](https://code.claude.com/docs/en/hooks)
 for supported events, handler types, and result schemas.
