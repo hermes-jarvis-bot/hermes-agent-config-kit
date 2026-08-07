@@ -369,7 +369,11 @@ def validate_quarantine_policy() -> None:
         if prefix not in compat:
             fail(f"compatibility mapping does not mention quarantine prefix {prefix}")
     allowed_scripts = reviewed_script_paths() | reviewed_hook_paths()
-    generated_paths = [p.relative_to(ROOT).as_posix() for p in (ROOT / "hermes").rglob("*") if p.is_file()]
+    generated_paths = [
+        p.relative_to(ROOT).as_posix()
+        for p in (ROOT / "hermes").rglob("*")
+        if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc"
+    ]
     leaked = [
         p
         for p in generated_paths
