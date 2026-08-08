@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import generate_skills_catalog
+import update_backlog_counts
 
 ROOT = Path(__file__).resolve().parents[1]
 QUARANTINE_PREFIXES = (
@@ -472,6 +473,13 @@ def validate_skills_catalog() -> None:
             fail(f"missing hand-maintained translation: {readme_ru.relative_to(ROOT)}")
 
 
+def validate_backlog_counts() -> None:
+    """PORTING_BACKLOG.md's Snapshot baseline table is generated, not hand-maintained --
+    catch drift the same way validate_skills_catalog() catches drift in the skills README."""
+    if not update_backlog_counts.apply(check_only=True):
+        fail("PORTING_BACKLOG.md Snapshot baseline table is stale; run scripts/update_backlog_counts.py")
+
+
 def validate_docs() -> None:
     for rel in ["INSTALL.md", "SECURITY.md", "README.md", "PORTING_BACKLOG.md"]:
         if not (ROOT / rel).exists():
@@ -523,6 +531,7 @@ def main() -> int:
     validate_reviewed_scripts()
     validate_reviewed_hooks()
     validate_skills_catalog()
+    validate_backlog_counts()
     validate_docs()
     validate_secret_scan()
     print("Validation OK")

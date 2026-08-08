@@ -10,6 +10,8 @@ import subprocess
 import tarfile
 import tempfile
 import urllib.request
+
+import update_backlog_counts
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -7415,6 +7417,7 @@ def main() -> int:
         )
         return 1
     save_lock(lock, head)
+    update_backlog_counts.apply(check_only=False)
     print(json.dumps({"synced": True, "base": base, "head": head, "converted": converted, "report": str(report.relative_to(ROOT))}, indent=2))
     return 0
 
