@@ -28,35 +28,59 @@ import sys; sys.path.insert(0, 'scripts'); import sync_upstream as su
 from collections import Counter
 c = Counter(k.split('/')[0] + '/' for k in su.SUPPORTED)
 for k, v in sorted(c.items()): print(f'{k}: {v}')
-"  # auto-ported-in-MVP column, by source prefix
+"  # fast-lane (auto-converted) part of the Ported column, by source prefix
 ```
 
-| Area | Files in snapshot | Auto-ported in MVP | Left out |
-| --- | ---: | ---: | ---: |
-| Root docs/config | 10 | 0 | 10 |
-| `.claude-plugin/` | 1 | 0 | 1 |
-| `.github/` | 1 | 0 | 1 |
-| `agents/` | 8 | 0 | 8 |
-| `alternatives/` | 19 | 0 | 19 |
-| `docs/` | 22 | 0 | 22 |
-| `evals/` | 2 | 0 | 2 |
-| `hooks/` | 58 | 0 | 58 [^hooks-lane] |
-| `principles/` | 31 | 30 | 1 |
-| `references/` | 1 | 0 | 1 |
-| `rules/` | 34 | 28 | 6 |
-| `scripts/` | 64 | 0 | 64 |
-| `skills/` | 240 | 146 | 94 |
-| `templates/` | 48 | 31 | 17 |
-| `workflows/` | 5 | 0 | 5 |
-| **Total** | **544** | **235** | **309** |
+The **Ported** column below is the fast-lane count above *plus* every individually reimplemented
+artefact in `mappings/reviewed-hooks.yaml` and `mappings/reviewed-scripts.yaml` (grouped by the
+same source-path prefix) — both lanes are a deliberate, final "this is in `hermes/`" decision,
+just reached through different review paths (see "Ported so far" below and `SECURITY.md`'s
+"Reviewed-hook lane" / "Reviewed-script lane"). The **Rejected** column counts entries in
+`mappings/rejected-hooks.yaml` and `mappings/rejected-scripts.yaml` whose `decision: rejected` is
+still current — an entry later reversed by its own `superseded_by` field (e.g.
+`bake_animation.py`, initially rejected then accepted the same day once the two flagged issues
+were fixed) counts as **Ported**, not Rejected. **Left out** is the true remainder still
+available to evaluate: `Files in snapshot − Ported − Rejected`.
 
-[^hooks-lane]: "Auto-ported" means the markdown `SUPPORTED`/fast-lane mechanism only, which
-never applies to executable hooks. Separately, 4 hooks (`destructive-command-guard.py`,
-`git-destructive-guard.py`, `self-harm-guard.py`, `command-injection-guard.py`) are individually
-reimplemented and ported through the narrow reviewed-hook lane, and 1 (`secret-leak-guard.py`)
-is explicitly rejected — see the "Wave 4" sections below and `mappings/reviewed-hooks.yaml`/
-`mappings/rejected-hooks.yaml`. This table counts only the fast lane, so these 5 decided hooks
-still show as "left out" here despite being individually resolved.
+| Area | Files in snapshot | Ported | Rejected | Left out |
+| --- | ---: | ---: | ---: | ---: |
+| Root docs/config | 10 | 0 | 0 | 10 |
+| `.claude-plugin/` | 1 | 0 | 0 | 1 |
+| `.github/` | 1 | 0 | 0 | 1 |
+| `agents/` | 8 | 0 | 0 | 8 |
+| `alternatives/` | 19 | 0 | 0 | 19 |
+| `docs/` | 22 | 0 | 0 | 22 |
+| `evals/` | 2 | 0 | 0 | 2 |
+| `hooks/` | 58 | 4 [^hooks-lane] | 1 [^hooks-lane] | 53 |
+| `principles/` | 31 | 30 | 0 | 1 |
+| `references/` | 1 | 0 | 0 | 1 |
+| `rules/` | 34 | 28 | 0 | 6 |
+| `scripts/` | 64 | 0 | 1 [^scripts-lane] | 63 |
+| `skills/` | 240 | 155 [^skills-lane] | 0 [^skills-lane] | 85 |
+| `templates/` | 48 | 33 [^templates-lane] | 0 | 15 |
+| `workflows/` | 5 | 0 | 0 | 5 |
+| **Total** | **544** | **250** | **2** | **292** |
+
+[^hooks-lane]: `hooks/` has no fast-lane (markdown `SUPPORTED`) entries at all — executable hooks
+never qualify for that mechanism. The 4 Ported are individually reimplemented through the
+reviewed-hook lane: `destructive-command-guard.py`, `git-destructive-guard.py`,
+`self-harm-guard.py`, `command-injection-guard.py` (`mappings/reviewed-hooks.yaml`). The 1
+Rejected is `secret-leak-guard.py` (`mappings/rejected-hooks.yaml`) — see the "Wave 4" sections
+below.
+
+[^scripts-lane]: The 1 Rejected is `scripts/gemini-switch.sh` (`mappings/rejected-scripts.yaml`,
+top-level `scripts/`, live credential-file mutation with only a same-session backup as a safety
+net). No top-level `scripts/` file has been ported through either lane yet.
+
+[^skills-lane]: 146 fast-lane + 9 reviewed-script-lane: `skills/ai-ml/notebooklm-grounded-research/
+scripts/verify_notebooklm_setup.py`, `skills/development/distill-feedback/scripts/
+extract_feedback_queue.py`, and all 7 `skills/creative/pixel-art-studio/scripts/*.py` files
+(`dither.py`, `palette.py`, `render.py`, `preprocess.py`, `animate.py`, `quality_check.py`,
+`bake_animation.py`) — the last of these was the `bake_animation.py` initially-rejected-then-
+accepted case described above, so it counts here, not in Rejected.
+
+[^templates-lane]: 31 fast-lane + 2 reviewed-script-lane: `templates/kb-skeleton/scripts/
+validate_kb.py` and `build_kb_graph.py`.
 
 Recounted 2026-08-08 against the current pinned snapshot (`upstream.lock.json`'s
 `last_synced_sha`) — every row had drifted from the original MVP-era snapshot the previous
@@ -352,9 +376,10 @@ All upstream principles in the pinned snapshot have now been reviewed and ported
 
 ## Skill packages not yet ported
 
-Upstream's `skills/` tree contains 94 files left out as of the last recount (2026-08-08; see the
-"Snapshot baseline" table above — 240 in the pinned snapshot, 146 auto-ported). Some are complete
-skills, some are support files, examples, scripts, templates, images, palettes, and references.
+Upstream's `skills/` tree contains 85 files left out as of the last recount (2026-08-08; see the
+"Snapshot baseline" table above — 240 in the pinned snapshot, 155 Ported across both lanes, 0
+Rejected). Some are complete skills, some are support files, examples, scripts, templates,
+images, palettes, and references.
 
 Top-level skill packages left out (this is a historical snapshot from early in the project and
 has not been kept in sync with later domain-queue ports — `agent-harness-design`,
@@ -1036,13 +1061,15 @@ Reason: many are design notes or competing patterns rather than ready modules. T
 
 ## Templates not yet ported
 
-**Updated 2026-08-08**: 31 upstream templates are now adapted (matches the "Snapshot baseline"
-table's templates row) with Hermes-native provenance and operator-confirmation wording: the
-complete reviewed `templates/agent-task/` record set (10 files), `templates/proof-plan.md`,
-`templates/long-run-project/README.md` + `PRD-BOOTSTRAP.md` (2 files), and the complete
-`templates/kb-skeleton/` tree (18 files, including its 2 reviewed-script-lane scripts —
-**reversed from "stays out of MVP" on 2026-08-06**, see the "`layer-new`/`feature-new` and the
-`kb-skeleton` template tree ported" entry above). The installer copies templates only into the
+**Updated 2026-08-08**: 33 upstream templates are now adapted (matches the "Snapshot baseline"
+table's templates `Ported` column: 31 fast-lane + 2 reviewed-script-lane) with Hermes-native
+provenance and operator-confirmation wording: the complete reviewed `templates/agent-task/`
+record set (10 files), `templates/proof-plan.md`, `templates/long-run-project/README.md` +
+`PRD-BOOTSTRAP.md` (2 files), and the complete `templates/kb-skeleton/` tree (18 markdown files
+via the fast lane, plus its 2 reviewed-script-lane scripts `validate_kb.py`/`build_kb_graph.py`,
+20 files total — **reversed from "stays out of MVP" on 2026-08-06**, see the
+"`layer-new`/`feature-new` and the `kb-skeleton` template tree ported" entry above). The
+installer copies templates only into the
 isolated `<hermes-home>/templates/config-kit/` namespace and the remover deletes only that
 namespace. The remaining template categories stay out of MVP:
 
@@ -1067,10 +1094,12 @@ namespace. The remaining template categories stay out of MVP:
 - `templates/test-policy.json` — untriaged.
 - `templates/README.md` — untriaged (top-level index file for the upstream `templates/`
   directory itself, not a template to adapt).
-
-(`templates/kb-skeleton/.github/workflows/kb.yml` is not listed here — it already has its own
-resolved decision, see the `kb-skeleton` port entry above: `status: unsupported`, harmless,
-excluded solely by the blanket `.github/workflows/**` quarantine rule.)
+- `templates/kb-skeleton/.github/workflows/kb.yml` — already has its own resolved decision (see
+  the `kb-skeleton` port entry above): `status: unsupported` in `mappings/compatibility.yaml`,
+  harmless (just runs `validate_kb.py` on push/PR), excluded solely by the blanket
+  `.github/workflows/**` quarantine rule, not a policy rejection. Still counts in the "Snapshot
+  baseline" table's `Left out` for `templates/` (it is neither individually Ported nor in
+  `mappings/rejected-scripts.yaml`), even though its rationale is settled.
 
 Reason: template installation raises path, naming, lifecycle, and overwrite questions. It needs a Hermes-native template target and removal contract.
 
