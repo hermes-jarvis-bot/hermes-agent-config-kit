@@ -148,3 +148,96 @@
     stdout JSON does not block).
   files:
     - hermes/hooks/tests/test_git_destructive_guard.py
+
+- path: hermes/hooks/self-harm-guard.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/self-harm-guard.py
+  source_sha256: 76e9c963c8619fc0bd5bd5cfc08857ff5b4a4ec3d7723ed2e9ccd42cd10bc18a
+  reviewed_at: "2026-08-08"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7"
+  summary: >
+    Blocks commands that could cut the agent off from its own host: sshd
+    config edits/restart/kill, killing the agent's own runtime process
+    (pkill/killall), iptables/ufw rules that drop its own connectivity,
+    and reboot/shutdown without a handoff. Decision logic (the regex
+    pattern list) carried over unchanged from upstream for the OS-level
+    concerns (SSH, firewall, reboot — these are vendor-neutral by
+    nature). The process-kill patterns were adapted with a live check,
+    not a guess: `ps aux` on this actual environment confirmed the
+    running Hermes gateway process is `python -m hermes_cli.main
+    gateway run` — shows as a bare `python` process, already covered
+    by upstream's own killall pattern. Renamed the Claude-specific
+    process/package identifiers (`claude`, `@anthropic`, `claude-code`)
+    to their Hermes equivalents (`hermes`, `hermes_cli`, `hermes-agent`,
+    `nousresearch`) in the killall/pkill -f patterns; kept `node`/`bun`
+    since Hermes's desktop/web components use them too. Tool-name
+    checks translated (Bash->terminal, Edit/Write->patch/write_file,
+    matching the file-write tool-name mapping established for the
+    read/write file operations). stdlib only (re, sys, pathlib). No
+    network calls, no subprocess/os.system/eval/exec, no destructive
+    filesystem operations of its own. Not policy-conflicting — this is
+    a defensive guard against losing access to one's own host, which no
+    existing operator policy argues against.
+  functional_test: >
+    Verified 2026-08-08 two ways. (1) stdlib-only subprocess test
+    (hermes/hooks/tests/test_self_harm_guard.py, runs in CI): 12/12
+    cases passed (benign command allowed; sshd restart, pkill sshd,
+    killall python, pkill -f hermes_cli, ufw default-deny, bare reboot,
+    sshd_config write_file, authorized_keys patch all blocked; reboot
+    mentioned inside a grep allowed; bypass marker allowed; a
+    non-matching tool call allowed). (2) Direct verification against
+    Hermes's real dispatch code path (agent.shell_hooks.run_once,
+    Hermes Agent v0.19.0) using an isolated ShellHookSpec that never
+    touched ~/.hermes/config.yaml or the shell-hooks allowlist: all
+    cases passed, including a repeat of the exit-code-never-blocks
+    regression check.
+  files:
+    - hermes/hooks/tests/test_self_harm_guard.py
+
+- path: hermes/hooks/command-injection-guard.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/command-injection-guard.py
+  source_sha256: cc0d2d231dcb3d517702874fdde23196fe308c096ec6d34f9b045a93e72db3fd
+  reviewed_at: "2026-08-08"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7"
+  summary: >
+    Detects a shell-substitution injection class: text intended as data
+    (e.g. an argument to `gh issue create --body`) that actually
+    executes as a command because of `$(...)`/backtick substitution
+    evaluating before the outer command sees it. Distinguishes trivial,
+    side-effect-free substitutions (pwd, date, git rev-parse, etc.) from
+    ones containing a destructive verb (hard block) from other
+    non-trivial ones (advisory block requiring confirmation). Decision
+    logic (the trivial-command allowlist, the destructive-verb regex,
+    the substitution-finding logic including the single-quote-literal
+    exclusion) carried over completely unchanged from upstream — every
+    piece of it is harness-agnostic string/regex analysis with no
+    Claude-Code-specific naming anywhere in the original file. Only the
+    I/O contract was translated (tool name terminal not Bash,
+    hermes_hook_common instead of safety_common, HERMES_ALLOW_INJECTION
+    instead of CLAUDE_ALLOW_INJECTION). stdlib only (re, sys, pathlib).
+    No network calls, no subprocess/os.system/eval/exec, no destructive
+    filesystem operations of its own. Not policy-conflicting — this
+    operator's own live environment already runs an equivalent guard:
+    its exact block-message wording ("Non-trivial shell
+    substitution... Подтверди... CLAUDE_ALLOW_INJECTION=1") was
+    encountered verbatim as a live PreToolUse block multiple times
+    earlier in this same session, confirming this exact guard (or a
+    close sibling) is already a working, valued part of this
+    operator's own Claude Code setup.
+  functional_test: >
+    Verified 2026-08-08 two ways. (1) stdlib-only subprocess test
+    (hermes/hooks/tests/test_command_injection_guard.py, runs in CI):
+    9/9 cases passed (benign command and trivial substitutions
+    $(pwd)/$(git rev-parse HEAD) allowed; a dropdb smuggled via $() and
+    an rm -rf smuggled via $() both hard-blocked; a non-trivial-but-not-
+    destructive $(curl ...) advisory-blocked; a literal $() inside
+    single quotes allowed as non-executing; bypass marker allowed; a
+    non-matching tool call allowed). (2) Direct verification against
+    Hermes's real dispatch code path (agent.shell_hooks.run_once,
+    Hermes Agent v0.19.0) using an isolated ShellHookSpec that never
+    touched ~/.hermes/config.yaml or the shell-hooks allowlist: all
+    cases passed, including a repeat of the exit-code-never-blocks
+    regression check.
+  files:
+    - hermes/hooks/tests/test_command_injection_guard.py

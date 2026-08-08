@@ -1239,12 +1239,12 @@ Candidate groups:
   public-repo push scan). See `mappings/rejected-hooks.yaml` and `SECURITY.md`'s "Rejected
   hooks". `api-key-leak-detector.py` is an unevaluated sibling that may share the same conflict —
   check before porting, not after.
-- destructive command guards — **`destructive-command-guard.py` and `git-destructive-guard.py`
-  both ported 2026-08-07** (see below). `self-harm-guard.py`, `command-injection-guard.py`,
-  `verify-deleted-guard.py`, `over-engineering-advisor.py` remain unevaluated Tier-1 candidates
-  (the last two have an already-ported skill companion — `safe-deletion` and `lean-code`/
-  `code-quality` respectively — a hook here would be mechanical enforcement of guidance that
-  already exists as prose).
+- destructive command guards — **`destructive-command-guard.py`, `git-destructive-guard.py`,
+  `self-harm-guard.py`, and `command-injection-guard.py` all ported** (2026-08-07/08, see below).
+  `verify-deleted-guard.py` and `over-engineering-advisor.py` remain unevaluated Tier-1
+  candidates — both have an already-ported skill companion (`safe-deletion` and `lean-code`/
+  `code-quality` respectively), so a hook here would be mechanical enforcement of guidance that
+  already exists as prose.
 - handoff/session guards — unevaluated (`handoff-closure-audit-guard.py`,
   `launch-watch-guard.py`, `live-tree-guard.py`, `open-items-are-work-orders.py`,
   `session-handoff-check.py`, `session-handoff-reminder.py` — the last two have an already-ported
@@ -1331,6 +1331,13 @@ Operator-directed prototype, chosen from the Tier-1 candidate list after reading
   lane" (9-point gate, mirroring the reviewed-script lane) and "Rejected hooks" sections.
   `AGENTS.md`'s matching stale claim corrected too.
 
+Full verification: `python3 -m py_compile scripts/*.py hermes/hooks/*.py
+hermes/hooks/tests/*.py` OK; `python3 scripts/validate_output.py` -> Validation OK; disposable
+`install_hermes.py --apply` -> byte-identical diff for all 4 files -> functional re-verification
+of the *installed* copy via `run_once` (block + allow cases both correct) ->
+`remove_hermes.py --apply` -> confirmed all 3 config-kit targets (`skills`, `templates`,
+`hooks`) removed -> disposable home directory deleted and absence confirmed.
+
 #### `git-destructive-guard.py` ported (2026-08-07) — second Wave 4 guard
 
 Operator-directed continuation from the Tier-1 candidate list. Content-integrity-checked
@@ -1354,12 +1361,50 @@ Full verification: `python3 scripts/validate_adapter.py` (the actual CI entry po
 end to end — both hook test suites now run automatically (18/18 combined cases), plus the full
 install/remove cycle covering `hooks/config-kit`. CI `Validate adapter` green.
 
-Full verification: `python3 -m py_compile scripts/*.py hermes/hooks/*.py
-hermes/hooks/tests/*.py` OK; `python3 scripts/validate_output.py` -> Validation OK; disposable
-`install_hermes.py --apply` -> byte-identical diff for all 4 files -> functional re-verification
-of the *installed* copy via `run_once` (block + allow cases both correct) ->
-`remove_hermes.py --apply` -> confirmed all 3 config-kit targets (`skills`, `templates`,
-`hooks`) removed -> disposable home directory deleted and absence confirmed.
+#### `self-harm-guard.py` and `command-injection-guard.py` ported (2026-08-08) — third and fourth Wave 4 guards
+
+Operator-directed continuation, both from the same Tier-1 candidate list, ported together in
+one pass. Upstream had drifted (2 new commits, `test-gate-stop-hook.py`'s Windows shell
+handling — unrelated to either target) since the last sync; confirmed via `sync_upstream.py
+--check` and did not touch it, since that belongs to a separate PR-review workflow, not this
+port. Content-integrity-checked both target files against the newest upstream HEAD (identical,
+no drift) before reading.
+
+**`self-harm-guard.py`**: blocks commands that could cut the agent off from its own host (sshd
+edits/restart/kill, killing its own runtime process, iptables/ufw self-block, reboot without a
+handoff). The OS-level patterns (SSH, firewall, reboot) ported unchanged — vendor-neutral by
+nature. The process-kill patterns were adapted from a live check, not a guess: `ps aux` on this
+actual environment confirmed the running Hermes gateway process is `python -m hermes_cli.main
+gateway run` (shows as bare `python`, already covered by upstream's own pattern); renamed the
+Claude-specific identifiers (`claude`, `@anthropic`, `claude-code`) to Hermes equivalents
+(`hermes`, `hermes_cli`, `hermes-agent`, `nousresearch`), kept `node`/`bun` since Hermes's
+desktop/web components use them too.
+
+**`command-injection-guard.py`**: detects shell-substitution injection (text meant as data that
+executes as a command via `$(...)`/backticks before the outer command sees it — e.g. `gh issue
+create --body "$(dropdb prod)"`). Every line of the decision logic carried over completely
+unchanged — the entire file was already harness-agnostic with zero Claude-Code-specific naming.
+Confirmed not just clean but *already proven valuable to this exact operator*: this guard's
+distinctive block-message wording ("Non-trivial shell substitution... Подтверди... CLAUDE_ALLOW_
+INJECTION=1") was hit verbatim as a live PreToolUse block multiple times earlier in this same
+session — this operator's own Claude Code environment already runs this exact guard (or a very
+close sibling).
+
+New test suites: `hermes/hooks/tests/test_self_harm_guard.py` (12/12) and
+`hermes/hooks/tests/test_command_injection_guard.py` (9/9), both stdlib-only, both run in CI.
+Both also verified directly against Hermes's real dispatch code path
+(`agent.shell_hooks.run_once`, isolated `ShellHookSpec`, no touch to `~/.hermes/config.yaml`/
+allowlist), including a repeat of the exit-code-never-blocks regression check.
+`mappings/reviewed-hooks.yaml` gained matching entries for both.
+
+Fixed a real structural bug found while writing this entry: the previous
+`destructive-command-guard.py` subsection's own "Full verification" trailer had been physically
+displaced below the `git-destructive-guard.py` subsection by an earlier edit's insertion point —
+moved back to its correct place, immediately after that subsection's own content.
+
+Full verification: `python3 scripts/validate_adapter.py` passes end to end — all four hook test
+suites now run automatically in CI (39/39 combined cases), plus the full install/remove cycle
+covering `hooks/config-kit`. CI `Validate adapter` green.
 
 ## Reviewed-script lane pilot — status (2026-08-04)
 
