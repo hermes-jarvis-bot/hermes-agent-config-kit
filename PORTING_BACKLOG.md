@@ -1,6 +1,6 @@
 # Porting backlog and handoff
 
-This document records what the `v0.1.0` Hermes Agent Config Kit deliberately did **not** port from `AnastasiyaW/claude-code-config`, why it stayed out, and how future work should approach it.
+This document records what the Hermes Agent Config Kit deliberately did **not** port from `AnastasiyaW/claude-code-config`, why it stayed out, and how future work should approach it. It also records what *has* been ported and why, as a running decision log — see "Release and Wave state" below for the current release line (`v0.1.0` was the MVP baseline this document's title originally referred to; the adapter has since progressed through Waves 2–4).
 
 It is the planning and handoff companion to:
 
@@ -15,26 +15,53 @@ It is the planning and handoff companion to:
 Current baseline is the upstream snapshot pinned in `upstream.lock.json`.
 
 Inventory from the current `upstream/claude-code-config/snapshot/`. Counts are
-rechecked against the pinned snapshot when this table changes.
+rechecked against the pinned snapshot when this table changes. Recheck with:
+
+```bash
+for d in .claude-plugin .github agents alternatives docs evals hooks principles \
+         references rules scripts skills templates workflows; do
+  echo "$d: $(find "upstream/claude-code-config/snapshot/$d" -type f 2>/dev/null | wc -l)"
+done
+find upstream/claude-code-config/snapshot -maxdepth 1 -type f | wc -l  # root docs/config
+python3 -c "
+import sys; sys.path.insert(0, 'scripts'); import sync_upstream as su
+from collections import Counter
+c = Counter(k.split('/')[0] + '/' for k in su.SUPPORTED)
+for k, v in sorted(c.items()): print(f'{k}: {v}')
+"  # auto-ported-in-MVP column, by source prefix
+```
 
 | Area | Files in snapshot | Auto-ported in MVP | Left out |
 | --- | ---: | ---: | ---: |
 | Root docs/config | 10 | 0 | 10 |
 | `.claude-plugin/` | 1 | 0 | 1 |
 | `.github/` | 1 | 0 | 1 |
-| `agents/` | 6 | 0 | 6 |
+| `agents/` | 8 | 0 | 8 |
 | `alternatives/` | 19 | 0 | 19 |
-| `docs/` | 4 | 0 | 4 |
+| `docs/` | 22 | 0 | 22 |
 | `evals/` | 2 | 0 | 2 |
-| `hooks/` | 44 | 0 | 44 |
-| `principles/` | 30 | 30 | 0 |
+| `hooks/` | 58 | 0 | 58 [^hooks-lane] |
+| `principles/` | 31 | 30 | 1 |
 | `references/` | 1 | 0 | 1 |
-| `rules/` | 30 | 28 | 2 |
-| `scripts/` | 35 | 0 | 35 |
-| `skills/` | 159 | 98 | 61 |
-| `templates/` | 47 | 13 | 34 |
+| `rules/` | 34 | 28 | 6 |
+| `scripts/` | 64 | 0 | 64 |
+| `skills/` | 240 | 146 | 94 |
+| `templates/` | 48 | 31 | 17 |
 | `workflows/` | 5 | 0 | 5 |
-| **Total** | **394** | **178** | **216** |
+| **Total** | **544** | **235** | **309** |
+
+[^hooks-lane]: "Auto-ported" means the markdown `SUPPORTED`/fast-lane mechanism only, which
+never applies to executable hooks. Separately, 4 hooks (`destructive-command-guard.py`,
+`git-destructive-guard.py`, `self-harm-guard.py`, `command-injection-guard.py`) are individually
+reimplemented and ported through the narrow reviewed-hook lane, and 1 (`secret-leak-guard.py`)
+is explicitly rejected — see the "Wave 4" sections below and `mappings/reviewed-hooks.yaml`/
+`mappings/rejected-hooks.yaml`. This table counts only the fast lane, so these 5 decided hooks
+still show as "left out" here despite being individually resolved.
+
+Recounted 2026-08-08 against the current pinned snapshot (`upstream.lock.json`'s
+`last_synced_sha`) — every row had drifted from the original MVP-era snapshot the previous
+counts were taken from; re-verify with the commands in the note above this table before relying
+on these numbers again after a future sync.
 
 ## Ported so far
 
@@ -112,6 +139,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `templates/agent-task/state.json` | `hermes/templates/agent-task-state.md` |
 | `templates/agent-task/trace.jsonl` | `hermes/templates/agent-task-trace.md` |
 | `templates/agent-task/verdict.json` | `hermes/templates/agent-task-verdict.md` |
+| `templates/agent-task/spec.md` | `hermes/templates/agent-task-spec.md` |
 | `templates/long-run-project/PRD-BOOTSTRAP.md` | `hermes/templates/long-run-project-prd-bootstrap.md` |
 | `templates/long-run-project/README.md` | `hermes/templates/long-run-project-overview.md` |
 | `principles/01-harness-design.md` | `hermes/skills/harness-design/SKILL.md` |
@@ -157,6 +185,7 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/no-guessing.md` | `hermes/skills/no-guessing/SKILL.md` |
 | `rules/verify-git-currency-first.md` | `hermes/skills/verify-git-currency-first/SKILL.md` |
 | `rules/moa-gemini-delegation-eval.md` | `hermes/skills/moa-gemini-delegation-eval/SKILL.md` |
+| `rules/rlm-context-as-program.md` | `hermes/skills/rlm-context-as-program/SKILL.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
 | `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
 | `rules/quality-code.md` | `hermes/skills/code-quality/SKILL.md` |
@@ -179,6 +208,9 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `skills/architecture/plan-swarm-review/references/vulnerability-kb.md` | `hermes/skills/architecture/plan-swarm-review/references/vulnerability-kb.md` |
 | `skills/architecture/layer-new/SKILL.md` | `hermes/skills/architecture/layer-new/SKILL.md` |
 | `skills/architecture/feature-new/SKILL.md` | `hermes/skills/architecture/feature-new/SKILL.md` |
+| `skills/development/architecture-quality/SKILL.md` | `hermes/skills/architecture-quality/SKILL.md` |
+| `skills/development/harness-feedback/SKILL.md` | `hermes/skills/harness-feedback/SKILL.md` |
+| `skills/development/testing-strategy/SKILL.md` | `hermes/skills/testing-strategy/SKILL.md` |
 | `templates/kb-skeleton/` (18 files: README/AGENTS + `docs/kb/*` + `docs/layers/**`) | `hermes/templates/kb-skeleton/` (same tree, preserved) |
 | `templates/kb-skeleton/scripts/validate_kb.py` | `hermes/templates/kb-skeleton/scripts/validate_kb.py` (reviewed-script lane) |
 | `templates/kb-skeleton/scripts/build_kb_graph.py` | `hermes/templates/kb-skeleton/scripts/build_kb_graph.py` (reviewed-script lane) |
@@ -241,52 +273,31 @@ Reason: upstream CI can execute arbitrary commands. Adapter workflows must be au
 
 ### Hooks
 
-All upstream hooks remain unported:
+**Updated 2026-08-08 — this used to be a static 41-entry list claiming "all upstream hooks
+remain unported"; that is no longer true and the list itself was already stale (missing 17+
+files present in the current pinned snapshot). Treat `ls
+upstream/claude-code-config/snapshot/hooks/` as the live source of truth (58 files as of the
+last recount) rather than maintaining a duplicate, drift-prone list here.**
 
-- `hooks/activity-journal-guard.py`
-- `hooks/api-key-leak-detector.py`
-- `hooks/ask-question-guard.py`
-- `hooks/backup-retention-cleanup.py`
-- `hooks/claude-attribution-guard.py`
-- `hooks/command-injection-guard.py`
-- `hooks/conversation-history-capture.py`
-- `hooks/coord-claim-guard.py`
-- `hooks/cyrillic-bash-guard.py`
-- `hooks/db-snapshot-guard.py`
-- `hooks/destructive-command-guard.py`
-- `hooks/directory-creation-guard.py`
-- `hooks/docs-staleness-guard.py`
-- `hooks/feature-list-validator.py`
-- `hooks/feedback-pending-show.py`
-- `hooks/file-cohesion-guard.py`
-- `hooks/git-auto-backup.py`
-- `hooks/git-destructive-guard.py`
-- `hooks/handoff-closure-audit-guard.py`
-- `hooks/handoff-resume-gate.py`
-- `hooks/human-confirmation-guard.py`
-- `hooks/kb-validate-gate.py`
-- `hooks/keyword-skill-router.py`
-- `hooks/long-run-detector.py`
-- `hooks/over-engineering-advisor.py`
-- `hooks/plan-gate.py`
-- `hooks/pre-push-claude-attribution.py`
-- `hooks/precompact-handoff-guard.py`
-- `hooks/problems-md-validator.py`
-- `hooks/safety_common.py`
-- `hooks/secret-leak-guard.py`
-- `hooks/self-harm-guard.py`
-- `hooks/session-drift-validator.py`
-- `hooks/session-feedback-capture.py`
-- `hooks/session-handoff-check.py`
-- `hooks/session-handoff-reminder.py`
-- `hooks/stop-phrase-guard.py`
-- `hooks/task-inbox-show.py`
-- `hooks/test-gate-stop-hook.py`
-- `hooks/test-muting-guard.py`
-- `hooks/verify-deleted-guard.py`
-- `hooks/README.md`
+5 hooks have been individually decided, each with a full evaluation recorded in the "Wave 4 —
+hook and workflow redesign" section below and in `mappings/reviewed-hooks.yaml` /
+`mappings/rejected-hooks.yaml`:
 
-Reason: these are Python programs designed for Claude Code hook events. Hermes has different tool, approval, skill, cron, gateway, and plugin surfaces. Porting requires threat modelling and Hermes-native interfaces.
+- **Ported** (reimplemented for Hermes's shell-hook contract, not copied):
+  `destructive-command-guard.py`, `git-destructive-guard.py`, `self-harm-guard.py`,
+  `command-injection-guard.py`.
+- **Rejected** (policy conflict with this operator's own stated stance, not a code defect):
+  `secret-leak-guard.py`.
+
+Every other hook in the current snapshot — including `safety_common.py` (the shared I/O
+contract module those 4 ports were reimplemented from, not itself installable) — remains
+unevaluated and quarantined by default.
+
+Reason: these are Python programs designed for Claude Code hook events. Hermes has a
+structurally equivalent shell-hook system (`~/.hermes/config.yaml`'s `hooks:` block — verified
+2026-08-07, see "Wave 4" below), so a hook is no longer inherently unportable, but it must be
+reimplemented for Hermes's I/O contract, never copy-pasted, and only after individual review —
+see `SECURITY.md`'s "Reviewed-hook lane" for the full 9-point gate.
 
 Recommended future treatment:
 
@@ -301,36 +312,15 @@ Recommended future treatment:
 
 ### Scripts and evals
 
-All upstream scripts and evals remain unported:
-
-- `scripts/ace_context_merge.workflow.js`
-- `scripts/build_hook_catalog.py`
-- `scripts/cleanup_handoffs.py`
-- `scripts/context_degradation.py`
-- `scripts/cross_reference_check.py`
-- `scripts/folder_lifecycle_audit.py`
-- `scripts/gemini-switch.sh`
-- `scripts/generate_skills_lock.py`
-- `scripts/install_hooks.py`
-- `scripts/kvcache_stats.py`
-- `scripts/openscience_skill_inventory.py`
-- `scripts/reasoning_metrics.py`
-- `scripts/review_handoff_memory_loop.py`
-- `scripts/skill_lint.py`
-- `scripts/sync_public_config.py`
-- `scripts/test_app_security_checklist.py`
-- `scripts/test_conversation_history_capture.py`
-- `scripts/test_directory_creation_guard.py`
-- `scripts/test_openscience_skill_inventory.py`
-- `scripts/test_review_handoff_memory_loop.py`
-- `scripts/test_task_completion_hooks.py`
-- `scripts/test_validate_agent_tickets.py`
-- `scripts/validate_agent_tickets.py`
-- `scripts/validate_config.py`
-- `scripts/validate_kb_links.py`
-- `scripts/verify_plugin_prerequisites.py`
-- `evals/hooks/cases.json`
-- `evals/hooks/run_hook_evals.py`
+**Updated 2026-08-08**: this used to be a static 27-entry list; the current pinned snapshot has
+64 files under `scripts/` alone (see the "Snapshot baseline" table above) — treat `ls
+upstream/claude-code-config/snapshot/scripts/` as the live source of truth rather than this
+list. All of them remain unevaluated and quarantined, with one exception: `scripts/gemini-switch.sh`
+was individually read in full and **explicitly rejected** (mutates live Google OAuth credential
+files — a higher-stakes category than the read-only/append-only scripts this adapter has
+accepted so far), recorded in `mappings/rejected-scripts.yaml` with a `revisit_condition`, not
+just "unported" — see `SECURITY.md`'s "Rejected scripts" section and the `gemini-delegate` port
+entry above. `evals/hooks/cases.json` and `evals/hooks/run_hook_evals.py` remain unevaluated.
 
 Reason: executable upstream code must remain data until reviewed. Some scripts may become useful validator routines, but should be rewritten or vendored deliberately with tests.
 
@@ -340,18 +330,31 @@ All upstream principles in the pinned snapshot have now been reviewed and ported
 
 ## Review lane: rules not yet ported
 
-The following rules stayed out of MVP:
+**Updated 2026-08-08**: `rules/` has grown to 34 files (28 auto-ported, 6 left out — matches the
+"Snapshot baseline" table above). Of the 6:
 
-
-- `rules/long-run-harness.md`
-- `rules/no-pre-existing-evasion.md`
-- `rules/safety-hooks.md`
-
-The remaining rules require separate review. `rules/long-run-harness.md` overlaps `long-run-feature-tracking`; `rules/no-pre-existing-evasion.md` needs a target-name and hook-link adaptation decision; `rules/safety-hooks.md` remains executable-adjacent and quarantined.
+- `rules/long-run-harness.md` — **resolved, not a gap.** Full read confirmed near-total overlap
+  with `long-run-feature-tracking`; its one genuinely new practice (a 15-point Readiness Gate)
+  was folded into that skill. See the detailed entry above ("Not portable as a standalone
+  module (duplicate, confirmed...)").
+- `rules/no-pre-existing-evasion.md` — **resolved, not a gap.** Diffed line-by-line against the
+  already-ported `no-pre-existing-evasion` skill; ~90% overlap, the non-duplicate parts either
+  infra-coupled or model-specific. A targeted enrichment (forbidden-phrase examples, a
+  generalized enforcement note) was applied to the existing skill. See the "One-off manual
+  enrichment" entry above.
+- `rules/safety-hooks.md` — genuinely unresolved. Remains executable-adjacent and quarantined;
+  needs its own review pass.
+- `rules/safety.md` — untriaged. Several other rules' Track-A re-reviews found upstream had
+  retargeted references from `safety-hooks.md` to this file (e.g. `git-source-of-truth.md`,
+  `silent-failure-detection.md`) without this file itself ever being individually read.
+- `rules/live-tree-is-receive-only.md` — untriaged, added upstream since the last recount.
+- `rules/no-commit-junk.md` — untriaged, added upstream since the last recount.
 
 ## Skill packages not yet ported
 
-Upstream contains 123 skill-package files left out of MVP. Some are complete skills, some are support files, examples, scripts, templates, images, palettes, and references.
+Upstream's `skills/` tree contains 94 files left out as of the last recount (2026-08-08; see the
+"Snapshot baseline" table above — 240 in the pinned snapshot, 146 auto-ported). Some are complete
+skills, some are support files, examples, scripts, templates, images, palettes, and references.
 
 Top-level skill packages left out (this is a historical snapshot from early in the project and
 has not been kept in sync with later domain-queue ports — `agent-harness-design`,
@@ -982,7 +985,8 @@ below is eligible for automatic porting without a new operator matrix decision.
 
 ## Agents not yet ported
 
-The upstream `agents/` directory contains pixel-art review agents:
+The upstream `agents/` directory has grown to 8 files (updated 2026-08-08; was 6 pixel-art
+review agents):
 
 - `agents/pixel-art-animation-reviewer.md`
 - `agents/pixel-art-composition-reviewer.md`
@@ -990,6 +994,11 @@ The upstream `agents/` directory contains pixel-art review agents:
 - `agents/pixel-art-quality-board.md`
 - `agents/pixel-art-reviewer.md`
 - `agents/pixel-art-style-reviewer.md`
+- `agents/ci-watcher.md` — untriaged, added upstream since the last recount.
+- `agents/thermo-nuclear-code-quality-review.md` — untriaged; note this shares a name with the
+  already-ported skill `hermes/skills/thermo-nuclear-code-quality-review/SKILL.md` (from
+  `skills/development/thermo-nuclear-code-quality-review/`) — check for overlap before deciding
+  anything here, do not assume they're the same content just because the name matches.
 
 Reason: Hermes does not use these Claude Code agent descriptors directly. They may become Hermes skills, prompt templates, or evaluation rubrics, but not autonomous agents without a Hermes-native orchestration design.
 
@@ -1027,16 +1036,15 @@ Reason: many are design notes or competing patterns rather than ready modules. T
 
 ## Templates not yet ported
 
-Thirteen low-risk upstream templates have been adapted with Hermes-native provenance and
-operator-confirmation wording, including the complete reviewed `templates/agent-task/`
-record set, `templates/proof-plan.md`, and
-`templates/long-run-project/PRD-BOOTSTRAP.md` ->
-`hermes/templates/long-run-project-prd-bootstrap.md`. The new long-run template is
-markdown-only planning data: it records a feature-plan proposal from an approved brief
-without creating state, calling a validator, or activating a workflow. The installer
-copies templates only into the isolated `<hermes-home>/templates/config-kit/` namespace
-and the remover deletes only that namespace. The remaining template categories stay
-out of MVP:
+**Updated 2026-08-08**: 31 upstream templates are now adapted (matches the "Snapshot baseline"
+table's templates row) with Hermes-native provenance and operator-confirmation wording: the
+complete reviewed `templates/agent-task/` record set (10 files), `templates/proof-plan.md`,
+`templates/long-run-project/README.md` + `PRD-BOOTSTRAP.md` (2 files), and the complete
+`templates/kb-skeleton/` tree (18 files, including its 2 reviewed-script-lane scripts —
+**reversed from "stays out of MVP" on 2026-08-06**, see the "`layer-new`/`feature-new` and the
+`kb-skeleton` template tree ported" entry above). The installer copies templates only into the
+isolated `<hermes-home>/templates/config-kit/` namespace and the remover deletes only that
+namespace. The remaining template categories stay out of MVP:
 
 - Claude project templates:
   - `templates/CLAUDE-library.md`
@@ -1045,35 +1053,26 @@ out of MVP:
 - Review/prompt templates:
   - `templates/REVIEW.md`
   - `templates/bug-fix-prompt.md`
-  - `templates/proof-plan.md`
 - Memory/project templates:
   - `templates/chronicle.md`
   - `templates/memory-project.md`
   - `templates/memory-reference.md`
-- Agent task structure:
-  - `templates/agent-task/README.md` has been ported as a data-only overview of the
-    reviewed task records; `templates/agent-task/handoff.md` has been ported as a data-only task transfer
-    template, `templates/agent-task/fix-log.md` as a data-only corrective-change
-    record, and `templates/agent-task/problems.md` as a data-only verifier-finding
-    record, `templates/agent-task/scratchpad.md` as concise resumable working
-    notes, `templates/agent-task/evidence/README.md` as a redacted evidence
-    register, and `templates/agent-task/state.json` as a data-only task-state record;
-    `templates/agent-task/trace.jsonl` has been ported as a markdown-only,
-    data-only timeline record, and `templates/agent-task/verdict.json` as a
-    data-only verdict record; neither initialises a task, creates state, approves
-    a change, or activates a workflow. All current `templates/agent-task/` files
-    are now represented only as reviewed data-only templates.
-- Knowledge-base skeleton:
-  - `templates/kb-skeleton/*`
-- Long-run project skeleton:
-  - `templates/long-run-project/README.md` has been ported as a data-only review
-    overview; JSON schema/example data and executable files remain unported.
+- `long-run-project` infra files (untriaged; same excluded class discussed at the
+  `no-pre-existing-evasion` WIP=1/VCR-Blocking entry above — infra-coupled to
+  `feature_list.json`, not a standalone markdown template):
+  - `templates/long-run-project/feature_list.schema.json`
+  - `templates/long-run-project/feature_list.template.json`
+  - `templates/long-run-project/init.sh.template`
+  - `templates/long-run-project/scripts/feature_dag_check.py`
+- `templates/test-policy.json` — untriaged.
+- `templates/README.md` — untriaged (top-level index file for the upstream `templates/`
+  directory itself, not a template to adapt).
+
+(`templates/kb-skeleton/.github/workflows/kb.yml` is not listed here — it already has its own
+resolved decision, see the `kb-skeleton` port entry above: `status: unsupported`, harmless,
+excluded solely by the blanket `.github/workflows/**` quarantine rule.)
 
 Reason: template installation raises path, naming, lifecycle, and overwrite questions. It needs a Hermes-native template target and removal contract.
-
-High-value next candidates:
-
-1. `templates/kb-skeleton/` — useful, but includes workflow/script files and must remain reviewed.
 
 ## Workflows not yet ported
 
@@ -1089,10 +1088,33 @@ Reason: JS workflows are executable orchestration artefacts. Hermes equivalents 
 
 ## References and docs not yet ported
 
+**Updated 2026-08-08**: `docs/` has grown to 22 files (this list covered only 4 in an earlier
+snapshot). 4 of them were already read in full and individually triaged — see the "Wave-4
+script-research + policy manual-review candidates" entry above: `docs/runtime-wiring.md` (pure
+Claude-Code/Codex plumbing, not portable), `docs/starting-from-what-you-remember.md` and
+`docs/finishing-what-you-started.md` (design-rationale docs, their genuinely new concepts were
+folded into `supply-chain-defense`/`no-pre-existing-evasion`), and `docs/a-launch-is-a-promise.md`
+(folded into `deterministic-orchestration`). The remaining docs below are untriaged:
+
 - `references/security-tooling-guide.md`
 - `docs/agent-tool-evals/2026-06-26-keenable-clips-evaluation.md`
 - `docs/openscience-ml-domain-eval.md`
 - `docs/openscience-ml-skill-inventory.json`
+- `docs/form-mistaken-for-content.md`
+- `docs/reports/claude-architecture-quality-handoff-2026-08-03.md`
+- `docs/research/2026-08-architecture-readable-code.md`
+- `docs/research/2026-08-cursor-team-kit-adoption.md`
+- `docs/research/2026-08-testing-and-agent-evals.md`
+- `docs/research/agent-memory-archive-prior-solution-2026-07-22.md`
+- `docs/research/cross-harness-continuation.md`
+- `docs/research/obsidian-mind-adoption-2026-07-28.md`
+- `docs/rtk-integration.md`
+- `docs/skills-organised-by-author.md`
+- `docs/skill-tree-recovery.md`
+- `docs/temp-cleanup-policy.example.json`
+- `docs/temp-workspace-cleanup.md`
+- `docs/temp-workspace-relocation.md`
+- `docs/why-agents-circle-instead-of-acting.md`
 
 Reason: these are useful reference materials but not installable Hermes modules yet.
 
