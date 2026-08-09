@@ -14,7 +14,9 @@ and does not activate any hook.** Wiring a copied hook into your own profile is 
 manual, operator-performed step — this adapter never auto-executes or auto-activates
 executable content.
 
-Two flavors, by event:
+Three flavors, by event — not every Claude Code hook event has a Hermes equivalent that
+actually reaches the model, so check which bucket a hook falls into before assuming it behaves
+like its upstream original:
 
 - **`pre_tool_call` guards** (`destructive-command-guard.py`, `git-destructive-guard.py`,
   `self-harm-guard.py`, `command-injection-guard.py`) can genuinely block a call — Hermes
@@ -28,6 +30,12 @@ Two flavors, by event:
   operator-inspectable audit trail, but not a live in-turn nudge to the agent, unlike upstream's
   Claude Code behavior. Revisit if a future Hermes version adds a context-injection path for
   `post_tool_call`.
+- **`pre_llm_call`/`pre_verify`/`on_session_end` hooks** (`session-handoff-check.py`,
+  `session-handoff-reminder.py`) — a mixed bucket, verified individually rather than assumed:
+  `pre_llm_call` (filtered to `extra.is_first_turn`) genuinely injects context into the model's
+  first message, same as a working `pre_tool_call` block; `pre_verify` genuinely nudges the
+  live agent but only on turns where the agent edited a file, capped at 3 nudges per session;
+  `on_session_end` is audit-log-only like `post_tool_call`. See each hook's own section below.
 
 ## Available hooks
 
@@ -131,6 +139,50 @@ hooks:
 Tunables: `HERMES_BLOAT_EDIT_LINES` (default 150), `HERMES_BLOAT_NEWFILE_LINES` (default 300).
 Bypass: `HERMES_ALLOW_BLOAT=1` or a `# hermes-bypass: bloat` marker in the changed content.
 
+### `session-handoff-check.py`
+
+On the first LLM call of a new session, scans `.hermes/handoffs/` (project) and
+`~/.hermes/handoffs/` (global) for recent handoffs and injects a listing into the model's
+context so it can offer to continue. Unlike the two `post_tool_call` guards above, this one's
+context genuinely reaches the model — `pre_llm_call`'s `{"context": ...}` return is appended
+to the first user message (verified against the live source, not assumed).
+
+```yaml
+hooks:
+  pre_llm_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/session-handoff-check.py"
+      timeout: 10
+```
+
+Handoff directory override: `HERMES_HANDOFF_DIR` (default `.hermes/handoffs/` under the
+project). No bypass — it never blocks, only injects context or stays silent.
+
+### `session-handoff-reminder.py` (dual-registered — see note below)
+
+Reminds to write a handoff when a session has run long (`SESSION_MIN_MINUTES`, default 15)
+with no fresh handoff on disk (`HANDOFF_STALE_MINUTES`, default 30). Register on **both**
+events — each covers a gap the other has:
+
+```yaml
+hooks:
+  pre_verify:
+    - command: "python3 ~/.hermes/hooks/config-kit/session-handoff-reminder.py"
+      timeout: 10
+  on_session_end:
+    - command: "python3 ~/.hermes/hooks/config-kit/session-handoff-reminder.py"
+      timeout: 10
+```
+
+- `pre_verify` genuinely nudges the live agent to write a handoff before ending its turn, but
+  Hermes only checks it when the agent edited a file *this turn*, and only up to 3 times per
+  session total (shared with any other `pre_verify` consumer).
+- `on_session_end` fires on every turn regardless of edits — the broad, reliable fallback —
+  but is audit-log-only (see the note at the top of this file).
+
+Both share the same `.hermes/.handoff-reminded`/`.hermes/.session-start` marker files, so
+whichever fires first in a turn suppresses the other for the rest of the session. Handoff
+directory override: same `HERMES_HANDOFF_DIR` as above. No bypass — it never blocks.
+
 ## Activating any hook
 
 Add the relevant block above to your own `~/.hermes/config.yaml`, then approve it at the
@@ -159,6 +211,8 @@ python3 hermes/hooks/tests/test_self_harm_guard.py
 python3 hermes/hooks/tests/test_command_injection_guard.py
 python3 hermes/hooks/tests/test_verify_deleted_guard.py
 python3 hermes/hooks/tests/test_over_engineering_advisor.py
+python3 hermes/hooks/tests/test_session_handoff_check.py
+python3 hermes/hooks/tests/test_session_handoff_reminder.py
 ```
 
 For deeper verification against Hermes's actual dispatch code path

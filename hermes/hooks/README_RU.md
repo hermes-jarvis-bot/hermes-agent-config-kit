@@ -11,7 +11,9 @@ Reviewed-hook lane (см. `SECURITY.md`). Это Hermes-native реимплем�
 ручной, выполняемый оператором шаг — этот адаптер никогда не авто-исполняет и не
 авто-активирует исполняемый контент.
 
-Два вида, по событию:
+Три вида, по событию — не у каждого события Claude Code есть Hermes-эквивалент, который
+реально доходит до модели, поэтому смотри, в какую корзину попадает конкретный хук, а не
+предполагай по аналогии с апстримом:
 
 - **`pre_tool_call`-гварды** (`destructive-command-guard.py`, `git-destructive-guard.py`,
   `self-harm-guard.py`, `command-injection-guard.py`) реально могут блокировать вызов — Hermes
@@ -25,6 +27,12 @@ Reviewed-hook lane (см. `SECURITY.md`). Это Hermes-native реимплем�
   safety-лог — полезно как аудит-след для оператора, но не живой фидбек агенту в моменте, в
   отличие от поведения апстрима в Claude Code. Пересмотреть, если будущая версия Hermes
   добавит путь инъекции контекста для `post_tool_call`.
+- **`pre_llm_call`/`pre_verify`/`on_session_end`-хуки** (`session-handoff-check.py`,
+  `session-handoff-reminder.py`) — смешанная корзина, каждый проверен индивидуально, а не по
+  аналогии: `pre_llm_call` (с фильтром `extra.is_first_turn`) реально инъектирует контекст в
+  первое сообщение модели, как рабочий `pre_tool_call`-блок; `pre_verify` реально подталкивает
+  живого агента, но только на ходах с правкой файлов, максимум 3 nudge на сессию;
+  `on_session_end` — только аудит-лог, как `post_tool_call`. См. секцию каждого хука ниже.
 
 ## Доступные хуки
 
@@ -131,6 +139,53 @@ hooks:
 (по умолчанию 300). Обход: `HERMES_ALLOW_BLOAT=1` или маркер `# hermes-bypass: bloat` в
 изменённом контенте.
 
+### `session-handoff-check.py`
+
+На первом LLM-вызове новой сессии сканирует `.hermes/handoffs/` (проект) и
+`~/.hermes/handoffs/` (глобально) на предмет свежих handoff'ов и инъектирует список в
+контекст модели, чтобы она могла предложить продолжить. В отличие от двух `post_tool_call`
+гвардов выше, здесь контекст реально доходит до модели — возврат `{"context": ...}` у
+`pre_llm_call` добавляется в первое сообщение пользователя (проверено по живому исходнику, не
+предположено).
+
+```yaml
+hooks:
+  pre_llm_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/session-handoff-check.py"
+      timeout: 10
+```
+
+Переопределение директории handoff'ов: `HERMES_HANDOFF_DIR` (по умолчанию
+`.hermes/handoffs/` в проекте). Без обхода — никогда не блокирует, только инъектирует
+контекст или молчит.
+
+### `session-handoff-reminder.py` (двойная регистрация — см. заметку ниже)
+
+Напоминает написать handoff, когда сессия идёт долго (`SESSION_MIN_MINUTES`, по умолчанию
+15) без свежего handoff на диске (`HANDOFF_STALE_MINUTES`, по умолчанию 30). Регистрировать
+на **оба** события — каждое закрывает пробел другого:
+
+```yaml
+hooks:
+  pre_verify:
+    - command: "python3 ~/.hermes/hooks/config-kit/session-handoff-reminder.py"
+      timeout: 10
+  on_session_end:
+    - command: "python3 ~/.hermes/hooks/config-kit/session-handoff-reminder.py"
+      timeout: 10
+```
+
+- `pre_verify` реально подталкивает живого агента написать handoff перед завершением хода,
+  но Hermes проверяет его только когда агент правил файл *в этом самом ходе*, и не больше 3
+  раз за сессию (бюджет общий с любым другим потребителем `pre_verify`).
+- `on_session_end` стреляет на каждом ходе независимо от правок — широкий, надёжный
+  fallback — но только аудит-лог (см. заметку в начале файла).
+
+Оба используют одни и те же маркер-файлы `.hermes/.handoff-reminded`/`.hermes/.session-start`,
+так что какое бы событие ни сработало первым в ходе, оно подавляет второе до конца сессии.
+Переопределение директории handoff'ов — тот же `HERMES_HANDOFF_DIR`. Без обхода — никогда не
+блокирует.
+
 ## Активация любого хука
 
 Добавь соответствующий блок выше в свой `~/.hermes/config.yaml`, затем подтверди на запросе
@@ -159,6 +214,8 @@ python3 hermes/hooks/tests/test_self_harm_guard.py
 python3 hermes/hooks/tests/test_command_injection_guard.py
 python3 hermes/hooks/tests/test_verify_deleted_guard.py
 python3 hermes/hooks/tests/test_over_engineering_advisor.py
+python3 hermes/hooks/tests/test_session_handoff_check.py
+python3 hermes/hooks/tests/test_session_handoff_reminder.py
 ```
 
 Для более глубокой верификации против реального dispatch-кода Hermes

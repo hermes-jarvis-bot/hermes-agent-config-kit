@@ -47,7 +47,7 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `alternatives/` | 19 | 0 | 0 | 19 |
 | `docs/` | 22 | 0 | 0 | 22 |
 | `evals/` | 2 | 0 | 0 | 2 |
-| `hooks/` | 58 | 7 | 1 | 50 |
+| `hooks/` | 58 | 9 | 1 | 48 |
 | `principles/` | 31 | 30 | 0 | 1 |
 | `references/` | 1 | 0 | 0 | 1 |
 | `rules/` | 34 | 28 | 0 | 6 |
@@ -55,11 +55,11 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `skills/` | 240 | 155 | 0 | 85 |
 | `templates/` | 48 | 33 | 0 | 15 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **545** | **253** | **2** | **290** |
+| **Total** | **545** | **255** | **2** | **288** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
-- `hooks/`: reviewed-lane Ported (7): `command-injection-guard.py`, `destructive-command-guard.py`, `git-destructive-guard.py`, `over-engineering-advisor.py`, `safety_common.py`, `self-harm-guard.py`, `verify-deleted-guard.py`; Rejected (1): `secret-leak-guard.py`
+- `hooks/`: reviewed-lane Ported (9): `command-injection-guard.py`, `destructive-command-guard.py`, `git-destructive-guard.py`, `over-engineering-advisor.py`, `safety_common.py`, `self-harm-guard.py`, `session-handoff-check.py`, `session-handoff-reminder.py`, `verify-deleted-guard.py`; Rejected (1): `secret-leak-guard.py`
 - `scripts/`: Rejected (1): `gemini-switch.sh`
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
@@ -1292,10 +1292,9 @@ Candidate groups:
   `over-engineering-advisor.py` (2026-08-09, `post_tool_call`, audit-log-only — see below,
   Hermes discards a post_tool_call hook's return value so neither can nudge the live agent turn
   the way their upstream originals do). This candidate group is now closed.
-- handoff/session guards — unevaluated (`handoff-closure-audit-guard.py`,
-  `launch-watch-guard.py`, `live-tree-guard.py`, `open-items-are-work-orders.py`,
-  `session-handoff-check.py`, `session-handoff-reminder.py` — the last two have an already-ported
-  skill companion, `session-handoff`).
+- handoff/session guards — **`session-handoff-check.py` and `session-handoff-reminder.py`
+  ported** (2026-08-09, see below). `handoff-closure-audit-guard.py`, `launch-watch-guard.py`,
+  `live-tree-guard.py`, `open-items-are-work-orders.py` remain unevaluated.
 - docs freshness and KB validation — unevaluated (`docs-staleness-guard.py`, `kb-validate-gate.py`
   — `docs-staleness-guard.py` has an already-ported skill companion, `documentation-freshness`).
 - task inbox and feedback display — unevaluated (`unbuffered-progress-advisor.py`,
@@ -1519,6 +1518,69 @@ covering `hooks/config-kit`. `scripts/update_backlog_counts.py` picked up both n
 entries automatically (hooks/ row: Ported 5->7, Left out 52->50) — no manual table edit needed,
 exercising the automation added in the immediately preceding session segment for exactly this
 scenario.
+
+#### `session-handoff-check.py` and `session-handoff-reminder.py` ported (2026-08-09) — seventh and eighth Wave 4 guards, first `pre_llm_call`/`pre_verify`/`on_session_end` guards
+
+Operator-directed continuation ("Так, продолжим портирование из Wave4?"). Content-integrity-
+checked both target files against fresh upstream HEAD (identical, no drift) before reading —
+this pair happens to be the exact hook (or a byte-identical sibling) already producing this
+operator's own live "SESSION HANDOFF(S)..." / "Stop hook feedback" messages seen earlier this
+session, giving unusually high confidence in reading their actual runtime behavior correctly.
+
+**Architectural research before writing any code**, same discipline as the previous pair:
+
+- `session-handoff-check.py` (upstream: `SessionStart`) — Hermes's `on_session_start` is
+  discard-only, same as `post_tool_call`. But `pre_llm_call`, fired with `is_first_turn=True`
+  on the first LLM call of a session (verified in `agent/turn_context.py:1054-1075`), genuinely
+  appends its `{"context": ...}` return to the first user message
+  (`turn_context.py:1059-1109`) — the first Wave-4 SessionStart-class hook where choosing the
+  *right* event alone recovers full upstream capability, no audit-log downgrade needed.
+- `session-handoff-reminder.py` (upstream: `Stop`) — no Hermes event fires on every turn-end
+  attempt regardless of what happened, the way Claude Code's Stop does. `pre_verify` gives a
+  real live nudge (verified: `get_pre_verify_continue_message()` ->
+  `conversation_loop.py:7116-7147`, the exact mechanism behind this operator's own
+  "Stop hook feedback" text earlier this session) but is gated by `agent/conversation_loop.py:
+  7109`'s `if _edited and has_hook("pre_verify") and _attempt < max_verify_nudges()` — only
+  fires on turns where the agent edited a file, capped at `max_verify_nudges()` (default 3)
+  nudges for the *entire session*, shared with any other `pre_verify` consumer.
+  `on_session_end` fires on every turn regardless of edits, matching upstream's real trigger
+  frequency, but is discard-only like `post_tool_call`. Presented this three-way tradeoff to
+  the operator before implementing; explicit decision: **dual-register both**, one script
+  branching on `hook_event_name` — `on_session_end` as the reliable audit-log fallback for any
+  long session, `pre_verify` as a bonus live nudge on the turns where its narrow gate holds.
+
+**Other adaptations** (both hooks): the already-ported `session-handoff` skill deliberately
+"removes harness-specific storage assumptions" rather than prescribing a fixed directory, so
+neither hook could assume `.claude/handoffs/`-equivalent exists — both define a Hermes-native
+default (`.hermes/handoffs/` project-local, `~/.hermes/handoffs/` global), overridable via
+`HERMES_HANDOFF_DIR`. Dropped the upstream `source` field (startup/resume/clear/compact) since
+Hermes exposes no compaction-boundary hook or flag at all (confirmed absent from
+`hermes_cli/plugins.py`'s `VALID_HOOKS`) — every `is_first_turn=True` is treated uniformly as a
+fresh start (`# simplification:`, documented in-file). Dropped upstream's legacy
+`.claude/HANDOFF.md` single-file format and cross-hook marker resets referencing sibling
+upstream hooks this adapter does not port (`.stop-phrase-guard-fired`, `.stop-budget-*`) — kept
+only the `.hermes/.handoff-reminded`/`.hermes/.session-start` markers the two ported hooks
+themselves need to function as a pair. Factored a small shared helper,
+`hermes_hook_common.filename_timestamp()`, out of upstream's near-duplicate timestamp-from-
+filename logic in the two source files.
+
+New test suites: `hermes/hooks/tests/test_session_handoff_check.py` (4/4) and
+`hermes/hooks/tests/test_session_handoff_reminder.py` (8/8), both stdlib-only, both run in CI.
+Both also verified directly against Hermes's real dispatch code path
+(`agent.shell_hooks.run_once`, isolated `ShellHookSpec`, no touch to `~/.hermes/config.yaml`/
+allowlist) — this run required actually `chdir`-ing the calling process into the sandbox first
+(a real gap found while writing the verification script: `_serialize_payload` always uses the
+live process `cwd`, not a kwarg override, unlike `tool_name`/`args`) and confirmed **empirically**
+that a real handoff file produces a genuine non-null `{"context": ...}` via `pre_llm_call`, that
+`pre_verify` genuinely returns a non-null `{"action":"continue",...}`, and that `on_session_end`
+always parses to `None` regardless of content — proving all three halves of the design above,
+not just reading the source, plus a repeat of the exit-code-never-blocks regression check.
+
+Full verification: `python3 scripts/validate_adapter.py` passes end to end — all eight hook
+test suites now run automatically in CI (67/67 combined cases), plus the full install/remove
+cycle covering `hooks/config-kit`. Also brought `hermes/hooks/README.md`/`README_RU.md`'s
+"flavors, by event" framing from two to three buckets, matching the new mixed-capability
+category these two hooks introduce.
 
 ## Reviewed-script lane pilot — status (2026-08-04)
 

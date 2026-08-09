@@ -138,3 +138,26 @@ def any_match(text: str, patterns: list[str]) -> str | None:
         if re.search(pat, text, re.IGNORECASE):
             return pat
     return None
+
+
+_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})(?:_(\d{2})-(\d{2}))?")
+
+
+def filename_timestamp(path: Path) -> float | None:
+    """Parse a `YYYY-MM-DD_HH-MM` prefix from a filename into an epoch timestamp.
+
+    Returns None if the filename has no such prefix — the caller should fall back to
+    `path.stat().st_mtime` in that case. The filename is authoritative over mtime for a
+    handoff file: a merge/checkout/sync rewrites mtimes for every file it touches, which
+    would otherwise make a months-old restored handoff read as "just written".
+    """
+    m = _TS_RE.match(path.name)
+    if not m:
+        return None
+    try:
+        hh = int(m.group(2)) if m.group(2) else 0
+        mm = int(m.group(3)) if m.group(3) else 0
+        dt = _dt.datetime.strptime(m.group(1), "%Y-%m-%d").replace(hour=hh, minute=mm)
+        return dt.timestamp()
+    except ValueError:
+        return None

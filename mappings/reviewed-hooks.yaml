@@ -61,10 +61,19 @@
     budget (stop_hook_active loop guard) was NOT ported: Hermes's pre_verify
     event does not have the same re-invocation-loop shape, so the mechanism
     it exists to guard against does not apply here.
+    Updated 2026-08-09: added `filename_timestamp()`, a small shared helper (parse a
+    `YYYY-MM-DD_HH-MM` filename prefix into an epoch timestamp, or None) factored out of
+    upstream's near-duplicate logic in session-handoff-check.py's `file_timestamp()` and
+    safety_common.py's `age_from_filename()` -- used by both session-handoff-check.py and
+    session-handoff-reminder.py below, no source_sha256 change since this file has no single
+    upstream source line-for-line equivalent to diff against (it's this adapter's own shared
+    module, reimplemented from safety_common.py, not a straight port).
   functional_test: >
     See the destructive-command-guard.py entry below — this module has no
     independent entry point, so it is exercised only through that guard's
-    tests.
+    tests. `filename_timestamp()` is exercised indirectly by
+    hermes/hooks/tests/test_session_handoff_check.py and
+    hermes/hooks/tests/test_session_handoff_reminder.py.
 
 - path: hermes/hooks/destructive-command-guard.py
   source_repo: AnastasiyaW/claude-code-config
@@ -331,3 +340,91 @@
     plus a repeat of the exit-code-never-blocks regression check.
   files:
     - hermes/hooks/tests/test_over_engineering_advisor.py
+
+- path: hermes/hooks/session-handoff-check.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/session-handoff-check.py
+  source_sha256: a8a32517bf0ea35fd33e5636806798515de76a51d30d0ef03361d04ffb2cd52f
+  reviewed_at: "2026-08-09"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  summary: >
+    Scans handoff files from previous sessions and, on the first LLM call of a new session,
+    injects a listing so the model can offer to continue. Reimplemented from the upstream
+    SessionStart hook onto Hermes's `pre_llm_call` event filtered by `extra.is_first_turn`,
+    NOT `on_session_start` -- verified against the live agent/turn_context.py source that
+    `on_session_start`'s return value is discarded by its only caller (same fire-and-forget
+    pattern as post_tool_call), while pre_llm_call's `{"context": "..."}` return genuinely
+    gets appended to the first user message (turn_context.py:1059-1109). This is the one
+    Wave-4 hook so far where the "right event" fix alone recovers full upstream capability --
+    no audit-log-only downgrade needed. Adapted: dropped the upstream `source` field
+    (startup/resume/clear/compact distinction) since Hermes exposes no compaction-boundary
+    hook or flag at all -- every is_first_turn=True is treated uniformly as a fresh start,
+    documented `# simplification:` in the file; dropped cross-hook marker resets
+    (`.stop-phrase-guard-fired`, `.stop-budget-*`) referencing sibling upstream hooks this
+    adapter does not port; defines a Hermes-native handoff-directory default
+    (`.hermes/handoffs/` + `~/.hermes/handoffs/`, overridable via HERMES_HANDOFF_DIR) since
+    the already-ported session-handoff skill deliberately does not prescribe one. Still resets
+    `.hermes/.handoff-reminded` and touches `.hermes/.session-start` -- session-handoff-
+    reminder.py's own state, needed for it to work at all (same feature, split across two
+    files, matching upstream's own two-hook design).
+  functional_test: >
+    Verified 2026-08-09 two ways. (1) stdlib-only subprocess test
+    (hermes/hooks/tests/test_session_handoff_check.py, runs in CI): 4/4 cases passed (wrong
+    event silent; not-first-turn silent; first turn with no handoffs silent but still touches
+    the session marker; first turn with a handoff present injects it as {"context": ...} and
+    clears a stale reminded-marker). (2) Direct verification against Hermes's real dispatch
+    code path (agent.shell_hooks.run_once, Hermes Agent v0.19.0) using an isolated
+    ShellHookSpec on the pre_llm_call event with the calling process actually chdir'd into the
+    sandbox (required -- Hermes's _serialize_payload always uses the live process cwd, not a
+    kwarg override) that never touched ~/.hermes/config.yaml or the shell-hooks allowlist:
+    confirmed a real handoff file produces a genuine, non-null parsed {"context": ...} --
+    empirically proving this hook's context injection actually works, not just reading the
+    source -- plus a repeat of the exit-code-never-blocks regression check.
+  files:
+    - hermes/hooks/tests/test_session_handoff_check.py
+
+- path: hermes/hooks/session-handoff-reminder.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/session-handoff-reminder.py
+  source_sha256: 1d23759138898bf92094991d75f30d8f7ae72cd2487996ac91bff367c3309070
+  reviewed_at: "2026-08-09"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  summary: >
+    Reminds to write a handoff when closing a long session with none fresh on disk.
+    Reimplemented from the upstream Stop hook. Hermes has no Stop-equivalent firing on every
+    turn-end attempt regardless of what happened that turn -- verified against the live
+    agent/conversation_loop.py and agent/turn_finalizer.py source that the two closest events
+    have complementary, individually incomplete coverage: `pre_verify` gives a genuine live
+    nudge (its {"action":"continue","message":...} return reaches the model via
+    get_pre_verify_continue_message(), the exact mechanism that produced this operator's own
+    live "Stop hook feedback" text earlier this session) but is only checked when the agent
+    edited a file THIS turn and a session-wide 3-nudge budget (shared with any other
+    pre_verify consumer) isn't exhausted; `on_session_end` fires on every turn regardless of
+    edits, matching upstream's actual trigger frequency far better, but its return value is
+    discarded (same fire-and-forget pattern as post_tool_call), so it can only log.
+    OPERATOR-APPROVED DESIGN: dual registration on both events, one script branching on
+    `hook_event_name`. `on_session_end` is the reliable audit-log fallback covering every
+    long session, coding or not; `pre_verify` is a bonus live nudge on the turns where its
+    narrow gate holds. Both share the same age/freshness check and the same
+    `.hermes/.handoff-reminded` marker, so whichever fires first in a turn suppresses the
+    other for the rest of the session. Adapted: dropped the upstream `.claude/HANDOFF.md`
+    legacy single-file format (documented `# simplification:` -- fresh adaptation, no legacy
+    baggage); same Hermes-native handoff-directory default as session-handoff-check.py.
+    SESSION_MIN_MINUTES/HANDOFF_STALE_MINUTES tunables carried over unchanged from upstream.
+  functional_test: >
+    Verified 2026-08-09 two ways. (1) stdlib-only subprocess test
+    (hermes/hooks/tests/test_session_handoff_reminder.py, runs in CI): 8/8 cases passed (wrong
+    event silent; no .hermes dir silent; first call touches the session marker with no
+    reminder; session too young silent; old-enough-with-no-fresh-handoff via pre_verify
+    produces a live nudge on stdout and sets the reminded marker; already-reminded silent;
+    the same condition via on_session_end logs to stderr only, no stdout; a fresh handoff on
+    disk silences the reminder despite an old session). (2) Direct verification against
+    Hermes's real dispatch code path (agent.shell_hooks.run_once, Hermes Agent v0.19.0) using
+    an isolated ShellHookSpec on both the pre_verify and on_session_end events, calling
+    process chdir'd into the sandbox, that never touched ~/.hermes/config.yaml or the
+    shell-hooks allowlist: confirmed pre_verify genuinely returns a non-null
+    {"action":"continue",...} while on_session_end always parses to None regardless of
+    content -- empirically proving both halves of the dual-registration design, not just
+    reading the source -- plus a repeat of the exit-code-never-blocks regression check.
+  files:
+    - hermes/hooks/tests/test_session_handoff_reminder.py
