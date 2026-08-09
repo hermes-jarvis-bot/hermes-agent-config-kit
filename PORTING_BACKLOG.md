@@ -47,7 +47,7 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `alternatives/` | 19 | 0 | 0 | 19 |
 | `docs/` | 22 | 0 | 0 | 22 |
 | `evals/` | 2 | 0 | 0 | 2 |
-| `hooks/` | 58 | 5 | 1 | 52 |
+| `hooks/` | 58 | 7 | 1 | 50 |
 | `principles/` | 31 | 30 | 0 | 1 |
 | `references/` | 1 | 0 | 0 | 1 |
 | `rules/` | 34 | 28 | 0 | 6 |
@@ -55,11 +55,11 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `skills/` | 240 | 155 | 0 | 85 |
 | `templates/` | 48 | 33 | 0 | 15 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **545** | **251** | **2** | **292** |
+| **Total** | **545** | **253** | **2** | **290** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
-- `hooks/`: reviewed-lane Ported (5): `command-injection-guard.py`, `destructive-command-guard.py`, `git-destructive-guard.py`, `safety_common.py`, `self-harm-guard.py`; Rejected (1): `secret-leak-guard.py`
+- `hooks/`: reviewed-lane Ported (7): `command-injection-guard.py`, `destructive-command-guard.py`, `git-destructive-guard.py`, `over-engineering-advisor.py`, `safety_common.py`, `self-harm-guard.py`, `verify-deleted-guard.py`; Rejected (1): `secret-leak-guard.py`
 - `scripts/`: Rejected (1): `gemini-switch.sh`
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
@@ -1286,12 +1286,12 @@ Candidate groups:
   public-repo push scan). See `mappings/rejected-hooks.yaml` and `SECURITY.md`'s "Rejected
   hooks". `api-key-leak-detector.py` is an unevaluated sibling that may share the same conflict —
   check before porting, not after.
-- destructive command guards — **`destructive-command-guard.py`, `git-destructive-guard.py`,
-  `self-harm-guard.py`, and `command-injection-guard.py` all ported** (2026-08-07/08, see below).
-  `verify-deleted-guard.py` and `over-engineering-advisor.py` remain unevaluated Tier-1
-  candidates — both have an already-ported skill companion (`safe-deletion` and `lean-code`/
-  `code-quality` respectively), so a hook here would be mechanical enforcement of guidance that
-  already exists as prose.
+- destructive command guards — **all 6 Tier-1 candidates ported**: `destructive-command-guard.py`,
+  `git-destructive-guard.py`, `self-harm-guard.py`, `command-injection-guard.py` (2026-08-07/08,
+  `pre_tool_call`, can genuinely block), and `verify-deleted-guard.py`,
+  `over-engineering-advisor.py` (2026-08-09, `post_tool_call`, audit-log-only — see below,
+  Hermes discards a post_tool_call hook's return value so neither can nudge the live agent turn
+  the way their upstream originals do). This candidate group is now closed.
 - handoff/session guards — unevaluated (`handoff-closure-audit-guard.py`,
   `launch-watch-guard.py`, `live-tree-guard.py`, `open-items-are-work-orders.py`,
   `session-handoff-check.py`, `session-handoff-reminder.py` — the last two have an already-ported
@@ -1452,6 +1452,73 @@ moved back to its correct place, immediately after that subsection's own content
 Full verification: `python3 scripts/validate_adapter.py` passes end to end — all four hook test
 suites now run automatically in CI (39/39 combined cases), plus the full install/remove cycle
 covering `hooks/config-kit`. CI `Validate adapter` green.
+
+#### `verify-deleted-guard.py` and `over-engineering-advisor.py` ported (2026-08-09) — fifth and sixth Wave 4 guards, first `post_tool_call` guards
+
+Operator-directed continuation from the Tier-1 candidate list ("Так, продолжим портирование из
+Wave4?"). Content-integrity-checked both target files against fresh upstream HEAD (identical, no
+drift) before reading.
+
+**Architectural finding before writing any code**: both remaining candidates are
+`PostToolUse`-class hooks whose entire value proposition is feeding a warning back into the
+*same agent turn* (upstream's own docstrings say so explicitly — "prompting attention to
+mismatched expectations", "additionalContext"). Verified against the live
+`model_tools.py`/`agent/shell_hooks.py` source that Hermes has no working equivalent path:
+`_emit_post_tool_call_hook()` calls `invoke_hook("post_tool_call", ...)` and discards its return
+value unconditionally, so nothing a `post_tool_call` shell hook prints — stdout JSON or
+stderr — can reach the model's context in this turn or the next. This is a real capability gap,
+not a reimplementation detail, and it applies to *any* future `post_tool_call`-class hook, not
+just these two. Presented to the operator before writing code; explicit decision: **port both as
+audit-log-only** (durable verdict in the shared safety log, no live in-turn nudge) rather than
+defer them or build a speculative two-hook state-file workaround through `pre_llm_call`.
+
+**`verify-deleted-guard.py`**: after-the-fact existence check for destructive commands (`rm`,
+`docker rm`/`rmi`/`volume rm`/`network rm`, `kubectl delete`, `curl -X DELETE`) — directly
+mechanizes this operator's own `deletion-confirm-and-verify.md` rule. Dispatch logic carried over
+from upstream with one deliberate exception: `verify_docker_rm()`'s `docker ps/images/... `
+list command used `subprocess.run(..., shell=True)` upstream, which this repo's own
+`validate_reviewed_hooks()` gate categorically bans for any reviewed hook (caught by CI on first
+run, not assumed clean) — switched to the equivalent argv-list form, no behavior change since
+every branch is a hardcoded arg list never built from the destructive command's own content.
+Upstream's `interrupted` skip-check (Claude-Code-specific, no Hermes field) replaced with
+`extra.status == "blocked"` — the real Hermes analog of "this call never executed"; a non-zero
+exit deliberately does *not* skip verification, since a partial failure (some targets deleted,
+some permission-denied) is exactly the scenario this hook exists to catch.
+
+**`over-engineering-advisor.py`**: advisory nudge on large/dependency-adding `write_file`/`patch`
+calls, mechanizing the `quality-code.md` YAGNI ladder. Hermes has no `MultiEdit` — `patch`
+covers both upstream's `Edit` (`mode="replace"`, path/old_string/new_string) and its `MultiEdit`
+equivalent (`mode="patch"`, V4A format, can span multiple files in one call). File-path
+extraction from a V4A patch body reuses the exact same header regex
+`agent/tool_dispatch_helpers.py:_extract_file_mutation_targets()` uses internally, rather than
+inventing a parallel one. Net-line counting for V4A is a documented `# simplification:`
+(aggregate `+`/`-` count across the whole multi-file patch, not per-file — an approximate signal
+is an acceptable ceiling for a non-blocking advisory; upgrade path is the real V4A parser already
+in `tools/patch_parser.py` if per-file precision is ever needed). Fixed one bug found while
+writing the test suite: the dependency-manifest check originally used the full old+new blob to
+decide whether to advise, which would have flagged a pure *deletion* from a manifest as "adding a
+dependency" — changed to check only the added-content side.
+
+New test suites: `hermes/hooks/tests/test_verify_deleted_guard.py` (6/6) and
+`hermes/hooks/tests/test_over_engineering_advisor.py` (10/10), both stdlib-only, both run in CI.
+Both also verified directly against Hermes's real dispatch code path (`agent.shell_hooks.run_once`,
+isolated `ShellHookSpec` on the `post_tool_call` event, no touch to `~/.hermes/config.yaml`/
+allowlist) — this run **empirically confirmed** the audit-log-only finding above (parsed response
+is `None` regardless of stdout content), not just a reading of the source, plus a repeat of the
+exit-code-never-blocks regression check. `mappings/reviewed-hooks.yaml` gained matching entries
+for both, each documenting the capability gap and its `revisit_condition`.
+
+Also brought `hermes/hooks/README.md`/`README_RU.md` up to date: they had documented only
+`destructive-command-guard.py` despite 3 more hooks (`git-destructive-guard.py`,
+`self-harm-guard.py`, `command-injection-guard.py`) having been ported since — a real, unrelated
+documentation gap found and fixed alongside the 2 new entries, not left for later.
+
+Full verification: `python3 scripts/validate_adapter.py` passes end to end — all six hook test
+suites now run automatically in CI (55/55 combined cases), plus the full install/remove cycle
+covering `hooks/config-kit`. `scripts/update_backlog_counts.py` picked up both new reviewed-hook
+entries automatically (hooks/ row: Ported 5->7, Left out 52->50) — no manual table edit needed,
+exercising the automation added in the immediately preceding session segment for exactly this
+scenario.
 
 ## Reviewed-script lane pilot — status (2026-08-04)
 

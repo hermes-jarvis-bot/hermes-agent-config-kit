@@ -241,3 +241,93 @@
     regression check.
   files:
     - hermes/hooks/tests/test_command_injection_guard.py
+
+- path: hermes/hooks/verify-deleted-guard.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/verify-deleted-guard.py
+  source_sha256: d1ba1ecd6898b7cd790110514c1f02544c6d8e6d63648b336670bc45f1710928
+  reviewed_at: "2026-08-08"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  summary: >
+    post_tool_call(terminal) after-the-fact verifier for destructive commands (rm/rmdir,
+    docker cleanup subcommands, kubectl delete, curl -X DELETE), matching this operator's own
+    deletion-confirm-and-verify.md rule ("after a delete/copy, re-verify it actually
+    happened"). Dispatch logic (regex-matched per-command verify functions, plus a
+    no-strategy hint list for recognized-but-unstrategized destructive commands) carried over
+    from upstream with one exception: verify_docker_rm()'s upstream implementation ran its
+    `docker ps/images/volume ls/network ls` list command via `subprocess.run(..., shell=True)`
+    -- this repo's own validate_reviewed_hooks() gate categorically bans shell=True in any
+    reviewed hook, so it was switched to the equivalent argv-list form (no behavior change:
+    every branch is a hardcoded arg list, never built from the destructive command's own
+    content). Otherwise unchanged -- harness-agnostic. Adapted: tool_name check "terminal"
+    not "Bash"; upstream's `interrupted` skip-check (Claude-Code-specific field, no Hermes
+    equivalent) replaced with `extra.status == "blocked"` (the real Hermes analog of "this
+    call never executed" -- a non-zero exit deliberately does NOT skip verification, since a
+    partial failure is exactly what this hook exists to catch).
+    IMPORTANT CAPABILITY GAP (verified against the live model_tools.py/agent/shell_hooks.py
+    source): Hermes's post_tool_call is a fire-and-forget observer hook --
+    `_emit_post_tool_call_hook()` calls `invoke_hook("post_tool_call", ...)` and discards its
+    return value, so nothing this script prints reaches the model's context in this turn or
+    the next (unlike Claude Code's PostToolUse, whose stderr is surfaced back into the same
+    agent turn). Ported anyway, by explicit operator decision, as an audit-log-only guard:
+    every verdict lands in the shared safety log (hermes_hook_common.log()), durable and
+    operator-inspectable, but there is no live in-turn nudge. Revisit if a future Hermes
+    version adds a context-injection path for post_tool_call.
+  functional_test: >
+    Verified 2026-08-08 two ways. (1) stdlib-only subprocess test
+    (hermes/hooks/tests/test_verify_deleted_guard.py, runs in CI): 6/6 cases passed
+    (non-destructive command silent; wrong tool silent; a still-existing target logs "STILL
+    PRESENT"; a gone target logs "verified deletion"; a blocked call is skipped entirely; a
+    recognized-but-unstrategized destructive command logs its hint). (2) Direct verification
+    against Hermes's real dispatch code path (agent.shell_hooks.run_once, Hermes Agent
+    v0.19.0) using an isolated ShellHookSpec on the post_tool_call event that never touched
+    ~/.hermes/config.yaml or the shell-hooks allowlist: confirmed the hook's stdout is always
+    parsed to None regardless of content (proving the audit-log-only capability gap
+    empirically, not just by reading the source), plus a repeat of the exit-code-never-blocks
+    regression check.
+  files:
+    - hermes/hooks/tests/test_verify_deleted_guard.py
+
+- path: hermes/hooks/over-engineering-advisor.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/over-engineering-advisor.py
+  source_sha256: 7c5ebf8dd8a15275c9766cb6c9eb37cb7aa52622ae211a9b82cc00a01f3b9ce5
+  reviewed_at: "2026-08-08"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  summary: >
+    post_tool_call(write_file|patch) advisory nudge on large/dependency-adding code changes,
+    mechanically enforcing quality-code.md's YAGNI ladder -- non-blocking by construction,
+    checks only reliable mechanical signals (net line count vs a tunable threshold, or a
+    touched dependency-manifest filename), never auto-classifies fuzzy "abstraction smells".
+    Tool-shape adapted for Hermes, which has no MultiEdit: `write_file` maps to upstream's
+    Write; `patch` mode="replace" (default) maps to upstream's Edit (path/old_string/
+    new_string); `patch` mode="patch" (V4A, can span multiple files in one call) is upstream's
+    MultiEdit equivalent in a structurally different format -- file paths are extracted via
+    the exact same file-mutation-target header regex Hermes's own
+    agent/tool_dispatch_helpers.py:_extract_file_mutation_targets() uses internally (reused,
+    not reinvented), and net lines are counted as (+lines - -lines) across the whole patch
+    body (documented `# simplification:` -- aggregate across a multi-file V4A patch, not
+    per-file; upgrade path is tools/patch_parser.py's real V4A parser if per-file precision
+    is ever needed). Env vars renamed CLAUDE_BLOAT_* -> HERMES_BLOAT_*.
+    SAME CAPABILITY GAP as verify-deleted-guard.py (see that entry): Hermes's post_tool_call
+    return value is discarded by its only caller, so upstream's `additionalContext` mechanism
+    (same-turn model feedback) has no working equivalent. Ported anyway, by explicit operator
+    decision, as an audit-log-only advisory: every advisory lands in the shared safety log,
+    durable and operator-inspectable, but there is no live in-turn nudge to the agent that
+    made the edit. Revisit if a future Hermes version adds a context-injection path for
+    post_tool_call.
+  functional_test: >
+    Verified 2026-08-08 two ways. (1) stdlib-only subprocess test
+    (hermes/hooks/tests/test_over_engineering_advisor.py, runs in CI): 10/10 cases passed
+    (wrong tool silent; small write/edit silent; large write_file over NEWFILE_LIMIT and large
+    patch mode=replace over EDIT_LIMIT both advise; a large write to a non-code extension is
+    skipped; a pure-deletion patch to a manifest is NOT flagged as "adding a dependency" --
+    only new content counts; a manifest touched with real new content IS flagged; a large V4A
+    multi-file patch advises with the large_v4a_patch signal; a bypass marker suppresses an
+    otherwise-large advisory). (2) Direct verification against Hermes's real dispatch code
+    path (agent.shell_hooks.run_once, Hermes Agent v0.19.0) using an isolated ShellHookSpec on
+    the post_tool_call event that never touched ~/.hermes/config.yaml or the shell-hooks
+    allowlist: confirmed the hook's stdout is always parsed to None regardless of content,
+    plus a repeat of the exit-code-never-blocks regression check.
+  files:
+    - hermes/hooks/tests/test_over_engineering_advisor.py
