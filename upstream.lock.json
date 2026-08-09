@@ -2,9 +2,9 @@
   "upstream": {
     "repo": "AnastasiyaW/claude-code-config",
     "branch": "main",
-    "last_synced_sha": "511a1f18048d5d7da7928c2bfaf7c60efc077f10",
-    "last_synced_at": "2026-08-08T02:20:43.665043+00:00",
-    "latest_seen_sha": "511a1f18048d5d7da7928c2bfaf7c60efc077f10"
+    "last_synced_sha": "7448bd377459dcf5694fcf4d0b670be8d6d02d09",
+    "last_synced_at": "2026-08-09T19:19:24.791083+00:00",
+    "latest_seen_sha": "7448bd377459dcf5694fcf4d0b670be8d6d02d09"
   },
   "adapter": {
     "version": "0.4.0",

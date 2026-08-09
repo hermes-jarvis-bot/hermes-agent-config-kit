@@ -119,6 +119,39 @@ If the verdict is FAIL:
 
 Repeat steps 4-5 until the verdict is PASS across all acceptance criteria.
 
+## Candidate-State Test Sequence
+
+The Proof Loop does not mean running every expensive check after every line.
+This is a universal testing sequence, not a VM-specific workflow:
+
+```text
+focused local slice -> risk-based review -> one full matrix -> conditional specialized proof
+```
+
+- **Focused local slice:** while changing code, run the smallest deterministic
+  checks that exercise the changed behavior or reproduction. This is the loop's
+  fast feedback and may run repeatedly.
+- **Independent review:** for a boundary/high-risk change, a fresh evaluator
+  checks the exact changed surface and records a verdict. More of the builder's
+  own tests is not a substitute for independence.
+- **Full matrix:** at the candidate commit/merge/release boundary, run the
+  complete project matrix once on the final candidate. Do not attach this cost
+  to every small commit or edit.
+- **Conditional specialized proof:** only when the acceptance criteria depend
+  on a VM, GPU, OS/ABI, browser, hardware, performance, stress, or another
+  specialized environment, run that proof against the exact candidate commit
+  or artifact digest. If none applies, record an explicit N/A. Any candidate
+  change invalidates all candidate-bound evidence, so the changed candidate
+  needs a fresh matrix and fresh specialized proof when applicable.
+
+The shared `a reviewed guard candidate` enforces the first two boundaries: `fast` for
+normal source changes, optional `integration` for high-risk changes, and a
+path-keyed independent-review requirement. It intentionally excludes the
+full/candidate matrix from automatic per-edit execution. `harness-load-advisor.py`
+reports when a costly or specialized gate is misrouted into a lower-risk smoke.
+Full-matrix and specialized-environment evidence are explicit candidate steps,
+not silent repeated work.
+
 ---
 
 ## Four Sub-Agent Roles
