@@ -47,7 +47,7 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `alternatives/` | 19 | 0 | 0 | 19 |
 | `docs/` | 22 | 0 | 0 | 22 |
 | `evals/` | 2 | 0 | 0 | 2 |
-| `hooks/` | 59 | 11 | 1 | 47 |
+| `hooks/` | 59 | 12 | 1 | 46 |
 | `principles/` | 31 | 30 | 0 | 1 |
 | `references/` | 1 | 0 | 0 | 1 |
 | `rules/` | 35 | 28 | 0 | 7 |
@@ -55,11 +55,11 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `skills/` | 240 | 155 | 0 | 85 |
 | `templates/` | 49 | 33 | 0 | 16 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **550** | **257** | **2** | **291** |
+| **Total** | **550** | **258** | **2** | **290** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
-- `hooks/`: reviewed-lane Ported (11): `command-injection-guard.py`, `destructive-command-guard.py`, `docs-staleness-guard.py`, `git-destructive-guard.py`, `kb-validate-gate.py`, `over-engineering-advisor.py`, `safety_common.py`, `self-harm-guard.py`, `session-handoff-check.py`, `session-handoff-reminder.py`, `verify-deleted-guard.py`; Rejected (1): `secret-leak-guard.py`
+- `hooks/`: reviewed-lane Ported (12): `command-injection-guard.py`, `destructive-command-guard.py`, `docs-staleness-guard.py`, `git-destructive-guard.py`, `kb-validate-gate.py`, `over-engineering-advisor.py`, `safety_common.py`, `self-harm-guard.py`, `session-handoff-check.py`, `session-handoff-reminder.py`, `transfer-contract-guard.py`, `verify-deleted-guard.py`; Rejected (1): `secret-leak-guard.py`
 - `scripts/`: Rejected (1): `gemini-switch.sh`
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
@@ -1311,6 +1311,11 @@ Candidate groups:
   `claude-attribution-guard.py`, `pre-push-claude-attribution.py`, `keyword-skill-router.py`
   (explicitly redundant given Hermes's own semantic skill loader, per `runtime-wiring.md`),
   `ask-question-guard.py` (specific to Claude Code's `AskUserQuestion` tool).
+- transfer contracts — **`transfer-contract-guard.py` ported** (2026-08-09, see below). New
+  upstream feature not on this list until it landed via PR #27 (a manual upstream-watch
+  dispatch triggered mid-Wave-4, not the scheduled cron — upstream had drifted since the
+  previous sync). No sibling candidates in this group; the rule (`transfer-contracts.md`) and
+  template (`transfer-contract.json`) it depends on are covered by the same port.
 
 Acceptance criteria:
 
@@ -1643,6 +1648,78 @@ Full verification: `python3 scripts/validate_adapter.py` passes end to end — a
 suites now run automatically in CI (79/79 combined cases), plus the full install/remove cycle
 covering `hooks/config-kit`. `scripts/update_backlog_counts.py` picked up both new reviewed-hook
 entries automatically (hooks/ row: Ported 9->11, Left out 48->46).
+
+#### Upstream drift mid-Wave-4: merged PR #27, updated `verify-deleted-guard.py`, ported `transfer-contract-guard.py` (2026-08-09) — eleventh Wave 4 guard, first hook spanning all three event patterns at once
+
+Operator asked to check for the sync PR the scheduled cron should have produced by now
+("Раз апстрим обновился - должно быть появился PR?"). It hadn't: the `upstream-watch.yml`
+cron (`17 */12 * * *`) last ran at 13:15 UTC when upstream was still at the previously-synced
+SHA — the 4 new upstream commits landed sometime after that run, before its next scheduled
+firing (~01:17 UTC the next day). Rather than wait, dispatched the workflow manually
+(`gh workflow run upstream-watch.yml`), which created PR #27 immediately. Reviewed its full
+diff before merging, per the operator's explicit instruction to inspect what's new and port
+it before continuing the Tier-2 candidate queue.
+
+**Two findings, both requiring action:**
+
+1. **`hooks/verify-deleted-guard.py` (already ported, v0.4.3) had drifted upstream** — a new
+   `verify_move()` function (mv, PowerShell `Move-Item`, `robocopy /move`) plus a matching
+   dispatch entry, +41 lines, the 4 already-ported verify functions untouched. Carried over
+   unchanged (same harness-agnostic regex+filesystem shape as the other verifiers), added 2
+   matching test cases (6/6 -> 8/8), updated `mappings/reviewed-hooks.yaml`'s `source_sha256`
+   and `functional_test` evidence. This is the adapter's first case of an already-ported hook
+   needing a content update from upstream drift, not just a fresh port — same discipline
+   applies (content-integrity check, re-verify against `agent.shell_hooks.run_once`, update the
+   manifest entry in place rather than adding a duplicate).
+2. **A genuinely new upstream feature**: "Transfer Contracts" — `rules/transfer-contracts.md`
+   (new rule, not previously in this backlog's candidate list at all), `templates/
+   transfer-contract.json` (new template), and `hooks/transfer-contract-guard.py` (new hook,
+   346 lines). Every clone/copy/move/sync command must reference a durable JSON contract
+   (source, destination, verification plan, source-cleanup intent) so a second agent can
+   resume from one small record instead of reconstructing intent from shell history — directly
+   extends this operator's own `deletion-confirm-and-verify.md` rule (already ported as
+   `safe-deletion`) to the copy/move case, not just delete.
+
+**`transfer-contract-guard.py` is the first hook to span all three Hermes-adaptation patterns
+established across this whole Wave** in a single file: `pre_tool_call` (genuinely blocks a
+transfer command with no/incomplete contract, same as `destructive-command-guard.py`),
+`post_tool_call` (audit-log-only, same verified gap as `verify-deleted-guard.py`), and
+`pre_verify`+`on_session_end` dual-registered (same design as `session-handoff-reminder.py`/
+`kb-validate-gate.py`). Presented this scope to the operator before implementing, along with
+the compounding consequence: this hook's Stop-equivalent portion becomes a **third** consumer
+of the shared 3-nudge-per-session `pre_verify` budget (after `session-handoff-reminder.py` and
+`kb-validate-gate.py`). Operator approved proceeding with the same accepted tradeoff already
+in place for `kb-validate-gate.py` — nothing is ever silently lost, since every `pre_verify`
+consumer here is dual-registered with `on_session_end`.
+
+Contract-validation logic (`_contract_errors()`, `_transfer_kind()` detection,
+`_verified_path_errors()`) carried over unchanged — harness-agnostic. Adapted: tool_name check
+`terminal` not `{Bash, PowerShell}` (Hermes has one unified shell tool, no separate PowerShell
+tool); directory recognition extended from `.claude/.agent/.codex` to also include
+`.hermes/transfers/` as the Hermes-native default, keeping the other three for cross-harness
+compatibility; `main()`'s dispatch simplified to Hermes's always-explicit `hook_event_name`
+field, dropping upstream's Claude-Code-specific fallback heuristics that exist only because
+Claude Code hook events don't always cleanly self-identify.
+
+New test suite `hermes/hooks/tests/test_transfer_contract_guard.py` (12/12), stdlib-only, runs
+in CI, covering all three event registrations. Two test-authoring bugs found and fixed before
+the suite passed clean (documented in `mappings/reviewed-hooks.yaml`'s `functional_test` field):
+a contract fixture using `operation.kind="copy"` against an `rsync` command (which
+`_transfer_kind()` correctly detects as `"sync"`, not `"copy"` — an `rsync` command is a sync
+operation) and a "no transfers dir" case that accidentally reused a temp dir already populated
+with contracts from an earlier case in the same test run. Also verified directly against
+Hermes's real dispatch code path (`agent.shell_hooks.run_once`, isolated `ShellHookSpec`
+objects on all four events this hook responds to, calling process chdir'd into a sandbox, no
+touch to `~/.hermes/config.yaml`/allowlist): confirmed `pre_tool_call` genuinely blocks,
+`post_tool_call`/`on_session_end` always parse to `None` regardless of content, `pre_verify`
+genuinely returns a non-null `{"action":"continue",...}`, plus a repeat of the
+exit-code-never-blocks regression check.
+
+Full verification: `python3 scripts/validate_adapter.py` passes end to end — eleven hook test
+suites now run automatically in CI (93/93 combined cases -- 79 from before this segment, +2 for
+the new verify-deleted-guard.py mv cases, +12 for transfer-contract-guard.py), plus the full install/remove cycle
+covering `hooks/config-kit`. `scripts/update_backlog_counts.py` picked up the new reviewed-hook
+entry automatically (hooks/ row: Files in snapshot 58->59, Ported 11->12, Left out 46->46).
 
 ## Reviewed-script lane pilot — status (2026-08-04)
 

@@ -36,9 +36,13 @@ like its upstream original:
   `extra.is_first_turn`) genuinely injects context into the model's first message, same as a
   working `pre_tool_call` block; `pre_verify` genuinely nudges the live agent but only on turns
   where the agent edited a file, capped at 3 nudges *per session, shared across every hook
-  registered on it* (`session-handoff-reminder.py` and `kb-validate-gate.py` both use it — see
+  registered on it* (`session-handoff-reminder.py`, `kb-validate-gate.py`, and
+  `transfer-contract-guard.py`'s Stop-equivalent portion all use it — see
   `kb-validate-gate.py`'s own section for the tradeoff that creates); `on_session_end` is
   audit-log-only like `post_tool_call`. See each hook's own section below.
+- **`transfer-contract-guard.py` spans all three buckets at once** — one hook, registered on
+  `pre_tool_call` (genuine block), `post_tool_call` (audit-log-only), and both `pre_verify`/
+  `on_session_end` (dual-registered). See its own section below.
 
 ## Available hooks
 
@@ -234,6 +238,46 @@ session, add your own marker-file check before registering it, or register only
 Bypass: `HERMES_SKIP_KB_GATE=1` or `.hermes/.skip-kb-gate`. Ships its own `--self-test`:
 `python3 hermes/hooks/kb-validate-gate.py --self-test`.
 
+### `transfer-contract-guard.py` (spans all three flavors — see note above)
+
+Guards clone/copy/move/sync commands (`git clone`, `robocopy`, `rclone`, `rsync`, `scp`,
+`sftp`, `xcopy`, `cp`/`copy`/`Copy-Item`, `mv`/`move`/`Move-Item`) with a durable JSON contract
+under `.hermes/transfers/<id>.json` (see `templates/transfer-contract.json`'s shape). Register
+on all three events:
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "terminal"
+      command: "python3 ~/.hermes/hooks/config-kit/transfer-contract-guard.py"
+      timeout: 10
+  post_tool_call:
+    - matcher: "terminal"
+      command: "python3 ~/.hermes/hooks/config-kit/transfer-contract-guard.py"
+      timeout: 10
+  pre_verify:
+    - command: "python3 ~/.hermes/hooks/config-kit/transfer-contract-guard.py"
+      timeout: 10
+  on_session_end:
+    - command: "python3 ~/.hermes/hooks/config-kit/transfer-contract-guard.py"
+      timeout: 10
+```
+
+- `pre_tool_call` genuinely blocks a transfer command that has no
+  `# transfer-contract: .hermes/transfers/<id>.json` marker, or whose contract is missing,
+  incomplete, or describes a different operation than the command actually runs.
+- `post_tool_call` reminds (stderr + safety log, audit-log-only) to update the contract and
+  verify the destination before touching the source.
+- `pre_verify`/`on_session_end` block/log while any contract stays open (`planned`/`running`/
+  `verification_pending`) or closed-but-invalid — the orphan-transfer gate. This is a **third**
+  consumer of the shared 3-nudge `pre_verify` budget, alongside `session-handoff-reminder.py`
+  and `kb-validate-gate.py` — see `kb-validate-gate.py`'s section above for the tradeoff.
+
+Recognizes `.hermes/transfers/`, `.claude/transfers/`, `.agent/transfers/`, and
+`.codex/transfers/` (cross-harness: a contract written by another harness working the same
+repo is still enforced). No bypass — this hook only ever blocks on a genuinely missing or
+invalid contract; write the contract instead of looking for an escape hatch.
+
 ## Activating any hook
 
 Add the relevant block above to your own `~/.hermes/config.yaml`, then approve it at the
@@ -266,6 +310,7 @@ python3 hermes/hooks/tests/test_session_handoff_check.py
 python3 hermes/hooks/tests/test_session_handoff_reminder.py
 python3 hermes/hooks/tests/test_docs_staleness_guard.py
 python3 hermes/hooks/tests/test_kb_validate_gate.py
+python3 hermes/hooks/tests/test_transfer_contract_guard.py
 ```
 
 For deeper verification against Hermes's actual dispatch code path

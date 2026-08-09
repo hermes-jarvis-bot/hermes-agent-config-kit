@@ -259,8 +259,8 @@
 - path: hermes/hooks/verify-deleted-guard.py
   source_repo: AnastasiyaW/claude-code-config
   source_path: hooks/verify-deleted-guard.py
-  source_sha256: d1ba1ecd6898b7cd790110514c1f02544c6d8e6d63648b336670bc45f1710928
-  reviewed_at: "2026-08-08"
+  source_sha256: a6cbfc1ceb466bfcffa5ba1710359c73d0d627e9fcc5f3b13769b82d2ad34e94
+  reviewed_at: "2026-08-09"
   reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
   summary: >
     post_tool_call(terminal) after-the-fact verifier for destructive commands (rm/rmdir,
@@ -278,6 +278,10 @@
     equivalent) replaced with `extra.status == "blocked"` (the real Hermes analog of "this
     call never executed" -- a non-zero exit deliberately does NOT skip verification, since a
     partial failure is exactly what this hook exists to catch).
+    Updated 2026-08-09: upstream added `verify_move()` (mv, PowerShell `Move-Item`, `robocopy
+    /move`) in a routine sync (PR #27, no drift in the 4 functions already ported) -- carried
+    over unchanged, same harness-agnostic regex+filesystem shape as the other verifiers, plus
+    a matching dispatch entry.
     IMPORTANT CAPABILITY GAP (verified against the live model_tools.py/agent/shell_hooks.py
     source): Hermes's post_tool_call is a fire-and-forget observer hook --
     `_emit_post_tool_call_hook()` calls `invoke_hook("post_tool_call", ...)` and discards its
@@ -288,16 +292,19 @@
     operator-inspectable, but there is no live in-turn nudge. Revisit if a future Hermes
     version adds a context-injection path for post_tool_call.
   functional_test: >
-    Verified 2026-08-08 two ways. (1) stdlib-only subprocess test
-    (hermes/hooks/tests/test_verify_deleted_guard.py, runs in CI): 6/6 cases passed
+    Verified 2026-08-08 two ways, re-verified 2026-08-09 after the `verify_move()` addition
+    (8/8, up from 6/6). (1) stdlib-only subprocess test
+    (hermes/hooks/tests/test_verify_deleted_guard.py, runs in CI): 8/8 cases passed
     (non-destructive command silent; wrong tool silent; a still-existing target logs "STILL
     PRESENT"; a gone target logs "verified deletion"; a blocked call is skipped entirely; a
-    recognized-but-unstrategized destructive command logs its hint). (2) Direct verification
-    against Hermes's real dispatch code path (agent.shell_hooks.run_once, Hermes Agent
-    v0.19.0) using an isolated ShellHookSpec on the post_tool_call event that never touched
-    ~/.hermes/config.yaml or the shell-hooks allowlist: confirmed the hook's stdout is always
-    parsed to None regardless of content (proving the audit-log-only capability gap
-    empirically, not just by reading the source), plus a repeat of the exit-code-never-blocks
+    recognized-but-unstrategized destructive command logs its hint; an `mv` source that still
+    exists logs "STILL PRESENT"; an `mv` source that is gone logs "verified deletion"). (2)
+    Direct verification against Hermes's real dispatch code path (agent.shell_hooks.run_once,
+    Hermes Agent v0.19.0) using an isolated ShellHookSpec on the post_tool_call event that
+    never touched ~/.hermes/config.yaml or the shell-hooks allowlist: confirmed the hook's
+    stdout is always parsed to None regardless of content (proving the audit-log-only
+    capability gap empirically, not just by reading the source), plus a repeat of the
+    exit-code-never-blocks
     regression check.
   files:
     - hermes/hooks/tests/test_verify_deleted_guard.py
@@ -519,3 +526,66 @@
     of content, plus a repeat of the exit-code-never-blocks regression check.
   files:
     - hermes/hooks/tests/test_kb_validate_gate.py
+
+- path: hermes/hooks/transfer-contract-guard.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/transfer-contract-guard.py
+  source_sha256: 27620f0c10dd1892b942178971b18baa7ae242eba09b6a03b87c0c1d31f5a904
+  reviewed_at: "2026-08-09"
+  reviewed_by: "operator-directed Wave 4 continuation after upstream sync PR #27, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  summary: >
+    Guards clone/copy/move/sync commands with a durable, handoff-friendly JSON contract
+    (see templates/transfer-contract.json's Hermes-native copy) recording source, destination,
+    verification plan, and source-cleanup intent -- so a second agent can resume from one small
+    record instead of reconstructing intent from shell history. New upstream feature discovered
+    via a manual upstream-watch dispatch (upstream had drifted since the last sync; PR #27
+    merged first). The single upstream file spans all three Hermes-adaptation patterns already
+    established in this repo, each verified individually rather than assumed to carry over:
+    - `pre_tool_call` -- genuinely blocks a transfer command through `terminal` without a
+      complete `# transfer-contract: <path>.json` marker, same mechanism as
+      destructive-command-guard.py etc.
+    - `post_tool_call` -- audit-log-only (Hermes discards this event's return value, same
+      verified gap as verify-deleted-guard.py/over-engineering-advisor.py). Reminds to update
+      the contract and verify the destination in the shared safety log + stderr, not live.
+    - `pre_verify` + `on_session_end`, dual-registered like session-handoff-reminder.py and
+      kb-validate-gate.py -- `pre_verify` gives a genuine live block while an open or invalid
+      contract remains (gated on file-edit turns and the session-wide 3-nudge budget, now
+      shared with THREE consumers: session-handoff-reminder.py, kb-validate-gate.py, and this
+      hook); `on_session_end` is the audit-log fallback firing every turn regardless.
+    All contract-validation logic (`_contract_errors()`, `_transfer_kind()` detection,
+    `_verified_path_errors()`) carried over unchanged -- harness-agnostic. Adapted: tool_name
+    check "terminal" not "{Bash, PowerShell}" (Hermes has one unified shell tool); directory
+    recognition extended from `.claude/.agent/.codex` to also include `.hermes/transfers/` as
+    the Hermes-native default, keeping the other three for cross-harness compatibility (a
+    contract written by another harness working the same repo is still enforced); `main()`'s
+    dispatch simplified to Hermes's always-explicit `hook_event_name` field, dropping upstream's
+    Claude-Code-specific fallback heuristics (`not tool and "transcript_path" in event`,
+    `"tool_response" in event`) that exist only because Claude Code hook events don't always
+    cleanly self-identify -- Hermes's wire protocol always does.
+    OPERATOR-APPROVED DESIGN (2026-08-09, extends the kb-validate-gate.py decision): accepted
+    that this hook's Stop-equivalent portion becomes a third consumer of the shared 3-nudge
+    pre_verify budget. Same mitigation already in place: dual-registered with on_session_end,
+    so nothing is ever silently lost, just possibly not surfaced live in a session where all
+    three hooks would otherwise want to speak.
+  functional_test: >
+    Verified 2026-08-09 two ways. (1) stdlib-only subprocess test
+    (hermes/hooks/tests/test_transfer_contract_guard.py, runs in CI): 12/12 cases passed,
+    covering all three event registrations (pre_tool_call allows benign/wrong-tool commands
+    and blocks a transfer with no marker and one with a mismatched operation.kind, allows one
+    with a complete matching contract; post_tool_call reminds via stderr only with
+    ok/error-derived outcome; pre_verify live-blocks an open transfer while on_session_end logs
+    the same condition to stderr only; an unknown hook_event_name stays silent). Two test-authoring
+    bugs found and fixed before the suite passed clean: a contract fixture using
+    operation.kind="copy" against an `rsync` command (which `_transfer_kind()` detects as
+    "sync", not "copy" -- an rsync command is a sync operation, not a plain copy) and a
+    "no transfers dir" case that reused a temp dir already populated with contracts from an
+    earlier case in the same suite. (2) Direct verification against Hermes's real dispatch
+    code path (agent.shell_hooks.run_once, Hermes Agent v0.19.0) using isolated ShellHookSpec
+    objects on all three events (pre_tool_call, post_tool_call, pre_verify, on_session_end),
+    calling process chdir'd into a sandbox, that never touched ~/.hermes/config.yaml or the
+    shell-hooks allowlist: confirmed pre_tool_call genuinely blocks, post_tool_call and
+    on_session_end always parse to None regardless of content, pre_verify genuinely returns a
+    non-null {"action":"continue",...}, plus a repeat of the exit-code-never-blocks regression
+    check.
+  files:
+    - hermes/hooks/tests/test_transfer_contract_guard.py

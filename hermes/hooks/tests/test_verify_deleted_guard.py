@@ -55,6 +55,16 @@ def build_cases(existing: str, missing: str) -> list[tuple[str, dict, str | None
             {"tool_name": "terminal", "tool_input": {"command": "kill -9 99999"}},
             "no auto-verify strategy",
         ),
+        (
+            "mv source that still exists -> still-present",
+            {"tool_name": "terminal", "tool_input": {"command": f"mv {existing} /tmp/dest"}},
+            "STILL PRESENT",
+        ),
+        (
+            "mv source that is gone -> verified-deleted",
+            {"tool_name": "terminal", "tool_input": {"command": f"mv {missing} /tmp/dest"}},
+            "verified deletion",
+        ),
     ]
 
 

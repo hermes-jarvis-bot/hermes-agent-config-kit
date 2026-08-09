@@ -33,9 +33,13 @@ Reviewed-hook lane (см. `SECURITY.md`). Это Hermes-native реимплем�
   фильтром `extra.is_first_turn`) реально инъектирует контекст в первое сообщение модели, как
   рабочий `pre_tool_call`-блок; `pre_verify` реально подталкивает живого агента, но только на
   ходах с правкой файлов, максимум 3 nudge *на сессию, общих для всех хуков, зарегистрированных
-  на это событие* (`session-handoff-reminder.py` и `kb-validate-gate.py` оба его используют —
-  см. секцию `kb-validate-gate.py` про трейд-офф отсюда); `on_session_end` — только аудит-лог,
-  как `post_tool_call`. См. секцию каждого хука ниже.
+  на это событие* (`session-handoff-reminder.py`, `kb-validate-gate.py` и Stop-часть
+  `transfer-contract-guard.py` все его используют — см. секцию `kb-validate-gate.py` про
+  трейд-офф отсюда); `on_session_end` — только аудит-лог, как `post_tool_call`. См. секцию
+  каждого хука ниже.
+- **`transfer-contract-guard.py` покрывает все три корзины одновременно** — один хук,
+  зарегистрированный на `pre_tool_call` (реальный блок), `post_tool_call` (только аудит-лог) и
+  оба `pre_verify`/`on_session_end` (двойная регистрация). См. его собственную секцию ниже.
 
 ## Доступные хуки
 
@@ -237,6 +241,42 @@ audit-лог через `on_session_end` всё равно сработает �
 Обход: `HERMES_SKIP_KB_GATE=1` или `.hermes/.skip-kb-gate`. Несёт свой `--self-test`:
 `python3 hermes/hooks/kb-validate-gate.py --self-test`.
 
+### `transfer-contract-guard.py` (покрывает все три корзины — см. заметку выше)
+
+Требует durable JSON-контракт под `.hermes/transfers/<id>.json` для команд
+clone/copy/move/sync (`git clone`, `robocopy`, `rclone`, `rsync`, `scp`, `sftp`, `xcopy`,
+`cp`/`copy`/`Copy-Item`, `mv`/`move`/`Move-Item`) — см. форму в
+`templates/transfer-contract.json`. Регистрируется на все три события:
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "terminal"
+      command: "python3 ~/.hermes/hooks/config-kit/transfer-contract-guard.py"
+      timeout: 10
+  post_tool_call:
+    - matcher: "terminal"
+      command: "python3 ~/.hermes/hooks/config-kit/transfer-contract-guard.py"
+      timeout: 10
+  pre_verify:
+    - command: "python3 ~/.hermes/hooks/config-kit/transfer-contract-guard.py"
+      timeout: 10
+  on_session_end:
+    - command: "python3 ~/.hermes/hooks/config-kit/transfer-contract-guard.py"
+      timeout: 10
+```
+
+- `pre_verify`/`on_session_end` блокируют/логируют, пока хоть один контракт открыт
+  (`planned`/`running`/`verification_pending`) или закрыт-но-невалиден — гейт против
+  «осиротевшего» переноса. Это **третий** потребитель общего бюджета `pre_verify` (3
+  nudge/сессия), вместе с `session-handoff-reminder.py` и `kb-validate-gate.py` — см. секцию
+  `kb-validate-gate.py` выше про этот трейд-офф.
+
+Распознаёт `.hermes/transfers/`, `.claude/transfers/`, `.agent/transfers/` и
+`.codex/transfers/` (cross-harness: контракт, написанный другим harness в том же репо, всё
+равно исполняется). Без обхода — этот хук блокирует только на реально отсутствующем или
+невалидном контракте; напиши контракт вместо поиска лазейки.
+
 ## Активация любого хука
 
 Добавь соответствующий блок выше в свой `~/.hermes/config.yaml`, затем подтверди на запросе
@@ -269,6 +309,7 @@ python3 hermes/hooks/tests/test_session_handoff_check.py
 python3 hermes/hooks/tests/test_session_handoff_reminder.py
 python3 hermes/hooks/tests/test_docs_staleness_guard.py
 python3 hermes/hooks/tests/test_kb_validate_gate.py
+python3 hermes/hooks/tests/test_transfer_contract_guard.py
 ```
 
 Для более глубокой верификации против реального dispatch-кода Hermes
