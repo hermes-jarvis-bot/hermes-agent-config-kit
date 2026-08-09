@@ -28,11 +28,14 @@ Reviewed-hook lane (см. `SECURITY.md`). Это Hermes-native реимплем�
   отличие от поведения апстрима в Claude Code. Пересмотреть, если будущая версия Hermes
   добавит путь инъекции контекста для `post_tool_call`.
 - **`pre_llm_call`/`pre_verify`/`on_session_end`-хуки** (`session-handoff-check.py`,
-  `session-handoff-reminder.py`) — смешанная корзина, каждый проверен индивидуально, а не по
-  аналогии: `pre_llm_call` (с фильтром `extra.is_first_turn`) реально инъектирует контекст в
-  первое сообщение модели, как рабочий `pre_tool_call`-блок; `pre_verify` реально подталкивает
-  живого агента, но только на ходах с правкой файлов, максимум 3 nudge на сессию;
-  `on_session_end` — только аудит-лог, как `post_tool_call`. См. секцию каждого хука ниже.
+  `session-handoff-reminder.py`, `docs-staleness-guard.py`, `kb-validate-gate.py`) —
+  смешанная корзина, каждый проверен индивидуально, а не по аналогии: `pre_llm_call` (с
+  фильтром `extra.is_first_turn`) реально инъектирует контекст в первое сообщение модели, как
+  рабочий `pre_tool_call`-блок; `pre_verify` реально подталкивает живого агента, но только на
+  ходах с правкой файлов, максимум 3 nudge *на сессию, общих для всех хуков, зарегистрированных
+  на это событие* (`session-handoff-reminder.py` и `kb-validate-gate.py` оба его используют —
+  см. секцию `kb-validate-gate.py` про трейд-офф отсюда); `on_session_end` — только аудит-лог,
+  как `post_tool_call`. См. секцию каждого хука ниже.
 
 ## Доступные хуки
 
@@ -186,6 +189,54 @@ hooks:
 Переопределение директории handoff'ов — тот же `HERMES_HANDOFF_DIR`. Без обхода — никогда не
 блокирует.
 
+### `docs-staleness-guard.py`
+
+На первом LLM-вызове сессии флагает, если `openwiki/` или `docs/layers/` отстали от `HEAD`
+больше чем на `HERMES_DOCS_STALE_COMMITS` (по умолчанию 20) коммитов, или если `openwiki/`
+существует, но ни `AGENTS.md`, ни `CLAUDE.md` на него не указывает. Git-based, cooldown 7 дней
+между напоминаниями для одного проекта.
+
+```yaml
+hooks:
+  pre_llm_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/docs-staleness-guard.py"
+      timeout: 10
+```
+
+Дополнительные якоря: список repo-относительных путей в `.hermes/.docs-anchors` (по одному на
+строку, `#` — комментарий). Отключить для проекта: тронуть `.hermes/.skip-docs-staleness`.
+Несёт свой собственный `--self-test` (чистая git/filesystem-логика — запускается прямо, без
+установки Hermes): `python3 hermes/hooks/docs-staleness-guard.py --self-test`.
+
+### `kb-validate-gate.py` (двойная регистрация — см. заметку выше)
+
+Блокирует/логирует, пока собственный `scripts/validate_kb.py` репозитория (см. шаблон
+`kb-skeleton`) сообщает, что база знаний рассинхронизирована с кодом, или пока `[LONG-RUN]`-
+проект (`feature_list.json` присутствует) не имеет вообще никакой agent-документации.
+
+```yaml
+hooks:
+  pre_verify:
+    - command: "python3 ~/.hermes/hooks/config-kit/kb-validate-gate.py"
+      timeout: 30
+  on_session_end:
+    - command: "python3 ~/.hermes/hooks/config-kit/kb-validate-gate.py"
+      timeout: 30
+```
+
+В отличие от `session-handoff-reminder.py`, этот хук готов блокировать на *каждом* подходящем
+ходе, пока KB остаётся сломанной — он не подавляет себя после одного nudge. Значит, он сильнее
+конкурирует за общий бюджет `pre_verify` (3 nudge/сессия): в редком случае, когда KB реально
+сломана *и* сессия при этом долгая без свежего handoff, этот хук может выжрать весь бюджет и
+оставить `session-handoff-reminder.py` без живого nudge до конца сессии (его запись в
+audit-лог через `on_session_end` всё равно сработает — ничего не теряется совсем, просто может
+не дойти живьём). Если хочешь ограничить этот хук одним nudge за сессию — добавь свою проверку
+маркер-файла перед регистрацией, или зарегистрируй только `on_session_end`, пропустив
+`pre_verify`.
+
+Обход: `HERMES_SKIP_KB_GATE=1` или `.hermes/.skip-kb-gate`. Несёт свой `--self-test`:
+`python3 hermes/hooks/kb-validate-gate.py --self-test`.
+
 ## Активация любого хука
 
 Добавь соответствующий блок выше в свой `~/.hermes/config.yaml`, затем подтверди на запросе
@@ -216,6 +267,8 @@ python3 hermes/hooks/tests/test_verify_deleted_guard.py
 python3 hermes/hooks/tests/test_over_engineering_advisor.py
 python3 hermes/hooks/tests/test_session_handoff_check.py
 python3 hermes/hooks/tests/test_session_handoff_reminder.py
+python3 hermes/hooks/tests/test_docs_staleness_guard.py
+python3 hermes/hooks/tests/test_kb_validate_gate.py
 ```
 
 Для более глубокой верификации против реального dispatch-кода Hermes

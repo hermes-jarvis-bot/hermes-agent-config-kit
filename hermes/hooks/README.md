@@ -31,11 +31,14 @@ like its upstream original:
   Claude Code behavior. Revisit if a future Hermes version adds a context-injection path for
   `post_tool_call`.
 - **`pre_llm_call`/`pre_verify`/`on_session_end` hooks** (`session-handoff-check.py`,
-  `session-handoff-reminder.py`) — a mixed bucket, verified individually rather than assumed:
-  `pre_llm_call` (filtered to `extra.is_first_turn`) genuinely injects context into the model's
-  first message, same as a working `pre_tool_call` block; `pre_verify` genuinely nudges the
-  live agent but only on turns where the agent edited a file, capped at 3 nudges per session;
-  `on_session_end` is audit-log-only like `post_tool_call`. See each hook's own section below.
+  `session-handoff-reminder.py`, `docs-staleness-guard.py`, `kb-validate-gate.py`) — a mixed
+  bucket, verified individually rather than assumed: `pre_llm_call` (filtered to
+  `extra.is_first_turn`) genuinely injects context into the model's first message, same as a
+  working `pre_tool_call` block; `pre_verify` genuinely nudges the live agent but only on turns
+  where the agent edited a file, capped at 3 nudges *per session, shared across every hook
+  registered on it* (`session-handoff-reminder.py` and `kb-validate-gate.py` both use it — see
+  `kb-validate-gate.py`'s own section for the tradeoff that creates); `on_session_end` is
+  audit-log-only like `post_tool_call`. See each hook's own section below.
 
 ## Available hooks
 
@@ -183,6 +186,54 @@ Both share the same `.hermes/.handoff-reminded`/`.hermes/.session-start` marker 
 whichever fires first in a turn suppresses the other for the rest of the session. Handoff
 directory override: same `HERMES_HANDOFF_DIR` as above. No bypass — it never blocks.
 
+### `docs-staleness-guard.py`
+
+On the first LLM call of a session, flags when `openwiki/` or `docs/layers/` has fallen more
+than `HERMES_DOCS_STALE_COMMITS` (default 20) commits behind `HEAD`, or when `openwiki/`
+exists but neither `AGENTS.md` nor `CLAUDE.md` points to it. Git-based, cooldown of 7 days
+between nudges for the same project.
+
+```yaml
+hooks:
+  pre_llm_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/docs-staleness-guard.py"
+      timeout: 10
+```
+
+Extra anchors: list repo-relative paths in `.hermes/.docs-anchors` (one per line, `#` for
+comments). Opt out per project: touch `.hermes/.skip-docs-staleness`. Ships its own
+`--self-test` (pure git/filesystem logic — run it directly, no Hermes install needed):
+`python3 hermes/hooks/docs-staleness-guard.py --self-test`.
+
+### `kb-validate-gate.py` (dual-registered — see note above)
+
+Blocks/logs while the repo's own `scripts/validate_kb.py` (see the `kb-skeleton` template)
+reports the knowledge base out of sync with the code, or while a `[LONG-RUN]` project
+(`feature_list.json` present) has no agent docs at all.
+
+```yaml
+hooks:
+  pre_verify:
+    - command: "python3 ~/.hermes/hooks/config-kit/kb-validate-gate.py"
+      timeout: 30
+  on_session_end:
+    - command: "python3 ~/.hermes/hooks/config-kit/kb-validate-gate.py"
+      timeout: 30
+```
+
+Unlike `session-handoff-reminder.py`, this hook is willing to block on *every* eligible turn
+while the KB stays broken — it does not self-suppress after one nudge. That means it competes
+harder for the shared `pre_verify` 3-nudge/session budget: in the rare case where the KB is
+genuinely broken *and* the session is also long with no fresh handoff, this hook could consume
+the whole budget and leave `session-handoff-reminder.py` with no live nudge for the rest of
+that session (its `on_session_end` audit-log entry still fires regardless — nothing is ever
+silently lost, just possibly not surfaced live). If you'd rather cap this hook to one nudge per
+session, add your own marker-file check before registering it, or register only
+`on_session_end` and skip `pre_verify` entirely.
+
+Bypass: `HERMES_SKIP_KB_GATE=1` or `.hermes/.skip-kb-gate`. Ships its own `--self-test`:
+`python3 hermes/hooks/kb-validate-gate.py --self-test`.
+
 ## Activating any hook
 
 Add the relevant block above to your own `~/.hermes/config.yaml`, then approve it at the
@@ -213,6 +264,8 @@ python3 hermes/hooks/tests/test_verify_deleted_guard.py
 python3 hermes/hooks/tests/test_over_engineering_advisor.py
 python3 hermes/hooks/tests/test_session_handoff_check.py
 python3 hermes/hooks/tests/test_session_handoff_reminder.py
+python3 hermes/hooks/tests/test_docs_staleness_guard.py
+python3 hermes/hooks/tests/test_kb_validate_gate.py
 ```
 
 For deeper verification against Hermes's actual dispatch code path

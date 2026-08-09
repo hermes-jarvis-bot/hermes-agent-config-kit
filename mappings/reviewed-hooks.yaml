@@ -68,12 +68,17 @@
     session-handoff-reminder.py below, no source_sha256 change since this file has no single
     upstream source line-for-line equivalent to diff against (it's this adapter's own shared
     module, reimplemented from safety_common.py, not a straight port).
+    Updated 2026-08-09: added `untrusted_block()`, promoted here from a kb-validate-gate.py-only
+    helper since wrapping third-party/repository-controlled output before it lands in the
+    model's context (explicit delimiters + stated provenance) is a generically reusable safety
+    practice, not specific to that one hook.
   functional_test: >
     See the destructive-command-guard.py entry below — this module has no
     independent entry point, so it is exercised only through that guard's
     tests. `filename_timestamp()` is exercised indirectly by
     hermes/hooks/tests/test_session_handoff_check.py and
-    hermes/hooks/tests/test_session_handoff_reminder.py.
+    hermes/hooks/tests/test_session_handoff_reminder.py. `untrusted_block()` is exercised
+    indirectly by hermes/hooks/tests/test_kb_validate_gate.py.
 
 - path: hermes/hooks/destructive-command-guard.py
   source_repo: AnastasiyaW/claude-code-config
@@ -428,3 +433,89 @@
     reading the source -- plus a repeat of the exit-code-never-blocks regression check.
   files:
     - hermes/hooks/tests/test_session_handoff_reminder.py
+
+- path: hermes/hooks/docs-staleness-guard.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/docs-staleness-guard.py
+  source_sha256: af75b3b291c72fa8e8f9cbdb7e2325a6ba961df30047e7372d3fcbe3d90ac9ef
+  reviewed_at: "2026-08-09"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  summary: >
+    Flags when a repo's agent-facing docs (openwiki/, docs/layers/) have fallen behind the
+    code, using git commit-count-since-anchor as the freshness signal, plus a pointer check
+    (openwiki/ present but not referenced from AGENTS.md/CLAUDE.md). Reimplemented from the
+    upstream SessionStart hook onto pre_llm_call+is_first_turn -- same event choice as
+    session-handoff-check.py, same reasoning (on_session_start discards its return; pre_llm_call
+    genuinely reaches the model). All git/filesystem detection logic (detect(),
+    _project_anchors(), the git helpers) carried over unchanged -- harness-agnostic. Adapted:
+    .claude/ -> .hermes/ for all marker/anchor-list/opt-out paths; CLAUDE_DOCS_STALE_COMMITS ->
+    HERMES_DOCS_STALE_COMMITS; instructional text retargeted from upstream rule paths
+    (rules/agent-docs-freshness.md, rules/safety-billing.md) to their ported skill equivalents
+    (documentation-freshness, billing-spend-controls). The upstream `--self-test` mode (pure
+    git/filesystem logic, zero Hermes wire-protocol dependency) was carried over verbatim and
+    still passes -- a real, independent verification surface this hook ships with, not just
+    the adapter's own test suite.
+  functional_test: >
+    Verified 2026-08-09 two ways. (1) stdlib-only subprocess test
+    (hermes/hooks/tests/test_docs_staleness_guard.py, runs in CI): 4/4 cases passed (wrong
+    event silent; not-first-turn silent; no-repo silent; the hook's own `--self-test` mode
+    passes, exercising 6 upstream-authored scenarios: missing pointer detected, fresh docs not
+    flagged, pointer-added clears the finding, stale docs detected past threshold, opt-out file
+    silences, repo without an anchor stays silent, and a custom anchor via .hermes/.docs-anchors
+    is tracked). (2) Direct verification against Hermes's real dispatch code path
+    (agent.shell_hooks.run_once, Hermes Agent v0.19.0) using an isolated ShellHookSpec on the
+    pre_llm_call event, calling process chdir'd into a real git repo with a deliberately
+    aged docs/layers/ anchor, that never touched ~/.hermes/config.yaml or the shell-hooks
+    allowlist: confirmed a genuinely stale anchor produces a real non-null {"context": ...}
+    parsed response, plus a repeat of the exit-code-never-blocks regression check.
+  files:
+    - hermes/hooks/tests/test_docs_staleness_guard.py
+
+- path: hermes/hooks/kb-validate-gate.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/kb-validate-gate.py
+  source_sha256: 1652caf695fc4288da0428b65191ed4a3cd74ecfd6f0b33af6834bb28920cfa5
+  reviewed_at: "2026-08-09"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  summary: >
+    Blocks session close while the repo's own scripts/validate_kb.py (already ported via the
+    reviewed-script lane, see templates/kb-skeleton/ in this same manifest's sibling
+    reviewed-scripts.yaml) reports the knowledge base out of sync with the code, or while a
+    [LONG-RUN] project (feature_list.json present) carries no agent docs at all. Same
+    dual-registration design as session-handoff-reminder.py (pre_verify for a genuine live
+    block, on_session_end as the audit-log fallback), and the same underlying reason: no
+    single Hermes event fires on every turn-end attempt the way Claude Code's Stop does.
+    OPERATOR-APPROVED DESIGN (2026-08-09), presented and accepted before implementing: unlike
+    session-handoff-reminder.py (fires once per session), this hook is willing to fire on
+    every eligible turn while the KB stays broken, sharing Hermes's session-wide 3-nudge
+    pre_verify budget with session-handoff-reminder.py and any other consumer -- in the rare
+    worst case (KB genuinely broken AND a long session with no fresh handoff, on overlapping
+    turns) this hook could consume the whole shared budget and starve the other hook's live
+    nudge for the rest of that session. Both are still dual-registered with on_session_end, so
+    neither is ever silently lost entirely -- worst case is losing the LIVE nudge for one
+    session, not the audit-log entry. The evaluate()/`_run_validator()`/self-test logic
+    carried over unchanged -- harness-agnostic. Dropped upstream's own per-hook-name anti-loop
+    budget (`stop_hook_active`/`stop_budget_consume`/`stop_budget_exhausted` from
+    safety_common.py) as redundant: Hermes's own session-wide `attempt`/`max_verify_nudges()`
+    cap already serves the identical purpose (same reasoning already applied when the shared
+    hermes_hook_common.py module was first ported). Kept `untrusted_block()` (promoted from a
+    one-off helper into hermes_hook_common.py, since it is a generically reusable safety
+    practice, not specific to this hook) -- the repo's own validate_kb.py stdout lands in the
+    model's context as a block message, so it is framed as data, not instructions.
+    CLAUDE_SKIP_KB_GATE -> HERMES_SKIP_KB_GATE, .claude/.skip-kb-gate -> .hermes/.skip-kb-gate.
+  functional_test: >
+    Verified 2026-08-09 two ways. (1) stdlib-only subprocess test
+    (hermes/hooks/tests/test_kb_validate_gate.py, runs in CI): 8/8 cases passed (wrong event
+    silent; no validator and not long-run silent; a failing validator via pre_verify produces
+    a live block on stdout; the same condition via on_session_end logs to stderr only; both the
+    env-var and file bypass silence the gate; a long-run project with no docs and no validator
+    blocks with the LONG-RUN reason; the hook's own `--self-test` mode passes, exercising all 7
+    upstream-authored scenarios unchanged). (2) Direct verification against Hermes's real
+    dispatch code path (agent.shell_hooks.run_once, Hermes Agent v0.19.0) using an isolated
+    ShellHookSpec on both the pre_verify and on_session_end events, calling process chdir'd
+    into a sandbox with a deliberately failing validate_kb.py, that never touched
+    ~/.hermes/config.yaml or the shell-hooks allowlist: confirmed pre_verify genuinely returns
+    a non-null {"action":"continue",...} while on_session_end always parses to None regardless
+    of content, plus a repeat of the exit-code-never-blocks regression check.
+  files:
+    - hermes/hooks/tests/test_kb_validate_gate.py

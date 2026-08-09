@@ -47,7 +47,7 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `alternatives/` | 19 | 0 | 0 | 19 |
 | `docs/` | 22 | 0 | 0 | 22 |
 | `evals/` | 2 | 0 | 0 | 2 |
-| `hooks/` | 58 | 9 | 1 | 48 |
+| `hooks/` | 58 | 11 | 1 | 46 |
 | `principles/` | 31 | 30 | 0 | 1 |
 | `references/` | 1 | 0 | 0 | 1 |
 | `rules/` | 34 | 28 | 0 | 6 |
@@ -55,11 +55,11 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `skills/` | 240 | 155 | 0 | 85 |
 | `templates/` | 48 | 33 | 0 | 15 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **545** | **255** | **2** | **288** |
+| **Total** | **545** | **257** | **2** | **286** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
-- `hooks/`: reviewed-lane Ported (9): `command-injection-guard.py`, `destructive-command-guard.py`, `git-destructive-guard.py`, `over-engineering-advisor.py`, `safety_common.py`, `self-harm-guard.py`, `session-handoff-check.py`, `session-handoff-reminder.py`, `verify-deleted-guard.py`; Rejected (1): `secret-leak-guard.py`
+- `hooks/`: reviewed-lane Ported (11): `command-injection-guard.py`, `destructive-command-guard.py`, `docs-staleness-guard.py`, `git-destructive-guard.py`, `kb-validate-gate.py`, `over-engineering-advisor.py`, `safety_common.py`, `self-harm-guard.py`, `session-handoff-check.py`, `session-handoff-reminder.py`, `verify-deleted-guard.py`; Rejected (1): `secret-leak-guard.py`
 - `scripts/`: Rejected (1): `gemini-switch.sh`
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
@@ -1295,8 +1295,8 @@ Candidate groups:
 - handoff/session guards — **`session-handoff-check.py` and `session-handoff-reminder.py`
   ported** (2026-08-09, see below). `handoff-closure-audit-guard.py`, `launch-watch-guard.py`,
   `live-tree-guard.py`, `open-items-are-work-orders.py` remain unevaluated.
-- docs freshness and KB validation — unevaluated (`docs-staleness-guard.py`, `kb-validate-gate.py`
-  — `docs-staleness-guard.py` has an already-ported skill companion, `documentation-freshness`).
+- docs freshness and KB validation — **`docs-staleness-guard.py` and `kb-validate-gate.py`
+  ported** (2026-08-09, see below). This candidate group is now closed.
 - task inbox and feedback display — unevaluated (`unbuffered-progress-advisor.py`,
   `task-inbox-show.py`, `feedback-pending-show.py`).
 - long-run feature validators — unevaluated (`feature-list-validator.py`, `long-run-detector.py`
@@ -1581,6 +1581,68 @@ test suites now run automatically in CI (67/67 combined cases), plus the full in
 cycle covering `hooks/config-kit`. Also brought `hermes/hooks/README.md`/`README_RU.md`'s
 "flavors, by event" framing from two to three buckets, matching the new mixed-capability
 category these two hooks introduce.
+
+#### `docs-staleness-guard.py` and `kb-validate-gate.py` ported (2026-08-09) — ninth and tenth Wave 4 guards, closes the "docs freshness and KB validation" candidate group
+
+Operator-directed continuation ("продолжим портирование из Wave4?"). Content-integrity-checked
+both target files against fresh upstream HEAD (identical, no drift) before reading — noted in
+passing that upstream itself had drifted again since the pinned snapshot (4 new commits, 19
+files, unrelated to either target file) while this port was in progress; left untouched, since
+advancing `upstream.lock.json` is a separate, deliberate sync action, not something to fold
+into a hook port.
+
+**`docs-staleness-guard.py`** (upstream: `SessionStart`) — same event choice as
+`session-handoff-check.py` and the same reason: `pre_llm_call`+`is_first_turn` genuinely
+reaches the model where `on_session_start` would not. All git/filesystem detection logic
+(commit-count-since-anchor freshness signal for `openwiki/`/`docs/layers/`, the
+AGENTS.md/CLAUDE.md pointer check) carried over unchanged — harness-agnostic. Adapted
+`.claude/` paths to `.hermes/`, `CLAUDE_DOCS_STALE_COMMITS` to `HERMES_DOCS_STALE_COMMITS`, and
+retargeted the instructional text from upstream rule paths to their already-ported skill
+equivalents (`documentation-freshness`, `billing-spend-controls`). Carried over the upstream
+`--self-test` mode verbatim — pure git/filesystem logic with zero Hermes wire-protocol
+dependency, still passes unmodified, a real independent verification surface beyond this
+adapter's own test suite.
+
+**`kb-validate-gate.py`** (upstream: `Stop`) — same dual-registration design as
+`session-handoff-reminder.py` and the same underlying reason (no Hermes event fires on every
+turn-end attempt the way Stop does): `pre_verify` for a genuine live block,
+`on_session_end` as the audit-log fallback. **New wrinkle found and presented to the operator
+before implementing**: unlike `session-handoff-reminder.py` (fires once per session, then goes
+quiet), this hook is willing to block on *every* eligible turn while the KB stays broken
+(matching upstream, which relies on its own per-hook-name budget for that) — meaning it shares
+Hermes's session-wide 3-nudge `pre_verify` budget with `session-handoff-reminder.py`, already
+live since v0.4.4, and could in the rare worst case (KB genuinely broken AND a long session
+with no fresh handoff, on overlapping turns) exhaust the whole shared budget and starve the
+other hook's live nudge for that session. Presented three options (accept as-is; cap this hook
+to one nudge per session, trading real strength for budget safety; drop `pre_verify`
+registration entirely, audit-log-only). Operator decision: **accept as-is** — both hooks stay
+dual-registered with `on_session_end`, so neither is ever silently lost entirely; worst case is
+losing one hook's *live* nudge for a session, never its audit-log entry. Dropped upstream's own
+per-hook-name anti-loop budget (`stop_hook_active`/`stop_budget_consume`/`stop_budget_exhausted`
+from `safety_common.py`) as redundant — Hermes's own session-wide `attempt`/`max_verify_nudges()`
+cap already serves the identical purpose, the same reasoning already applied when
+`hermes_hook_common.py` was first ported. Promoted `untrusted_block()` (repo-controlled output
+framed as data, not instructions, before it lands in a block message) from a
+kb-validate-gate.py-only helper into `hermes_hook_common.py`, since it is a generically reusable
+safety practice. `evaluate()`/`_run_validator()`/self-test logic carried over unchanged.
+`CLAUDE_SKIP_KB_GATE` -> `HERMES_SKIP_KB_GATE`, `.claude/.skip-kb-gate` -> `.hermes/.skip-kb-gate`.
+
+New test suites: `hermes/hooks/tests/test_docs_staleness_guard.py` (4/4) and
+`hermes/hooks/tests/test_kb_validate_gate.py` (8/8), both stdlib-only, both run in CI, both also
+exercise each hook's own carried-over `--self-test` mode as an additional check layer. Both
+hooks also verified directly against Hermes's real dispatch code path
+(`agent.shell_hooks.run_once`, isolated `ShellHookSpec`, calling process chdir'd into a real
+sandbox — a real git repo with a deliberately aged `docs/layers/` anchor for the first, a
+deliberately failing `scripts/validate_kb.py` for the second — no touch to
+`~/.hermes/config.yaml`/allowlist): confirmed a genuinely stale anchor produces a real non-null
+`{"context": ...}`, `pre_verify` genuinely returns a non-null `{"action":"continue",...}`, and
+`on_session_end` always parses to `None` regardless of content, plus a repeat of the
+exit-code-never-blocks regression check for both.
+
+Full verification: `python3 scripts/validate_adapter.py` passes end to end — all ten hook test
+suites now run automatically in CI (79/79 combined cases), plus the full install/remove cycle
+covering `hooks/config-kit`. `scripts/update_backlog_counts.py` picked up both new reviewed-hook
+entries automatically (hooks/ row: Ported 9->11, Left out 48->46).
 
 ## Reviewed-script lane pilot — status (2026-08-04)
 
