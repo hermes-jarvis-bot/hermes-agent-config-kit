@@ -29,6 +29,14 @@ When the user asks you to "set up this project" or "apply these principles":
 4. Before copying a principle, verify the user's stack matches the examples
 5. After setup, run `scripts/validate_config.py --strict` and the relevant hook self-tests to catch drift in the freshly assembled config
 
+## File transfers
+
+Every clone/copy/move/sync command requires a `.claude/transfers/<id>.json`
+contract and a `# transfer-contract:` marker. The contract records source,
+destination, operation/settings, purpose, motivation, deadline, verification,
+source cleanup, and the next action. The transfer Stop hook blocks unfinished
+or invalid records; never remove a source before the destination is verified.
+
 ## Reasoning Policy: Selection Before Expansion
 
 Core rule: **a sufficient solution is a reason to stop expanding, not an invitation to
@@ -92,6 +100,7 @@ python evals/hooks/run_hook_evals.py
 python scripts/test_lifecycle_hook_contracts.py
 python scripts/test_dependency_provenance_guard.py
 python scripts/dependency-alternatives.py --self-test
+python scripts/test_test_strategy.py
 ```
 
 After installing into a local Codex/Claude environment, also run

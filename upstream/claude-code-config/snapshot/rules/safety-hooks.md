@@ -37,6 +37,7 @@ Env vars через inline `FOO=1 cmd` НЕ видны хуку — нужен m
 ## PostToolUse / Stop / SessionStart / PreCompact
 
 - `verify-deleted-guard.py` (PostToolUse) — проверяет, что destructive-операция РЕАЛЬНО завершилась (объект исчез).
+- `transfer-contract-guard.py` (PreToolUse + PostToolUse + Stop) — требует контракт в `.claude/transfers/` для clone/copy/move/sync, напоминает о проверке результата и блокирует незакрытые переносы.
 - `api-key-leak-detector.py` (PostToolUse) — detective: сканирует output на API-key паттерны, warning (не блок).
 - `over-engineering-advisor.py` (PostToolUse Write|Edit|MultiEdit) — advisory: большое добавление в код / новая зависимость → нудж «это минимум?» (`quality-code.md`), НЕ блок; bypass `CLAUDE_ALLOW_BLOAT=1`.
 - `module-shape-advisor.py` (PostToolUse Write|Edit|MultiEdit) — advisory: после правки
@@ -49,12 +50,19 @@ Env vars через inline `FOO=1 cmd` НЕ видны хуку — нужен m
 - `test-gate-stop-hook.py` (Stop) — выбирает минимальный test scope по Git-visible
   изменению: docs-only пропускает, source/tests запускают fast suite, а
   auth/DB/API/concurrency/deploy boundary добавляет `integration` из
-  `.claude/test-policy.json`. Timeout считается отсутствием proof и блокирует,
-  вместо того чтобы молча пропускать завершение.
-- `harness-load-advisor.py` (Stop) — ловит явный сигнал, что VM/proof/release
-  gate перегружен или блокирует staging smoke; требует назвать профиль, gate,
-  доказательство и исправление маршрутизации. Не отключает security/release
-  проверку и пишет только агрегированные метаданные в
+  `.claude/test-policy.json`. Полная matrix намеренно не запускается на каждой
+  правке: на границе candidate commit/merge она выполняется один раз. VM/GPU/
+  OS/ABI/browser/hardware/performance proof запускается только если такой
+  specialised environment реально входит в acceptance criteria; иначе фиксируется
+  `N/A`. Изменившийся candidate обнуляет всю evidence, привязанную к его identity.
+  Timeout считается отсутствием proof и блокирует, вместо того чтобы молча
+  пропускать завершение. Для high-risk hook также требует независимый review, а
+  не бесконечное добавление собственных тестов.
+- `harness-load-advisor.py` (Stop) — ловит явный сигнал, что дорогой или
+  специализированный gate перегружен или блокирует lower-risk smoke; требует
+  назвать профиль, gate, доказательство и исправление маршрутизации. Это ловит
+  необязательный expensive-test слой в неправильном профиле, но не разрешает
+  обходить security/release проверку и пишет только агрегированные метаданные в
   `~/.claude/harness-feedback/events.jsonl`.
 - `problems-md-validator.py` (Stop) — блок при OPEN-пунктах в PROBLEMS.md без 5-exception тикета.
 - `session-handoff-reminder.py` (Stop) — напоминает написать handoff в конце длинной сессии.

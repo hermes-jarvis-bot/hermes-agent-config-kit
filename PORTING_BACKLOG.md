@@ -47,15 +47,15 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `alternatives/` | 19 | 0 | 0 | 19 |
 | `docs/` | 22 | 0 | 0 | 22 |
 | `evals/` | 2 | 0 | 0 | 2 |
-| `hooks/` | 58 | 11 | 1 | 46 |
+| `hooks/` | 59 | 11 | 1 | 47 |
 | `principles/` | 31 | 30 | 0 | 1 |
 | `references/` | 1 | 0 | 0 | 1 |
-| `rules/` | 34 | 28 | 0 | 6 |
-| `scripts/` | 65 | 0 | 1 | 64 |
+| `rules/` | 35 | 28 | 0 | 7 |
+| `scripts/` | 67 | 0 | 1 | 66 |
 | `skills/` | 240 | 155 | 0 | 85 |
-| `templates/` | 48 | 33 | 0 | 15 |
+| `templates/` | 49 | 33 | 0 | 16 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **545** | **257** | **2** | **286** |
+| **Total** | **550** | **257** | **2** | **291** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
@@ -64,7 +64,7 @@ Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only 
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
 
-_Last recomputed against upstream commit `511a1f18048d5d7da7928c2bfaf7c60efc077f10` (`upstream.lock.json`'s `last_synced_sha`)._
+_Last recomputed against upstream commit `7448bd377459dcf5694fcf4d0b670be8d6d02d09` (`upstream.lock.json`'s `last_synced_sha`)._
 
 <!-- END SNAPSHOT_BASELINE_TABLE -->
 

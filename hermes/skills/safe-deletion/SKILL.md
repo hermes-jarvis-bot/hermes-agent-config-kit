@@ -50,6 +50,7 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
 - `a reviewed guard candidate` / `a reviewed guard candidate` — блок катастрофических удалений.
 - `a reviewed guard candidate` — снапшот БД перед destructive SQL.
 - `a reviewed guard candidate` (post-action verification concept) — проверяет, что destructive-операция реально завершилась.
+- `a reviewed guard candidate` (pre-action guard concept + post-action verification concept + Stop) — связывает конкретный перенос с планом проверки и не даёт закрыть сессию с незавершённой записью.
 
 Related upstream references, review before porting: AGENTS.md or project guidance «Anti-Fabrication» («Deletion = re-verification»),
 `system-verification-independent.md`, `safety.md`.
