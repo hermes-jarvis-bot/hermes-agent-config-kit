@@ -1156,7 +1156,7 @@ number; do not infer a Wave transition from an artefact's category alone.
 | --- | --- |
 | Active Wave | Wave 4 — hook and workflow redesign |
 | Active release line | `0.4` |
-| Latest released tag | `v0.4.7` |
+| Latest released tag | `v0.4.8` |
 | `upstream.lock.json` `adapter.version` | `0.4.0` (Wave 4 baseline, not a patch-release counter) |
 | Historical classification of `templates/proof-plan.md` | Wave 1 close-out; its `v0.1.40` release did not start Wave 2 |
 | Exact Wave 2 trigger | First accepted and verified `templates/agent-task/*` artefact |
