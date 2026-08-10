@@ -105,6 +105,12 @@ python3 scripts/remove_hermes.py --apply --hermes-home /tmp/hermes-home
 
 Do not run real installation or removal on production profiles without operator confirmation.
 
+Check whether a previously installed copy has drifted from this repo (read-only, never writes):
+
+```bash
+python3 scripts/config_kit_drift_report.py --hermes-home /tmp/hermes-home
+```
+
 ## Upstream batching protocol
 
 The upstream watcher compares:

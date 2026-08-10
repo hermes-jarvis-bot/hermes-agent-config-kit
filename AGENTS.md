@@ -78,6 +78,7 @@ scripts/validate_output.py                 # safety and generated-output validat
 scripts/validate_adapter.py                # complete disposable adapter validation routine
 scripts/install_hermes.py                  # dry-run-first file copier for generated artefacts
 scripts/remove_hermes.py                   # dry-run-first remover for config-kit artefacts
+scripts/config_kit_drift_report.py         # read-only repo-vs-live-install drift diagnostic
 hermes/skills/**/SKILL.md                  # generated/adapted Hermes skills (including domain/skill nesting)
 upstream/claude-code-config/snapshot/      # pinned upstream source snapshot for review
 reports/upstream-sync/*.md                 # generated sync reports; latest.md mirrors newest
@@ -358,6 +359,27 @@ Important invariants:
 - no default target may be `~/.hermes`;
 - no whole-profile deletion belongs here;
 - no gateway start/restart/install behaviour belongs here.
+
+### `scripts/config_kit_drift_report.py`
+
+Responsibilities:
+
+- read-only diagnostic comparing this repo's `hermes/{skills,hooks,templates}` against a live
+  installed `<hermes-home>/{skills,hooks,templates}/config-kit/` copy;
+- classify every relative path into one of: identical, EOL-only, repo-superset, live-superset,
+  both-sides-changed, live-only, repo-only;
+- surface drift caused by hand-editing an installed copy after `install_hermes.py` ran, without
+  ever writing to either side.
+
+Important invariants:
+
+- never writes anything, in either direction — a report only, not a sync;
+- `--hermes-home` uses the same `validate_hermes_home()` safety gate as `install_hermes.py`/
+  `remove_hermes.py` (disposable `/tmp`/`*-test`/`*-sandbox` paths, or explicit
+  `--i-know-this-is-production`);
+- design adapted from claude-code-config's `scripts/rules_drift_report.py` (which compares a
+  live `~/.claude/rules/` against that repo's own `rules/`) for this adapter's analogous
+  repo-vs-installed-copy concern; not a byte-for-byte port.
 
 ## GitHub Actions design
 

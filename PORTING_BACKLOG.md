@@ -1814,6 +1814,47 @@ Stop call genuinely NOT blocked by another live session's open transfer; and the
 session's own Stop call still genuinely blocked by its own open transfer — the exact ownership
 distinction the whole fix exists to make, proven live, not just read from source.
 
+**Follow-up: what else was in that same sync (asked again, `ec5a6cd`).** Diffed the actual
+2-commit/4-file range (`7448bd3..ec5a6cd`) rather than trusting the fast-lane's full 237-artefact
+regeneration list, which re-lists everything `SUPPORTED` on every sync regardless of what
+changed. Two of the four changed files were upstream's own prose about itself and needed no
+action: `rules/safety-hooks.md`'s diff just documents, in upstream's own rule file, the same
+`transfer-contract-guard.py` ownership fix already ported above (already reflected on this side
+in `hermes/hooks/README.md`/`README_RU.md`'s "Multi-session note"); `README.md`'s diff adds a
+paragraph stating upstream's `rules/` tree is a redacted, shareable starter set and NOT a mirror
+of any machine's live `~/.claude/rules/` — upstream-internal maintenance guidance, not portable
+content.
+
+The fourth, `scripts/rules_drift_report.py` (new, 156 lines), was a real candidate: a read-only
+diagnostic comparing a live `~/.claude/rules/` against upstream's own repo `rules/` copy,
+bucketing every shared filename by how they disagree (byte-identical / CRLF-only / one-side-superset
+/ both-sides-added / side-only), with a `--self-test`. Presented three options to the operator
+(reject as out-of-scope; port a Hermes-native analog; skip without deciding). **Operator decision:
+port a Hermes-native analog.** This adapter has the exact analogous problem: `install_hermes.py`
+copies `hermes/{skills,hooks,templates}` one-directionally into
+`<hermes-home>/{skills,hooks,templates}/config-kit/`, and a hand-edit to that live copy after
+install has no way to surface itself before the next `--apply` silently overwrites it.
+
+Wrote `scripts/config_kit_drift_report.py` — same classification design (identical/eol_only/
+both_added/live_superset/repo_superset/live_only/repo_only), generalized to walk all three
+`hermes/` categories via `rglob()` instead of upstream's flat `*.md` glob (skills/templates nest
+in subdirectories; hooks are `.py`, not `.md`), and reusing this repo's own
+`hermes_home_safety.validate_hermes_home()` for the `--hermes-home` argument (same disposable-path-
+or-explicit-override gate as `install_hermes.py`/`remove_hermes.py`) rather than upstream's
+unguarded `--live`/`--repo` flags — this tool can point at a real Hermes profile path, unlike
+upstream's script which only ever reads the machine it runs on. This is a new adapter-owned
+tool, not a `SUPPORTED`-lane conversion of the upstream file (it is not a byte-for-byte port and
+carries no `mappings/compatibility.yaml` entry), documented directly in `AGENTS.md`'s "Script
+responsibilities" and `README.md`/`CLAUDE.md`'s command lists alongside the installer/remover.
+
+Verified: `--self-test` passes; a real disposable install (`install_hermes.py --apply` into
+`/tmp/hermes-config-kit-test`) reports all-identical across all three categories immediately
+after install; appending a line to the live copy's `hooks/config-kit/README.md` correctly moves
+exactly that one file into `live_superset` while everything else stays `identical`; pointing
+`--hermes-home` at a non-disposable path without `--i-know-this-is-production` is refused by the
+same safety gate `install_hermes.py` uses. Temp install directory removed and deletion verified
+(`test ! -e`) afterward, per this session's deletion-confirm-and-verify discipline.
+
 Full verification: `python3 scripts/validate_adapter.py` passes end to end — 102/102 combined
 hook test cases (up from 93), plus the full install/remove cycle covering `hooks/config-kit`,
 `skills/config-kit`, and `templates/config-kit`. No version bump forced by the skill/template

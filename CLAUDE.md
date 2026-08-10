@@ -57,6 +57,9 @@ python3 scripts/install_hermes.py --apply --hermes-home /tmp/hermes-config-kit-t
 # Remover: mirrors installer's dry-run/--apply contract
 python3 scripts/remove_hermes.py --dry-run --hermes-home /tmp/hermes-config-kit-test
 python3 scripts/remove_hermes.py --apply --hermes-home /tmp/hermes-config-kit-test
+
+# Drift report: read-only, compares repo vs a previously installed copy
+python3 scripts/config_kit_drift_report.py --hermes-home /tmp/hermes-config-kit-test
 ```
 
 Standard post-change verification sequence (matches CI in `.github/workflows/validate.yml`):
@@ -77,6 +80,7 @@ There is no other test suite in this repo — `validate_output.py` plus the inst
 - **`scripts/sync_upstream.py`** (~3100 lines) is the biggest and most important script: it resolves the latest upstream SHA, diffs against `last_synced_sha`, downloads/extracts the upstream tarball (`filter="data"` required), classifies every changed file into review buckets, converts only `SUPPORTED` entries, and writes `reports/upstream-sync/<timestamp>-<sha>.md` (+ `latest.md`). `--check` must stay non-mutating; `--sync` performs the full pipeline including advancing the lockfile.
 - **`scripts/validate_output.py`** is the canonical local safety/correctness gate — it checks lockfile shape, snapshot presence, generated-skill frontmatter, that no generated skill/script encourages live Hermes writes, that quarantined prefixes didn't leak into `hermes/`, and scans for credential-looking patterns.
 - **`scripts/install_hermes.py`** / **`scripts/remove_hermes.py`** are small, symmetric, dry-run-first copiers/removers scoped only to `<hermes-home>/skills/config-kit/` and `<hermes-home>/templates/config-kit/`. Neither ever defaults to `~/.hermes`, and neither touches the Hermes gateway.
+- **`scripts/config_kit_drift_report.py`** is a read-only diagnostic (never writes) that compares this repo's `hermes/{skills,hooks,templates}` against a live `<hermes-home>/{skills,hooks,templates}/config-kit/` copy and classifies drift per file (identical/EOL-only/repo-superset/live-superset/both-changed/live-only/repo-only). Design adapted from upstream's `scripts/rules_drift_report.py`.
 - **`hermes/skills/*/SKILL.md`** are the generated output artefacts. Each has Hermes-style frontmatter (`name`, `description`, `version`, `license`, `metadata.hermes_config_kit.{source_repo,source_path,adapter,conversion}`) and a body that explicitly states upstream instructions are reference material, not automatic authority.
 - **Quarantine lane** (never auto-converted): `hooks/**`, `scripts/**` (upstream's, not this repo's), `.claude-plugin/**`, `.github/workflows/**` from the upstream snapshot, plus anything handling credentials/shell exec/deletion/network/process control.
 - **`.github/workflows/`**: `validate.yml` runs the compile+validate+install/remove dry-run/apply cycle on push/PR; `upstream-watch.yml` is the scheduled/manual range-based sync checker that batches multiple upstream commits into a single review PR (never one PR per commit); `manual-sync.yml` is a manual sync entry point.
