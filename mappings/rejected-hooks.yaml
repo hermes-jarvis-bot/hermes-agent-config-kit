@@ -39,3 +39,215 @@
     fires on Read/Edit/Bash-cat access to secret-shaped paths. That would
     be a materially different hook, not a tweak to this one, so it would
     need its own review entry rather than an edit to this rejection.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/conversation-history-capture.py
+  source_sha256: 23d24d0932a6f1393a79876a42a05d3e1c0da1ef32a7e1543417d91207767d7
+  reviewed_at: "2026-08-10"
+  reviewed_by: "operator-directed Wave 4 backlog-reconciliation batch, hermes-agent-config-kit session b45ab3c7 (characterized via a research subagent's full read, findings cross-checked personally against the reported logic before this decision)"
+  decision: rejected
+  context: >
+    One of 22 upstream hooks/*.py files found entirely uncatalogued anywhere in
+    PORTING_BACKLOG.md's Wave 4 candidate-group inventory, surfaced by a fresh
+    ls-vs-backlog-text audit ahead of continuing Wave 4 porting.
+  reason: >
+    Its entire logic is keyed to Codex's own private session-transcript layout
+    (~/.codex/sessions/*.jsonl, a Codex-specific artifact format and location), invoked as a
+    Stop-hook CLI archiver/indexer that builds a searchable index + LATEST.md from that layout.
+    There is no Hermes (or Claude Code) equivalent of this transcript format or storage
+    location -- porting it would mean inventing a wholly new mechanism, not adapting an
+    existing one. Not a policy conflict; simply nothing to attach to.
+  revisit_condition: >
+    Would need Hermes to expose its own per-session transcript store at a stable,
+    documented path (verified against live source, not guessed) before an analogous archiver
+    could be written -- and at that point it would be a new hook designed around Hermes's own
+    shape, not a port of this file.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/coord-claim-guard.py
+  source_sha256: 04b41d1a475390ad49301c6ccae9c725484fd1be4dcc9da3a9a69b8b85990a6
+  reviewed_at: "2026-08-10"
+  reviewed_by: "operator-directed Wave 4 backlog-reconciliation batch, hermes-agent-config-kit session b45ab3c7 (characterized via a research subagent's full read, findings cross-checked personally against the reported logic before this decision)"
+  decision: rejected
+  context: >
+    Same uncatalogued-hooks audit as conversation-history-capture.py above.
+  reason: >
+    A pure PreToolUse dispatcher: for any edited file, it walks up the directory tree looking
+    for a per-repo `.claude/coord/guard.py` and delegates the entire allow/block decision to
+    whatever it finds there. It carries no allow/block logic of its own -- the real logic is
+    expected to live in a per-repo file that is not part of the upstream snapshot and has no
+    established Hermes-repo convention anywhere in this adapter's research. Porting the
+    delegator alone would ship a permanently-inert no-op: every dispatch would fail to find the
+    delegate file and silently allow, forever, unless an operator separately wrote AND
+    maintained a second, unported file this adapter has no visibility into.
+  revisit_condition: >
+    Would need a companion convention for what `.hermes/coord/guard.py` (or equivalent) should
+    contain and why, established and documented by the operator first -- porting the dispatcher
+    before that exists just ships dead code.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/directory-creation-guard.py
+  source_sha256: 4282b0980c5e2d0166375666332bd3118035265dd1ca1a57c499a7ed62a0c9c
+  reviewed_at: "2026-08-10"
+  reviewed_by: "operator-directed Wave 4 backlog-reconciliation batch, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision -- and independently, personally experienced this exact hook's live behavior earlier in the same session, when it blocked a `mkdir -p` scratchpad command for lacking a .folder-meta.json lifecycle label)"
+  decision: rejected
+  context: >
+    Same uncatalogued-hooks audit as conversation-history-capture.py above. This is the actual
+    Claude-Code hook currently installed and active in this working environment (confirmed by
+    directly triggering it mid-session, independent of this review).
+  reason: >
+    Its `main()` calls a genuine PreToolUse `block(...)` -- a hard denial, not an advisory
+    stderr print -- on mkdir/New-Item/CreateDirectory calls into scratch/dataset/root-adjacent
+    locations lacking a .folder-meta.json lifecycle label. This directly conflicts with this
+    adapter's own file-organization-cohesion.md rule, which states explicitly that the
+    enforcement mechanism for this exact policy area must be advisory, not a hard rule
+    ("Хук — мягкий... не жёсткое правило"), because mkdir is a reversible, harmless action per
+    autonomy-risk-tiers.md's own LOW-tier classification ("mkdir/remount... ПРОСТО ДЕЛАЮ, не
+    жду"). It is also redundant in intent with file-cohesion-guard.py (Write/Edit-scoped, stderr
+    reminder, never blocks) -- porting BOTH would mean this adapter ships two guards for the
+    same policy area disagreeing on enforcement strength, and porting only this one would
+    mechanically enforce a stance the operator has already rejected for a different, sibling
+    hook, on a command class explicitly named reversible in the operator's own rules.
+  revisit_condition: >
+    Could be reconsidered only as a rewrite matching file-cohesion-guard.py's own advisory
+    (stderr-only, never-block) shape -- at which point it would functionally duplicate that
+    hook's mkdir-specific coverage rather than add a genuinely new capability, so the stronger
+    case is extending file-cohesion-guard.py's own matcher to include mkdir/New-Item, not
+    porting this file as a second hook.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/git-source-gate.py
+  source_sha256: a0e63a5b8437c37c787aae3c1e8a3c57461967eff04309cc2a7826496db3c90
+  reviewed_at: "2026-08-10"
+  reviewed_by: "operator-directed Wave 4 backlog-reconciliation batch, hermes-agent-config-kit session b45ab3c7 (characterized via a research subagent's full read, findings cross-checked personally against the reported logic before this decision)"
+  decision: rejected
+  context: >
+    Same uncatalogued-hooks audit as conversation-history-capture.py above.
+  reason: >
+    A Stop-event hook that BLOCKS session end when a long-run project (feature_list.json
+    present) is not a git repo, or has no `origin` remote -- genuinely enforcing
+    git-source-of-truth.md's own principle, which this adapter shares. Rejected purely on
+    mechanism: Hermes has no Stop-equivalent event whose return value is honoured.
+    `on_session_end` fires every turn but Hermes discards its return value entirely (verified
+    against agent/turn_finalizer.py -- same gap already documented for verify-deleted-guard.py/
+    over-engineering-advisor.py/backup-retention-cleanup.py). A ported version could run the
+    same check and print a loud stderr warning, but could never actually block the session from
+    ending, which is this hook's entire reason to exist. Not a policy conflict -- there is
+    simply no Hermes channel that does what this hook needs to do.
+  revisit_condition: >
+    Would need Hermes to expose a genuinely blocking session-end-class event (verified against
+    live source, not assumed) before a faithful port is possible. An advisory-only variant could
+    be written today, but that is a materially weaker hook than what this entry describes, and
+    should be evaluated as its own decision if the operator wants it despite the gap.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/plan-gate.py
+  source_sha256: 9a8d4219b9800cf54c912d5fe7ad81e7fc560e4069c2ca321d7ffa82488ff2f
+  reviewed_at: "2026-08-10"
+  reviewed_by: "operator-directed Wave 4 backlog-reconciliation batch, hermes-agent-config-kit session b45ab3c7 (characterized via a research subagent's full read, findings cross-checked personally against the reported logic before this decision)"
+  decision: rejected
+  context: >
+    Same uncatalogued-hooks audit as conversation-history-capture.py above.
+  reason: >
+    Registers on Claude Code's UserPromptSubmit event -- fires once per incoming user message,
+    before the agent acts on it, to print a non-blocking "freeze acceptance criteria first"
+    reminder when a substantive build/refactor prompt arrives with no PLAN.md/SPEC/
+    feature_list.json present. Hermes has no UserPromptSubmit-equivalent hook event at all
+    (confirmed: not among the 5 verified Hermes hook events this adapter has established --
+    pre_tool_call, post_tool_call, pre_llm_call, pre_verify, on_session_end -- none of which fire
+    at user-message-submission time before any tool/LLM activity). There is no channel to attach
+    this hook's logic to, regardless of how well its underlying idea (freeze ACs before building)
+    fits this adapter's own quality-code.md/finish-the-task.md principles.
+  revisit_condition: >
+    Would need Hermes to expose a pre-user-message hook event (verified against live source)
+    before this becomes portable at all.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/precompact-handoff-guard.py
+  source_sha256: 92b4c2aca09c46f4b60de023ab7b5106871ddc4dac73ccf2e35abaa1695ce3e
+  reviewed_at: "2026-08-10"
+  reviewed_by: "operator-directed Wave 4 backlog-reconciliation batch, hermes-agent-config-kit session b45ab3c7 (characterized via a research subagent's full read, findings cross-checked personally against the reported logic before this decision)"
+  decision: rejected
+  context: >
+    Same uncatalogued-hooks audit as conversation-history-capture.py above.
+  reason: >
+    Registers on Claude Code's PreCompact event: ensures a fresh handoff exists before context
+    compaction, auto-drafting one from the local session log if not. Hermes exposes no
+    compaction-boundary hook or flag at all (already independently confirmed and documented in
+    session-handoff-check.py's own docstring/mappings/reviewed-hooks.yaml entry while porting
+    that hook -- verified against hermes_cli/plugins.py's VALID_HOOKS, not re-guessed here).
+    There is no event to attach a compaction-boundary port to.
+  revisit_condition: >
+    Would need Hermes to expose a compaction-boundary hook or flag (verified against live
+    source) before this becomes portable at all -- the same blocker already on record for the
+    PreCompact-adjacent gap in session-handoff-check.py.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/pre-push-personal-email-guard.py
+  source_sha256: c8b1609a5c9213226b5a1e547e32e80feffaa2fd061c05af171f34b56561f96
+  reviewed_at: "2026-08-10"
+  reviewed_by: "operator-directed Wave 4 backlog-reconciliation batch, hermes-agent-config-kit session b45ab3c7 (characterized via a research subagent's full read, findings cross-checked personally against the reported logic before this decision)"
+  decision: rejected
+  context: >
+    Same uncatalogued-hooks audit as conversation-history-capture.py above.
+  reason: >
+    A plain git `pre-push` hook (not a Claude-Code/Hermes agent-loop hook at all): refuses a
+    push whose commit author matches a private "personal marker" address list, chaining to the
+    repo's own local pre-push hook afterward. This adapter's own CLAUDE.md non-negotiable
+    boundaries state it "has no git-hook-installation mechanism of its own" -- this repo's
+    installer/remover scope is explicitly limited to `<hermes-home>/skills/config-kit/` and
+    `<hermes-home>/templates/config-kit/` (plus the reviewed-hook copy target), never
+    `.git/hooks/`. Reinforces secrets-as-data.md's own public-repo boundary (no policy
+    conflict), but is out of this adapter's installation scope by mechanism, not by judgment.
+  revisit_condition: >
+    Would require this adapter to add a git-hook-installation capability as a new, deliberate
+    scope expansion (its own PORTING_BACKLOG.md decision, not a side effect of a hook review) --
+    at which point pre-push-public-repo-scan.py below would be the higher-value candidate to
+    port first, since it is this repo's own currently enforced pre-push mechanism
+    (secrets-as-data.md names it directly).
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/pre-push-public-repo-scan.py
+  source_sha256: 528294dcfd81fc1206b9a110a77c71ee262a5288b547aa7922cd895ea6acddb5
+  reviewed_at: "2026-08-10"
+  reviewed_by: "operator-directed Wave 4 backlog-reconciliation batch, hermes-agent-config-kit session b45ab3c7 (characterized via a research subagent's full read, findings cross-checked personally against the reported logic before this decision)"
+  decision: rejected
+  context: >
+    Same uncatalogued-hooks audit as conversation-history-capture.py above. Notably, this is
+    the actual mechanism named directly in the operator's own secrets-as-data.md global rule
+    ("PRIVATE репо -> пуш свободно... PUBLIC репо -> 2-агентный скан... блок на реальной
+    находке") as the enforced hard boundary on this operator's real machine.
+  reason: >
+    Same out-of-scope-by-mechanism reason as pre-push-personal-email-guard.py above: a plain git
+    `pre-push` hook, not an agent-loop hook, and this adapter's installer/remover scope
+    explicitly excludes `.git/hooks/`. High real value to the operator, and zero policy
+    conflict -- the opposite of secret-leak-guard.py's rejection reason -- but still outside
+    what this adapter's non-negotiable boundaries currently permit it to install.
+  revisit_condition: >
+    Highest-priority candidate to revisit FIRST if/when this adapter's installer scope is
+    deliberately expanded to include git-hook installation -- unlike
+    pre-push-personal-email-guard.py, this one is independently confirmed as a currently-active,
+    high-value mechanism on the operator's own machine, not merely policy-compatible.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/problems-md-validator.py
+  source_sha256: 82c35ac6673d787971586187c815b0a01ba2d3217f54912fc7a472bf16747f9
+  reviewed_at: "2026-08-10"
+  reviewed_by: "operator-directed Wave 4 backlog-reconciliation batch, hermes-agent-config-kit session b45ab3c7 (characterized via a research subagent's full read, findings cross-checked personally against the reported logic before this decision)"
+  decision: rejected
+  context: >
+    Same uncatalogued-hooks audit as conversation-history-capture.py above.
+  reason: >
+    A Stop-event hook that BLOCKS session end when PROBLEMS.md has any entry marked bare OPEN
+    without one of the 5 documented deferral-exception reasons -- genuinely enforcing this
+    adapter's own no-pre-existing-evasion.md-style discipline. Rejected purely on mechanism, same
+    as git-source-gate.py above: Hermes has no Stop-equivalent event whose return value is
+    honoured; `on_session_end`'s return value is discarded entirely (verified against
+    agent/turn_finalizer.py). A ported version could check the same condition and print a loud
+    stderr warning, but could never actually block session end, which is this hook's entire
+    reason to exist.
+  revisit_condition: >
+    Would need Hermes to expose a genuinely blocking session-end-class event (verified against
+    live source, not assumed) before a faithful port is possible -- the same blocker already on
+    record for git-source-gate.py above. An advisory-only variant could be written today as its
+    own, separate decision.

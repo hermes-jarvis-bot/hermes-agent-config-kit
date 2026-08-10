@@ -224,6 +224,27 @@ def session_is_live(hermes_dir: Path, session_id: str, ttl_seconds: int | None =
         return False
 
 
+HANDOFF_DIR_ENV = "HERMES_HANDOFF_DIR"
+
+
+def local_handoffs_dir(cwd: Path) -> Path:
+    """This project's handoff store: `.hermes/handoffs/` by default, override via
+    HERMES_HANDOFF_DIR. Handoffs live one level deeper, per project slug:
+    `<this>/<project-slug>/*.md` -- see session-handoff-check.py's `scan_store()`."""
+    override = os.environ.get(HANDOFF_DIR_ENV, "").strip()
+    if override:
+        return (cwd / override).resolve()
+    return (cwd / ".hermes" / "handoffs").resolve()
+
+
+def emit_context(text: str) -> None:
+    """Inject `text` into the first user message via pre_llm_call's `{"context": ...}` return
+    (verified against agent/turn_context.py:1059-1109 -- see session-handoff-check.py's
+    docstring). Only meaningful when the caller already confirmed `extra.is_first_turn`."""
+    print(json.dumps({"context": text}, ensure_ascii=False))
+    sys.exit(0)
+
+
 def untrusted_block(payload: str, source: str) -> str:
     """Wrap third-party output so it cannot read as instructions to the agent.
 

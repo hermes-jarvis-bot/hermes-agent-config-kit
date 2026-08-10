@@ -41,7 +41,6 @@ Adaptations from upstream:
 """
 from __future__ import annotations
 
-import json
 import sys
 import time
 from datetime import datetime
@@ -49,24 +48,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from hermes_hook_common import (  # noqa: E402
+    emit_context,
     event_session_id,
     filename_timestamp,
+    local_handoffs_dir,
     read_event,
     touch_session_heartbeat,
 )
 
 MAX_PROJECTS = 3
 MAX_AGE_HOURS = 168  # 7 days
-HANDOFF_DIR_ENV = "HERMES_HANDOFF_DIR"
-
-
-def local_handoffs_dir(cwd: Path) -> Path:
-    import os
-
-    override = os.environ.get(HANDOFF_DIR_ENV, "").strip()
-    if override:
-        return (cwd / override).resolve()
-    return (cwd / ".hermes" / "handoffs").resolve()
 
 
 def scan_store(root: Path, store_label: str, now: float) -> list[dict]:
@@ -85,11 +76,6 @@ def scan_store(root: Path, store_label: str, now: float) -> list[dict]:
         project = rel.parts[0] if len(rel.parts) > 1 else "(no-project)"
         found.append({"ts": ts, "path": p, "project": project, "store": store_label})
     return found
-
-
-def emit_context(text: str) -> None:
-    print(json.dumps({"context": text}, ensure_ascii=False))
-    sys.exit(0)
 
 
 def main() -> None:

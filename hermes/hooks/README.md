@@ -290,6 +290,100 @@ Recognizes `.hermes/transfers/`, `.claude/transfers/`, `.agent/transfers/`, and
 repo is still enforced). No bypass — this hook only ever blocks on a genuinely missing or
 invalid contract; write the contract instead of looking for an escape hatch.
 
+### `db-snapshot-guard.py` and `git-auto-backup.py` (never block — safety nets)
+
+Once a destructive DB command or git op has already cleared its own blocking guard's bypass,
+these take a best-effort backup right before allowing the op through, then warn on stderr if the
+backup looks incomplete. Neither ever blocks — a machine without `pg_dump`/`mysqldump`/
+`mongodump`/git available for the backup step must not be locked out of legitimate destructive
+work.
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "terminal"
+      command: "python3 ~/.hermes/hooks/config-kit/db-snapshot-guard.py"
+      timeout: 180
+    - matcher: "terminal"
+      command: "python3 ~/.hermes/hooks/config-kit/git-auto-backup.py"
+      timeout: 10
+```
+
+`db-snapshot-guard.py` bypass: `HERMES_ALLOW_DB_SNAPSHOT=1` or `# hermes-bypass: db-snapshot`
+(suppresses the whole safety net, use only on throwaway DBs). `git-auto-backup.py` only acts once
+`HERMES_ALLOW_GIT_DESTRUCTIVE=1` is already set (the same bypass `git-destructive-guard.py`
+uses) — if it isn't, that guard already blocked the command and this one never sees it act.
+Creates `hermes-backup-<ts>` branches / `hermes-pre-clean-<ts>` stashes.
+
+### `backup-retention-cleanup.py` (on_session_end — companion to `git-auto-backup.py`)
+
+Deletes `hermes-backup-<ts>` branches and `hermes-pre-clean-<ts>` stashes older than 14 days.
+Pure side effect (Hermes discards this event's return value, same as the audit-log-only guards
+above) — idempotent, silent when nothing is old enough to remove.
+
+```yaml
+hooks:
+  on_session_end:
+    - command: "python3 ~/.hermes/hooks/config-kit/backup-retention-cleanup.py"
+      timeout: 10
+```
+
+### `handoff-resume-gate.py` and `session-drift-validator.py`
+
+Both `pre_llm_call`+`is_first_turn`, read-only, genuinely inject context (same mechanism as
+`session-handoff-check.py` above). The first flags STALE-but-still-ACTIVE handoffs — a resuming
+session should re-verify their claims, not trust them (shares `session-handoff-check.py`'s
+`.hermes/handoffs/`/`HERMES_HANDOFF_DIR` convention). The second scans `CLAUDE.md`, `AGENTS.md`,
+and `.claude/rules/*.md` for file-path references that no longer resolve on disk, staying silent
+when everything checks out.
+
+```yaml
+hooks:
+  pre_llm_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/handoff-resume-gate.py"
+      timeout: 10
+    - command: "python3 ~/.hermes/hooks/config-kit/session-drift-validator.py"
+      timeout: 10
+```
+
+No bypass on either — they never block, only inject context or stay silent.
+
+### `github-workflow-security.py`
+
+Blocks the first edit of any `.github/workflows/*.yml(.yaml)` file per session to force a
+GitHub-Actions command-injection checklist into context; later edits of the same file in the
+same session are advisory-only (stderr).
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "write_file|patch"
+      command: "python3 ~/.hermes/hooks/config-kit/github-workflow-security.py"
+      timeout: 10
+```
+
+Disable entirely: `HERMES_ALLOW_GH_WORKFLOW_SECURITY=1`.
+
+### `repeated-attempt-guard.py` (dual-registered)
+
+Stops the guess-and-retry loop: blocks a 4th attempt at the same command/file target after 3
+failures with nothing read since the last one. A single read (of anything) clears it.
+
+```yaml
+hooks:
+  post_tool_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/repeated-attempt-guard.py"
+      timeout: 10
+  pre_tool_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/repeated-attempt-guard.py"
+      timeout: 10
+```
+
+Tunables: `HERMES_RETRY_SOFT` (default 2, advisory threshold), `HERMES_RETRY_HARD` (default 3,
+block threshold), `HERMES_RETRY_WINDOW_SEC` (default 3600), `HERMES_RETRY_STATE` (state file
+path). Bypass: `HERMES_ALLOW_RETRY_LOOP=1` or `# hermes-bypass: retry-loop` in the command.
+Self-test: `python3 repeated-attempt-guard.py --self-test`.
+
 ## Activating any hook
 
 Add the relevant block above to your own `~/.hermes/config.yaml`, then approve it at the

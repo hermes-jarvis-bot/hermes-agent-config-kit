@@ -47,7 +47,7 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `alternatives/` | 19 | 0 | 0 | 19 |
 | `docs/` | 22 | 0 | 0 | 22 |
 | `evals/` | 2 | 0 | 0 | 2 |
-| `hooks/` | 59 | 12 | 1 | 46 |
+| `hooks/` | 59 | 19 | 10 | 30 |
 | `principles/` | 31 | 30 | 0 | 1 |
 | `references/` | 1 | 0 | 0 | 1 |
 | `rules/` | 35 | 29 | 0 | 6 |
@@ -55,11 +55,11 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `skills/` | 240 | 155 | 0 | 85 |
 | `templates/` | 49 | 34 | 0 | 15 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **551** | **260** | **2** | **289** |
+| **Total** | **551** | **267** | **11** | **273** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
-- `hooks/`: reviewed-lane Ported (12): `command-injection-guard.py`, `destructive-command-guard.py`, `docs-staleness-guard.py`, `git-destructive-guard.py`, `kb-validate-gate.py`, `over-engineering-advisor.py`, `safety_common.py`, `self-harm-guard.py`, `session-handoff-check.py`, `session-handoff-reminder.py`, `transfer-contract-guard.py`, `verify-deleted-guard.py`; Rejected (1): `secret-leak-guard.py`
+- `hooks/`: reviewed-lane Ported (19): `backup-retention-cleanup.py`, `command-injection-guard.py`, `db-snapshot-guard.py`, `destructive-command-guard.py`, `docs-staleness-guard.py`, `git-auto-backup.py`, `git-destructive-guard.py`, `github-workflow-security.py`, `handoff-resume-gate.py`, `kb-validate-gate.py`, `over-engineering-advisor.py`, `repeated-attempt-guard.py`, `safety_common.py`, `self-harm-guard.py`, `session-drift-validator.py`, `session-handoff-check.py`, `session-handoff-reminder.py`, `transfer-contract-guard.py`, `verify-deleted-guard.py`; Rejected (10): `conversation-history-capture.py`, `coord-claim-guard.py`, `directory-creation-guard.py`, `git-source-gate.py`, `plan-gate.py`, `pre-push-personal-email-guard.py`, `pre-push-public-repo-scan.py`, `precompact-handoff-guard.py`, `problems-md-validator.py`, `secret-leak-guard.py`
 - `scripts/`: Rejected (1): `gemini-switch.sh`
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
@@ -1320,6 +1320,55 @@ Candidate groups:
   itself (2026-08-10, see below). New upstream feature not on this list until it landed via
   PR #27 (a manual upstream-watch dispatch triggered mid-Wave-4, not the scheduled cron —
   upstream had drifted since the previous sync). No sibling hook candidates in this group.
+- backup safety nets — **`db-snapshot-guard.py`, `git-auto-backup.py`, `backup-retention-cleanup.py`
+  ported** (2026-08-10, see below, part of the uncatalogued-hooks audit). This candidate group
+  is now closed.
+
+**Inventory audit (2026-08-10):** the "not exhaustive" warning above turned out to undercount
+badly — a direct `ls` vs. backlog-text diff found **22 of 58** upstream `hooks/*.py` files never
+mentioned anywhere in this document, none of the candidate-group bullets above included. All 22
+were read in full (via a research subagent's first pass, cross-checked personally against the
+reported logic before any decision) and disposed of:
+- **Ported (7, this batch, see below):** `db-snapshot-guard.py`, `git-auto-backup.py`,
+  `backup-retention-cleanup.py`, `handoff-resume-gate.py`, `session-drift-validator.py`,
+  `github-workflow-security.py`, `repeated-attempt-guard.py`.
+- **Rejected (9, `mappings/rejected-hooks.yaml`):** `conversation-history-capture.py` (Codex-only
+  transcript format, no Hermes analog), `coord-claim-guard.py` (pure delegator, no logic of its
+  own, permanently inert without an unported companion file), `directory-creation-guard.py`
+  (policy conflict — hard-blocks a reversible mkdir, contradicting this repo's own
+  file-organization-cohesion.md, which mandates advisory-only for this exact policy area, and
+  redundant with `file-cohesion-guard.py`'s correct advisory version), `git-source-gate.py` and
+  `problems-md-validator.py` (both need a genuinely blocking Stop-equivalent event; Hermes's
+  `on_session_end` discards its return value), `plan-gate.py` (`UserPromptSubmit`, no Hermes
+  equivalent), `precompact-handoff-guard.py` (`PreCompact`, no Hermes equivalent),
+  `pre-push-personal-email-guard.py` and `pre-push-public-repo-scan.py` (plain git `pre-push`
+  hooks — out of this adapter's installer scope by mechanism, not judgment; the latter is
+  flagged as the highest-priority revisit candidate if that scope is ever deliberately expanded,
+  since it is secrets-as-data.md's own named enforced mechanism on the operator's machine).
+- **Deferred, not yet decided (6):** `activity-journal-guard.py` (clean mapping, but niche
+  multi-host-journal convention this environment has no config for), `continuity-contract-guard.py`
+  + `continuity-session-check.py` (real value for the cross-harness-worktree-collision problem
+  this repo's own memory already names, but heavy machinery to bootstrap without an established
+  `CONTINUITY.json`-equivalent convention), `cyrillic-bash-guard.py` (clean mapping, Windows-
+  console-codepage-specific value), `file-cohesion-guard.py` (right policy shape already, but no
+  Hermes channel exists for "advisory nudge that reaches the model" at `pre_tool_call` — the best
+  substitute, `pre_verify`, is budget-shared and file-edit-turn-only, a real downgrade not a
+  clean substitute), `stop-phrase-guard.py` (highest policy importance of the batch — operationalizes
+  finish-the-task.md/autonomy-risk-tiers.md's own deferral rules — but the same `pre_verify` gap
+  applies, plus it needs to catch pure-chat deferrals that `pre_verify`'s file-edit-only gate
+  would miss entirely).
+- **Re-evaluated after live-source verification, not just characterized:** `session-feedback-capture.py`
+  was initially reported LIKELY-PORT by the research subagent, but direct verification against
+  `agent/turn_finalizer.py`'s real `on_session_end` invoke_hook call found NO `transcript_path`
+  or message-history field in the payload at all (only `session_id/task_id/turn_id/completed/
+  failed/interrupted/turn_exit_reason/model/platform`) — the hook's entire purpose (enqueue a
+  transcript pointer for later distillation) has no viable Hermes-native implementation without
+  coupling to Hermes's internal session store, already rejected as fragile internals-coupling
+  when the session-heartbeat mechanism was designed (2026-08-10, see below). Downgraded to
+  deferred, not ported this batch. `repeated-attempt-guard.py` conversely was upgraded from
+  NEEDS-DISCUSSION to LIKELY-PORT after verifying `post_tool_call`'s `extra` payload DOES carry
+  Hermes's own derived `status`/`error_type` fields (`model_tools.py`'s
+  `_emit_post_tool_call_hook`/`_tool_result_observer_fields`) — ported this batch.
 
 Acceptance criteria:
 
@@ -1860,6 +1909,93 @@ hook test cases (up from 93), plus the full install/remove cycle covering `hooks
 `skills/config-kit`, and `templates/config-kit`. No version bump forced by the skill/template
 port alone, but this segment's hook changes (ownership fix + session-scoping fix) are real
 behavior changes to already-released hooks, so this whole segment ships as one release.
+
+#### `db-snapshot-guard.py`, `git-auto-backup.py`, `backup-retention-cleanup.py`, `handoff-resume-gate.py`, `session-drift-validator.py`, `github-workflow-security.py`, `repeated-attempt-guard.py` ported (2026-08-10) — twelfth through eighteenth Wave 4 guards, closes the uncatalogued-hooks inventory gap
+
+Operator asked to continue Wave 4 again. Before picking a candidate, re-ran the backlog's own
+2026-08-07 inventory-note warning ("candidate groups... not exhaustive... re-survey `ls`") for
+real: diffed the full `ls upstream/claude-code-config/snapshot/hooks/*.py` (58 files) against
+every filename mentioned anywhere in this document. Found 22 completely uncatalogued files — see
+the "Inventory audit" note in the Wave 4 candidate-groups section above for the full disposition
+(7 ported here, 9 rejected, 6 deferred). Characterized all 22 via a research subagent's full
+read first, then personally verified two of its claims against live Hermes source before acting
+on them (see below) rather than trusting the subagent's report as-is (`no-guessing.md`'s
+agent-research-output is rank 5 of 6 in source authority — code and live probes outrank it).
+
+**Live-source verification before committing to the batch:**
+1. `post_tool_call`'s wire payload — checked whether `repeated-attempt-guard.py`'s failure
+   detection (needs to know if a call failed) has anything to read. Found `model_tools.py`'s
+   `_emit_post_tool_call_hook()` passes `result=`, `status=`, `error_type=`, `error_message=` as
+   kwargs to `invoke_hook()`, all of which land in the wire payload's `extra` object (anything
+   not in `_TOP_LEVEL_PAYLOAD_KEYS` does). Confirmed viable — ported.
+2. `on_session_end`'s wire payload — checked whether `session-feedback-capture.py`'s need (a
+   transcript-path pointer to enqueue) has anything to read. Found `agent/turn_finalizer.py`'s
+   `invoke_hook("on_session_end", ...)` call passes only `session_id/task_id/turn_id/completed/
+   failed/interrupted/turn_exit_reason/model/platform` — no transcript path, no message history,
+   nothing content-bearing at all. Not viable without internals-coupling to Hermes's own session
+   store, already rejected as fragile when the shared heartbeat mechanism was designed
+   (2026-08-10, transfer-contract-guard.py entry above). Deferred, not ported.
+
+**Ported (7):**
+- **`db-snapshot-guard.py`** and **`git-auto-backup.py`** — `pre_tool_call` safety nets, never
+  block, side-effect-only (snapshot-and-verify a DB / branch-or-stash a git working tree) once a
+  main blocking guard's own bypass has already been granted. Ported the full engine-specific
+  verification logic (PG/MySQL/Mongo dump-completeness checks; git branch/stash creation)
+  unchanged; adapted tool-name checks and bypass-env-var naming to this adapter's conventions.
+- **`backup-retention-cleanup.py`** — `on_session_end` companion to `git-auto-backup.py`, deletes
+  its `hermes-backup-<ts>` branches/`hermes-pre-clean-<ts>` stashes past a 14-day retention
+  window. The two hooks' branch/stash-name prefixes were deliberately kept in agreement during
+  the port (renamed together from `claude-` to `hermes-`), since this hook only recognizes what
+  the other creates.
+- **`handoff-resume-gate.py`** and **`session-drift-validator.py`** — `pre_llm_call`+
+  `is_first_turn`, read-only, genuinely inject context (same verified mechanism as
+  `session-handoff-check.py`/`docs-staleness-guard.py`). The first flags STALE-but-still-ACTIVE
+  handoffs as a "verify before trusting" nudge (complementing `session-handoff-check.py`, which
+  only *shows* recent ones); promoted `local_handoffs_dir()` out of `session-handoff-check.py`
+  into `hermes_hook_common.py` during this port so the two hooks share one handoff-location
+  convention rather than duplicating it. The second scans project config docs for file-path
+  references that no longer resolve on disk; extended beyond upstream's `CLAUDE.md`-only scan to
+  also cover `AGENTS.md` (this adapter's own cross-harness canonical-context file), and changed
+  to stay silent when clean rather than always printing a confirmation, matching
+  `session-handoff-check.py`'s established silence-when-nothing-to-report convention.
+- **`github-workflow-security.py`** — `pre_tool_call` on `write_file`/`patch` of
+  `.github/workflows/*.yml`, blocks the first edit per (file, session) to force a GitHub-Actions-
+  injection security checklist into context, advisory-only thereafter. Per-session "already
+  shown" state moved from upstream's flat log-directory file to this adapter's established
+  `.hermes/sessions/<session_id>/` convention.
+- **`repeated-attempt-guard.py`** — dual-registered `post_tool_call` (records outcomes) +
+  `pre_tool_call` (reads the record, decides): blocks a 4th attempt at the same target after 3
+  failures with nothing read since the last one. Tool-name sets translated to Hermes's actual
+  registry (`ACTING = {terminal, write_file, patch}`, `CONSULTING = {read_file, search_files}` —
+  the latter matching Hermes's own internal `_READ_SEARCH_TOOLS` grouping, not a guessed set).
+  The hook's own extensive upstream `--self-test` was ported and extended with 3 more cases for
+  the Hermes-specific adaptations.
+
+**Rejected (9)** and **deferred (6)**: see the "Inventory audit" note above for the full list and
+per-hook reasoning; entries recorded in `mappings/rejected-hooks.yaml`, not just this prose.
+
+New/updated test coverage: 7 new test files (`test_db_snapshot_guard.py` 5 cases,
+`test_git_auto_backup.py` 5, `test_backup_retention_cleanup.py` 6, `test_handoff_resume_gate.py`
+7, `test_session_drift_validator.py` 6, `test_github_workflow_security.py` 7,
+`test_repeated_attempt_guard.py` 7 plus the hook's own 18-case `--self-test`), bringing the
+combined hook-test tally to 145 (up from 102). `git-auto-backup.py`/`backup-retention-cleanup.py`
+are tested against REAL disposable git repos (not mocked) — real branches/stashes created and
+verified via actual `git branch --list`/`git stash list` output, not just checking the hook's own
+stdout. All 7 hooks additionally verified against Hermes's real dispatch code path
+(`agent.shell_hooks.run_once`), including a genuine end-to-end check that `git-auto-backup.py`'s
+real dispatch call creates a real git branch, not just that its subprocess-level test passes.
+
+One real bug found and fixed while writing the real-dispatch verification script itself (not in
+any shipped hook): the payload's top-level `cwd` field is always `Path.cwd()` of the CALLING
+process (`agent/shell_hooks.py:_serialize_payload`) — a `cwd` kwarg passed to `run_once()` does
+NOT override it, it silently lands in `extra.cwd` instead. The first verification pass for
+`handoff-resume-gate.py`/`session-drift-validator.py` set `cwd` as a kwarg expecting it to work,
+producing a false pass for `session-drift-validator.py` (it picked up drift in this repo's own
+real `AGENTS.md`, not the synthetic test fixture, and happened to still find *some* drift so the
+assertion passed for the wrong reason) and a false fail for `handoff-resume-gate.py` (no synthetic
+data existed at the real cwd). Fixed by actually `os.chdir()`-ing into the fixture directory
+before each `run_once()` call, matching the pattern `git-auto-backup.py`'s own verification
+already used correctly from the start.
 
 ## Reviewed-script lane pilot — status (2026-08-04)
 

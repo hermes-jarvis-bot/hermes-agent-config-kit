@@ -290,6 +290,99 @@ hooks:
 равно исполняется). Без обхода — этот хук блокирует только на реально отсутствующем или
 невалидном контракте; напиши контракт вместо поиска лазейки.
 
+### `db-snapshot-guard.py` и `git-auto-backup.py` (никогда не блокируют — страховочная сетка)
+
+Once уже пройден bypass основного блокирующего гейта для деструктивной команды БД или git —
+делают best-effort бэкап прямо перед тем как пропустить операцию, и warn на stderr если бэкап
+выглядит неполным. Ни один не блокирует — машина без `pg_dump`/`mysqldump`/`mongodump`/git
+для шага бэкапа не должна быть заблокирована для легитимной деструктивной работы.
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "terminal"
+      command: "python3 ~/.hermes/hooks/config-kit/db-snapshot-guard.py"
+      timeout: 180
+    - matcher: "terminal"
+      command: "python3 ~/.hermes/hooks/config-kit/git-auto-backup.py"
+      timeout: 10
+```
+
+Обход `db-snapshot-guard.py`: `HERMES_ALLOW_DB_SNAPSHOT=1` или `# hermes-bypass: db-snapshot`
+(отключает всю страховку целиком, только для одноразовых БД). `git-auto-backup.py` срабатывает
+только когда уже установлен `HERMES_ALLOW_GIT_DESTRUCTIVE=1` (тот же bypass что у
+`git-destructive-guard.py`) — если не установлен, тот гейт уже заблокировал команду. Создаёт
+ветки `hermes-backup-<ts>` / stash `hermes-pre-clean-<ts>`.
+
+### `backup-retention-cleanup.py` (on_session_end — компаньон `git-auto-backup.py`)
+
+Удаляет ветки `hermes-backup-<ts>` и stash `hermes-pre-clean-<ts>` старше 14 дней. Чистый
+побочный эффект (Hermes отбрасывает возврат этого события, как и audit-log-only хуки выше) —
+идемпотентен, тих, когда нечего чистить.
+
+```yaml
+hooks:
+  on_session_end:
+    - command: "python3 ~/.hermes/hooks/config-kit/backup-retention-cleanup.py"
+      timeout: 10
+```
+
+### `handoff-resume-gate.py` и `session-drift-validator.py`
+
+Оба `pre_llm_call`+`is_first_turn`, read-only, реально инжектят контекст (тот же механизм что у
+`session-handoff-check.py` выше). Первый флагует STALE-но-ACTIVE хендоффы — резюмирующая сессия
+должна перепроверить их утверждения, а не доверять им (использует ту же конвенцию
+`.hermes/handoffs/`/`HERMES_HANDOFF_DIR` что и `session-handoff-check.py`). Второй сканирует
+`CLAUDE.md`, `AGENTS.md` и `.claude/rules/*.md` на файловые пути, которые больше не резолвятся
+на диске, молчит если всё чисто.
+
+```yaml
+hooks:
+  pre_llm_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/handoff-resume-gate.py"
+      timeout: 10
+    - command: "python3 ~/.hermes/hooks/config-kit/session-drift-validator.py"
+      timeout: 10
+```
+
+Без обхода на обоих — они никогда не блокируют, только инжектят контекст или молчат.
+
+### `github-workflow-security.py`
+
+Блокирует первое редактирование любого `.github/workflows/*.yml(.yaml)` за сессию, чтобы
+принудительно вставить в контекст чеклист про command-injection в GitHub Actions; последующие
+редактирования того же файла в той же сессии — только advisory (stderr).
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "write_file|patch"
+      command: "python3 ~/.hermes/hooks/config-kit/github-workflow-security.py"
+      timeout: 10
+```
+
+Полностью отключить: `HERMES_ALLOW_GH_WORKFLOW_SECURITY=1`.
+
+### `repeated-attempt-guard.py` (двойная регистрация)
+
+Останавливает цикл угадай-и-повтори: блокирует 4-ю попытку того же таргета (команда/файл) после
+3 неудач без чтения чего-либо после последней неудачи. Одно чтение (чего угодно) снимает блок.
+
+```yaml
+hooks:
+  post_tool_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/repeated-attempt-guard.py"
+      timeout: 10
+  pre_tool_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/repeated-attempt-guard.py"
+      timeout: 10
+```
+
+Настройки: `HERMES_RETRY_SOFT` (по умолчанию 2, порог advisory), `HERMES_RETRY_HARD` (по
+умолчанию 3, порог блока), `HERMES_RETRY_WINDOW_SEC` (по умолчанию 3600), `HERMES_RETRY_STATE`
+(путь к state-файлу). Обход: `HERMES_ALLOW_RETRY_LOOP=1` или `# hermes-bypass: retry-loop` в
+команде. Self-test: `python3 repeated-attempt-guard.py --self-test`.
+
 ## Активация любого хука
 
 Добавь соответствующий блок выше в свой `~/.hermes/config.yaml`, затем подтверди на запросе
