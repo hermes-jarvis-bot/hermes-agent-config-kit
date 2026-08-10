@@ -50,12 +50,12 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `hooks/` | 59 | 12 | 1 | 46 |
 | `principles/` | 31 | 30 | 0 | 1 |
 | `references/` | 1 | 0 | 0 | 1 |
-| `rules/` | 35 | 28 | 0 | 7 |
-| `scripts/` | 67 | 0 | 1 | 66 |
+| `rules/` | 35 | 29 | 0 | 6 |
+| `scripts/` | 68 | 0 | 1 | 67 |
 | `skills/` | 240 | 155 | 0 | 85 |
-| `templates/` | 49 | 33 | 0 | 16 |
+| `templates/` | 49 | 34 | 0 | 15 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **550** | **258** | **2** | **290** |
+| **Total** | **551** | **260** | **2** | **289** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
@@ -64,7 +64,7 @@ Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only 
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
 
-_Last recomputed against upstream commit `7448bd377459dcf5694fcf4d0b670be8d6d02d09` (`upstream.lock.json`'s `last_synced_sha`)._
+_Last recomputed against upstream commit `ec5a6cd67f3039b907555a74c2fbf0f40d8e423d` (`upstream.lock.json`'s `last_synced_sha`)._
 
 <!-- END SNAPSHOT_BASELINE_TABLE -->
 
@@ -206,6 +206,8 @@ The adapter intentionally auto-converts only selected markdown-only material int
 | `rules/verify-git-currency-first.md` | `hermes/skills/verify-git-currency-first/SKILL.md` |
 | `rules/moa-gemini-delegation-eval.md` | `hermes/skills/moa-gemini-delegation-eval/SKILL.md` |
 | `rules/rlm-context-as-program.md` | `hermes/skills/rlm-context-as-program/SKILL.md` |
+| `rules/transfer-contracts.md` | `hermes/skills/transfer-contracts/SKILL.md` |
+| `templates/transfer-contract.json` | `hermes/templates/transfer-contract.md` |
 | `rules/finish-the-task.md` | `hermes/skills/finish-the-task/SKILL.md` |
 | `rules/git-source-of-truth.md` | `hermes/skills/git-source-of-truth/SKILL.md` |
 | `rules/quality-code.md` | `hermes/skills/code-quality/SKILL.md` |
@@ -1057,15 +1059,16 @@ Reason: many are design notes or competing patterns rather than ready modules. T
 
 ## Templates not yet ported
 
-**Updated 2026-08-08**: 33 upstream templates are now adapted (matches the "Snapshot baseline"
-table's templates `Ported` column: 31 fast-lane + 2 reviewed-script-lane) with Hermes-native
+**Updated 2026-08-10**: 34 upstream templates are now adapted (matches the "Snapshot baseline"
+table's templates `Ported` column: 32 fast-lane + 2 reviewed-script-lane) with Hermes-native
 provenance and operator-confirmation wording: the complete reviewed `templates/agent-task/`
 record set (10 files), `templates/proof-plan.md`, `templates/long-run-project/README.md` +
-`PRD-BOOTSTRAP.md` (2 files), and the complete `templates/kb-skeleton/` tree (18 markdown files
-via the fast lane, plus its 2 reviewed-script-lane scripts `validate_kb.py`/`build_kb_graph.py`,
-20 files total — **reversed from "stays out of MVP" on 2026-08-06**, see the
-"`layer-new`/`feature-new` and the `kb-skeleton` template tree ported" entry above). The
-installer copies templates only into the
+`PRD-BOOTSTRAP.md` (2 files), `templates/transfer-contract.json` (2026-08-10, see the
+transfer-contracts entry above), and the complete `templates/kb-skeleton/` tree (18 markdown
+files via the fast lane, plus its 2 reviewed-script-lane scripts
+`validate_kb.py`/`build_kb_graph.py`, 20 files total — **reversed from "stays out of MVP" on
+2026-08-06**, see the "`layer-new`/`feature-new` and the `kb-skeleton` template tree ported"
+entry above). The installer copies templates only into the
 isolated `<hermes-home>/templates/config-kit/` namespace and the remover deletes only that
 namespace. The remaining template categories stay out of MVP:
 
@@ -1311,11 +1314,12 @@ Candidate groups:
   `claude-attribution-guard.py`, `pre-push-claude-attribution.py`, `keyword-skill-router.py`
   (explicitly redundant given Hermes's own semantic skill loader, per `runtime-wiring.md`),
   `ask-question-guard.py` (specific to Claude Code's `AskUserQuestion` tool).
-- transfer contracts — **`transfer-contract-guard.py` ported** (2026-08-09, see below). New
-  upstream feature not on this list until it landed via PR #27 (a manual upstream-watch
-  dispatch triggered mid-Wave-4, not the scheduled cron — upstream had drifted since the
-  previous sync). No sibling candidates in this group; the rule (`transfer-contracts.md`) and
-  template (`transfer-contract.json`) it depends on are covered by the same port.
+- transfer contracts — **`transfer-contract-guard.py` ported** (2026-08-09, see below), the
+  rule and template ported into the fast lane (`transfer-contracts` skill,
+  `transfer-contract.md` template) and an upstream session-ownership fix ported into the hook
+  itself (2026-08-10, see below). New upstream feature not on this list until it landed via
+  PR #27 (a manual upstream-watch dispatch triggered mid-Wave-4, not the scheduled cron —
+  upstream had drifted since the previous sync). No sibling hook candidates in this group.
 
 Acceptance criteria:
 
@@ -1720,6 +1724,101 @@ suites now run automatically in CI (93/93 combined cases -- 79 from before this 
 the new verify-deleted-guard.py mv cases, +12 for transfer-contract-guard.py), plus the full install/remove cycle
 covering `hooks/config-kit`. `scripts/update_backlog_counts.py` picked up the new reviewed-hook
 entry automatically (hooks/ row: Files in snapshot 58->59, Ported 11->12, Left out 46->46).
+
+#### `rules/transfer-contracts.md` + `templates/transfer-contract.json` ported; session-ownership fix ported into `transfer-contract-guard.py`; session-scoping fix applied to `session-handoff-check.py`/`session-handoff-reminder.py` (2026-08-10)
+
+Operator asked what else the last sync brought in ("Что еще из последнего обновления
+апстрима?"). Found: `rules/transfer-contracts.md` (the rule the just-ported hook enforces) and
+`templates/transfer-contract.json` (its record shape) were both merged in PR #27 alongside the
+hook itself, but neither had a `SUPPORTED`/`compatibility.yaml` entry — only the hook was
+tracked. Operator approved porting both.
+
+**`rules/transfer-contracts.md` → `hermes/skills/transfer-contracts/SKILL.md`** (fast lane).
+Needed a custom `adapt_source_text()` override, not the generic conversion: the generic
+hook-filename redaction (`transfer-contract-guard.py` -> "a reviewed guard candidate") reads as
+nonsense once concatenated with a literal `hooks/` prefix in this specific rule's prose, the
+"Mechanical wiring" section described upstream's 3-event Claude-Code wiring rather than this
+adapter's actual 4-event Hermes wiring (and after the generic `Claude Code` -> `Hermes Agent`
+substitution, literally claimed this port also covers Codex, which it does not), and the
+template cross-reference pointed at `templates/transfer-contract.json` instead of the actual
+ported `.md` path. Wrote a corrected override by hand; still had to rephrase two literal
+`transfer-contract-guard.py` mentions to avoid `validate_output.py`'s
+`FORBIDDEN_GENERATED_HARNESS_PATTERNS` hook-filename regex, which applies unconditionally to
+every custom override too (custom overrides bypass `adapt_text()`'s automatic redaction
+entirely, so a hand-written override is responsible for avoiding every forbidden pattern
+itself — a real gap found while landing this specific override, not a pre-existing bug).
+
+**`templates/transfer-contract.json` → `hermes/templates/transfer-contract.md`** (fast lane,
+also custom `adapt_source_text()` — JSON template sources render as a data-only markdown
+record with `{{placeholder}}` fields, matching the existing `templates/agent-task/*.json`
+convention, never a literal JSON copy). Added a "File transfers" section to
+`hermes/templates/README.md`/`README_RU.md` (hand-maintained catalogs) and regenerated
+`hermes/skills/README.md`/bumped the count in `README_RU.md` for the new skill.
+
+**Reviewing the diff also surfaced two things not asked for but directly relevant, both
+presented to the operator before acting:**
+
+1. **Upstream had already fixed a real bug in `transfer-contract-guard.py`** — a commit landed
+   within hours of this adapter's initial port (found via `sync_upstream.py --check` showing
+   further drift mid-task; a manual `sync_upstream.py --sync` without `--target-sha` picked up
+   this newer, unreviewed commit automatically, which is exactly the kind of un-reviewed
+   lockfile advance this repo's own rules forbid — caught by re-reading the diff before treating
+   it as accepted, not by skipping the review). The bug: one shared `transfers/` directory
+   meant one session's open transfer blocked every OTHER session's Stop attempt too —
+   collateral, since a project can have several concurrent agent sessions. Upstream's fix:
+   stamp the opening session's id onto the contract; at Stop, an open contract owned by a
+   DIFFERENT, still-live session is deferred (stderr note only), not blocked. Ported in spirit,
+   not copied: Hermes's `event.get("session_id")` is always populated (no fallback-chain lookup
+   needed, unlike upstream's session_id/sessionId/conversation_id/transcript_path chain), and
+   liveness is checked via a new shared heartbeat mechanism
+   (`hermes_hook_common.touch_session_heartbeat()`/`session_is_live()`, a
+   `.hermes/sessions/<id>/heartbeat` file with a 30-minute TTL, `HERMES_SESSION_HEARTBEAT_TTL`
+   env override) rather than upstream's per-session-transcript-file mtime, since Hermes has no
+   direct equivalent to Claude Code's `~/.claude/projects/<slug>/<session-id>.jsonl`. Ported the
+   upstream `--self-test` mode too, adapted to the heartbeat mechanism.
+2. **The same bug class, independently found in this adapter's own `session-handoff-check.py`/
+   `session-handoff-reminder.py`** (ported 2026-08-09, already live at v0.4.4) — their
+   `.hermes/.session-start`/`.hermes/.handoff-reminded` markers were project-scoped, not
+   session-scoped, so two concurrent Hermes sessions in the same project stomp on each other's
+   markers (one session's reminded-marker silently suppresses the other's; touching
+   `.session-start` resets the other's age baseline). Confirmed this is a pre-existing upstream
+   limitation too (upstream's own session-handoff-check.py/session-handoff-reminder.py use the
+   exact same unscoped paths, only just fixed the unrelated transfer-contract-guard.py pair) —
+   this port faithfully carried over an upstream defect, did not introduce a new one. Presented
+   three options (fix all three hooks; fix only transfer-contract-guard.py to match upstream
+   exactly; defer everything to a separate round). **Operator decision: fix all three.** Moved
+   both markers under `.hermes/sessions/<session_id>/`, and both hooks now also touch the
+   shared heartbeat on every call (`pre_llm_call` fires every turn; `pre_verify`/
+   `on_session_end` fire on most/every turn), making them natural heartbeat producers for
+   transfer-contract-guard.py's liveness checks even when it's the only one of the three
+   registered.
+
+New/updated test coverage: `test_transfer_contract_guard.py` grew from 12 to 18 cases (6 new
+ownership scenarios: unknown-session still blocks, live-foreign-session defers on both
+pre_verify and on_session_end, stale-heartbeat blocks again, own-open-contract always blocks
+self, plus the hook's own `--self-test`); `test_session_handoff_check.py` grew from 4 to 5
+(a second session's first turn does not touch the first session's markers);
+`test_session_handoff_reminder.py` grew from 8 to 10 (a brand-new second session is not
+silenced by the first session's old marker, and cannot clear the first session's reminded
+marker). Two test-fixture bugs found and fixed while writing the ownership tests: a contract
+using `"settings": {}` (an empty dict, which `_nonempty()` correctly treats as absent per
+schema — not a hook bug, a test-fixture bug) instead of a non-empty settings object; and a
+premature `mkdir()` that collided with a directory the hook itself had already created via
+`touch_session_heartbeat()`'s own `mkdir(parents=True, exist_ok=True)` two lines earlier in the
+same test.
+
+All new/changed behavior verified directly against Hermes's real dispatch code path
+(`agent.shell_hooks.run_once`) with the calling process chdir'd into a real sandbox, covering:
+two different session_ids producing two non-colliding session directories; a foreign session's
+Stop call genuinely NOT blocked by another live session's open transfer; and the owning
+session's own Stop call still genuinely blocked by its own open transfer — the exact ownership
+distinction the whole fix exists to make, proven live, not just read from source.
+
+Full verification: `python3 scripts/validate_adapter.py` passes end to end — 102/102 combined
+hook test cases (up from 93), plus the full install/remove cycle covering `hooks/config-kit`,
+`skills/config-kit`, and `templates/config-kit`. No version bump forced by the skill/template
+port alone, but this segment's hook changes (ownership fix + session-scoping fix) are real
+behavior changes to already-released hooks, so this whole segment ships as one release.
 
 ## Reviewed-script lane pilot — status (2026-08-04)
 

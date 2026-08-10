@@ -10,9 +10,11 @@ mappings/reviewed-hooks.yaml.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
+import time as _time
 from pathlib import Path
 
 GUARD = Path(__file__).resolve().parents[1] / "transfer-contract-guard.py"
@@ -182,6 +184,76 @@ def main() -> int:
             None,
             "transfer_contract",
         )
+
+    # Session ownership (2026-08-10 fix): an open contract owned by a DIFFERENT, still-live
+    # session is deferred (stderr note, not a block); one owned by no one, by the current
+    # session, or by a stale (heartbeat-expired) session still blocks.
+    with tempfile.TemporaryDirectory() as tmp3:
+        cwd3 = Path(tmp3)
+        hermes_dir = cwd3 / ".hermes"
+        transfers = hermes_dir / "transfers"
+        transfers.mkdir(parents=True)
+        owned = dict(VALID_CONTRACT)
+        owned["status"] = "running"
+        owned["session_id"] = "other-session"
+        (transfers / "owned.json").write_text(json.dumps(owned), encoding="utf-8")
+
+        check(
+            "pre_verify: open transfer owned by an UNKNOWN (never-heartbeat) session -> still blocks",
+            {"hook_event_name": "pre_verify", "cwd": str(cwd3)},
+            "continue",
+            None,
+        )
+
+        # Give "other-session" a fresh heartbeat -> now it reads as live, and its open
+        # contract should be deferred instead of blocking "my-session".
+        (hermes_dir / "sessions" / "other-session").mkdir(parents=True)
+        (hermes_dir / "sessions" / "other-session" / "heartbeat").touch()
+        check(
+            "pre_verify: open transfer owned by a LIVE foreign session -> deferred, not blocked",
+            {"hook_event_name": "pre_verify", "cwd": str(cwd3), "session_id": "my-session"},
+            None,
+            "left to their owners",
+        )
+        check(
+            "on_session_end: same live-foreign-owned transfer -> deferred note only",
+            {"hook_event_name": "on_session_end", "cwd": str(cwd3), "session_id": "my-session"},
+            None,
+            "left to their owners",
+        )
+
+        # Make the owner's heartbeat stale -> its contract blocks again.
+        stale_heartbeat = hermes_dir / "sessions" / "other-session" / "heartbeat"
+        old = _time.time() - 1800 - 600
+        os.utime(stale_heartbeat, (old, old))
+        check(
+            "pre_verify: same contract, owner's heartbeat now STALE -> blocks again",
+            {"hook_event_name": "pre_verify", "cwd": str(cwd3), "session_id": "my-session"},
+            "continue",
+            None,
+        )
+
+        # The current session's OWN open contract always blocks it, regardless of liveness.
+        mine = dict(VALID_CONTRACT)
+        mine["status"] = "running"
+        mine["session_id"] = "my-session"
+        (transfers / "owned.json").unlink()
+        (transfers / "mine.json").write_text(json.dumps(mine), encoding="utf-8")
+        (hermes_dir / "sessions" / "my-session").mkdir(parents=True, exist_ok=True)
+        (hermes_dir / "sessions" / "my-session" / "heartbeat").touch()
+        check(
+            "pre_verify: my own open contract blocks me even though I'm live",
+            {"hook_event_name": "pre_verify", "cwd": str(cwd3), "session_id": "my-session"},
+            "continue",
+            None,
+        )
+
+    total += 1
+    self_test_proc = subprocess.run([sys.executable, str(GUARD), "--self-test"], capture_output=True, text=True, timeout=15)
+    ok = self_test_proc.returncode == 0 and "self-test: ok" in self_test_proc.stdout
+    if not ok:
+        failures += 1
+    print(f"{'PASS' if ok else 'FAIL'}  {'--self-test mode (ownership rule on real files)':65} rc={self_test_proc.returncode} out={self_test_proc.stdout.strip()[-40:]!r}")
 
     total += 1
     spec_exit_check = run_case({"hook_event_name": "unknown_event"})

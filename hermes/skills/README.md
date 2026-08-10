@@ -1,6 +1,6 @@
 # Skills Catalog
 
-Generated from every `SKILL.md` under this directory (103 skills as of the
+Generated from every `SKILL.md` under this directory (104 skills as of the
 last regeneration). Regenerate with `python3 scripts/generate_skills_catalog.py`;
 verify it is current with `--check`.
 
@@ -106,6 +106,7 @@ the category layout shown here. Remove the same way with
 | [system-and-data-design](system-and-data-design/) | Plan and review capacity, storage, data flow, consistency, resilience, and scaling decisions from measured requirements without provisioning infrastructure. |
 | [testing-strategy](testing-strategy/) | Classify a code change's risk and select the smallest test-level evidence set that can falsify the changed behaviour, from unit through agent-evaluation checks. |
 | [thermo-nuclear-code-quality-review](thermo-nuclear-code-quality-review/) | Run an opt-in strict maintainability review for giant files, spaghetti growth, misplaced logic, weak boundaries, unnecessary abstractions, and missed structural simplifications. |
+| [transfer-contracts](transfer-contracts/) | Record a durable JSON contract for every clone/copy/move/sync operation -- source, destination, verification plan, and source-cleanup intent -- so a later agent can resume without reconstructing intent from shell history. |
 | [verify-at-consumer](verify-at-consumer/) | Verify integrations at the receiving side; sender logs, specs, and HTTP acknowledgements are not enough. |
 | [verify-git-currency-first](verify-git-currency-first/) | Establish current remote, local, and deployed Git state before diagnosing, editing, synchronising, deploying, or copying project trees. |
 | [verify-this](verify-this/) | Prove a concrete behavior, performance, UI, CLI, API, or memory claim with fresh baseline-versus-treatment evidence and one explicit verdict. |

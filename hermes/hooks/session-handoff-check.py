@@ -24,9 +24,20 @@ Adaptations from upstream:
     the project, `~/.hermes/handoffs/` globally), overridable via HERMES_HANDOFF_DIR.
   - Dropped the upstream PreCompact-marker surfacing and other-hook marker resets
     (`.stop-phrase-guard-fired`, `.stop-budget-*`) — those reference sibling upstream hooks this
-    adapter does not port. Still resets `.hermes/.handoff-reminded` and touches
-    `.hermes/.session-start` — session-handoff-reminder.py's own state, needed for it to work at
-    all (same feature, split across two files, matching upstream's own design).
+    adapter does not port. Still resets `.handoff-reminded` and touches `session-start` —
+    session-handoff-reminder.py's own state, needed for it to work at all (same feature, split
+    across two files, matching upstream's own design).
+  - Session-scoped, not project-scoped (added 2026-08-10): upstream's original marker paths
+    (`.claude/.session-start`, `.claude/.handoff-reminded`) carry no session id at all, so two
+    concurrent sessions in the same project stomp on each other's markers -- one session's
+    reminded-marker silently suppresses the other's, and touching `.session-start` resets the
+    other's age baseline. This adapter found the same defect in its own first port while
+    reviewing an unrelated upstream fix to transfer-contract-guard.py's session ownership (see
+    that hook's docstring); upstream has not fixed this pair itself. Fixed here by moving both
+    markers under `.hermes/sessions/<session_id>/`, scoped per Hermes session. Also touches
+    the shared heartbeat (`hermes_hook_common.touch_session_heartbeat()`) on every call, not
+    just is_first_turn -- `pre_llm_call` fires every turn, making this hook a natural,
+    already-happening heartbeat producer for transfer-contract-guard.py's liveness checks.
 """
 from __future__ import annotations
 
@@ -37,7 +48,12 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from hermes_hook_common import filename_timestamp, read_event  # noqa: E402
+from hermes_hook_common import (  # noqa: E402
+    event_session_id,
+    filename_timestamp,
+    read_event,
+    touch_session_heartbeat,
+)
 
 MAX_PROJECTS = 3
 MAX_AGE_HOURS = 168  # 7 days
@@ -80,22 +96,25 @@ def main() -> None:
     event = read_event()
     if event.get("hook_event_name") != "pre_llm_call":
         sys.exit(0)
+
+    cwd = Path(str(event.get("cwd") or Path.cwd()))
+    hermes_dir = cwd / ".hermes"
+    session_id = event_session_id(event)
+    touch_session_heartbeat(hermes_dir, session_id)
+
     extra = event.get("extra", {}) or {}
     if not extra.get("is_first_turn"):
         sys.exit(0)
 
-    cwd = Path(str(event.get("cwd") or Path.cwd()))
-    hermes_dir = cwd / ".hermes"
-    if hermes_dir.exists():
-        reminded = hermes_dir / ".handoff-reminded"
-        if reminded.exists():
-            try:
-                reminded.unlink()
-            except OSError:
-                pass
-    else:
-        hermes_dir.mkdir(parents=True, exist_ok=True)
-    (hermes_dir / ".session-start").touch()
+    session_dir = hermes_dir / "sessions" / session_id if session_id else hermes_dir
+    session_dir.mkdir(parents=True, exist_ok=True)
+    reminded = session_dir / "handoff-reminded"
+    if reminded.exists():
+        try:
+            reminded.unlink()
+        except OSError:
+            pass
+    (session_dir / "session-start").touch()
 
     now = time.time()
     found: list[dict] = []

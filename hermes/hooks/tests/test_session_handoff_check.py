@@ -13,6 +13,7 @@ import json
 import subprocess
 import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 GUARD = Path(__file__).resolve().parents[1] / "session-handoff-check.py"
@@ -61,26 +62,44 @@ def main() -> int:
         cwd = Path(tmp)
         check(
             "first turn, no handoffs yet",
-            {"hook_event_name": "pre_llm_call", "cwd": str(cwd), "extra": {"is_first_turn": True}},
+            {"hook_event_name": "pre_llm_call", "cwd": str(cwd), "session_id": "sess-a", "extra": {"is_first_turn": True}},
             None,
         )
-        assert (cwd / ".hermes" / ".session-start").exists(), "session marker should be touched"
+        assert (cwd / ".hermes" / "sessions" / "sess-a" / "session-start").exists(), "session-scoped marker should be touched"
+        assert (cwd / ".hermes" / "sessions" / "sess-a" / "heartbeat").exists(), "heartbeat should be touched"
 
         handoffs = cwd / ".hermes" / "handoffs" / "myproj"
         handoffs.mkdir(parents=True)
-        from datetime import datetime
-
         fresh_name = datetime.now().strftime("%Y-%m-%d_%H-%M") + "_abcd1234.md"
         (handoffs / fresh_name).write_text("# Handoff\n\nSome state.\n")
-        reminded = cwd / ".hermes" / ".handoff-reminded"
+        reminded = cwd / ".hermes" / "sessions" / "sess-a" / "handoff-reminded"
         reminded.write_text("x")
 
         check(
             "first turn, one handoff present -> injected as context",
-            {"hook_event_name": "pre_llm_call", "cwd": str(cwd), "extra": {"is_first_turn": True}},
+            {"hook_event_name": "pre_llm_call", "cwd": str(cwd), "session_id": "sess-a", "extra": {"is_first_turn": True}},
             "SESSION HANDOFF(S)",
         )
-        assert not reminded.exists(), "stale .handoff-reminded marker should be cleared on first turn"
+        assert not reminded.exists(), "stale handoff-reminded marker should be cleared on first turn"
+
+    # Session-scoping (2026-08-10 fix): two concurrent sessions in the same project must not
+    # stomp on each other's markers -- session B's first turn must not clear session A's
+    # already-set reminded marker, nor touch A's session-start baseline.
+    with tempfile.TemporaryDirectory() as tmp2:
+        cwd2 = Path(tmp2)
+        run_case({"hook_event_name": "pre_llm_call", "cwd": str(cwd2), "session_id": "sess-a", "extra": {"is_first_turn": True}})
+        a_reminded = cwd2 / ".hermes" / "sessions" / "sess-a" / "handoff-reminded"
+        a_reminded.write_text("x")
+        a_start = cwd2 / ".hermes" / "sessions" / "sess-a" / "session-start"
+        a_mtime_before = a_start.stat().st_mtime
+
+        run_case({"hook_event_name": "pre_llm_call", "cwd": str(cwd2), "session_id": "sess-b", "extra": {"is_first_turn": True}})
+
+        total += 1
+        ok = a_reminded.exists() and a_start.stat().st_mtime == a_mtime_before
+        if not ok:
+            failures += 1
+        print(f"{'PASS' if ok else 'FAIL'}  {'session B first-turn does not touch session A markers':65}")
 
     print(f"\n{total - failures}/{total} passed")
     return 1 if failures else 0

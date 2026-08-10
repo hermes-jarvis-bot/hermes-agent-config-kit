@@ -60,3 +60,9 @@ and health evidence, and proposing that plan from an approved brief.
 | Template | Description |
 |---|---|
 | [kb-skeleton/](kb-skeleton/) | Drop-in knowledge-base directory tree (global KB, per-project layers, feature narratives) for the feature-layer-architecture skill's `/layer-new` and `/feature-new` scaffolding. See its own `kb-skeleton/README.md`. |
+
+## File transfers
+
+| Template | Description |
+|---|---|
+| [transfer-contract.md](transfer-contract.md) | Durable record for one clone/copy/move/sync operation -- source, destination, verification plan, and source-cleanup intent. Enforced by the `transfer-contract-guard.py` reviewed hook; see the `transfer-contracts` skill for the full workflow. |

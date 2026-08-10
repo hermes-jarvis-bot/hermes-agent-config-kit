@@ -29,6 +29,23 @@ Directory convention: recognizes `.claude/transfers/`, `.agent/transfers/`, `.co
 (cross-harness, unchanged from upstream -- a contract written by another harness working in
 the same repo is still enforced) plus `.hermes/transfers/` as the Hermes-native default.
 
+Session ownership (added 2026-08-10, ported from an upstream fix that landed within hours of
+this hook's initial port): the first PreToolUse-equivalent (`pre_tool_call`) call that uses a
+contract stamps its `session_id` onto it. At the Stop-equivalent gate, an OPEN contract owned
+by a DIFFERENT, still-live session is deferred (a stderr note, not a block) -- only unowned,
+own-session, or STALE (owner inactive past the TTL) contracts actually block. Without this, one
+shared `transfers/` directory meant any session's in-flight transfer blocked every other
+session's Stop attempt too -- collateral, and the usual fix for collateral is disabling the
+gate. Liveness is checked via `hermes_hook_common.session_is_live()` (a heartbeat file this
+hook and session-handoff-check.py/session-handoff-reminder.py all touch), not upstream's
+per-session transcript-file mtime -- Hermes has no direct equivalent to Claude Code's
+`~/.claude/projects/<slug>/<session-id>.jsonl` transcript, and `event.get("session_id")` is
+already always populated on Hermes's wire payload, so no transcript-filename fallback chain is
+needed either. # simplification: a contract owned by a NON-Hermes session_id (another harness
+working the same repo) has no heartbeat we can check, so it is treated as not-live and can
+still block -- multi-harness liveness is not solved, only same-mechanism (Hermes-to-Hermes)
+liveness is.
+
 The hook never deletes a source and never invents verification evidence. A second agent can
 therefore resume from one small JSON record instead of reconstructing intent from shell
 history.
@@ -43,7 +60,15 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from hermes_hook_common import allow, block, log, read_event  # noqa: E402
+from hermes_hook_common import (  # noqa: E402
+    allow,
+    block,
+    event_session_id,
+    log,
+    read_event,
+    session_is_live,
+    touch_session_heartbeat,
+)
 
 TRANSFER_MARKER = re.compile(
     r"(?:^|[\s;&])#\s*transfer-contract\s*:\s*(?P<path>[^\r\n]+)",
@@ -209,6 +234,31 @@ def _contract_errors(contract: Any, *, pre_transfer: bool = False) -> list[str]:
     return errors
 
 
+def _stamp_owner(path: Path, contract: dict[str, Any], session_id: str) -> None:
+    """Record who opened this transfer, so its Stop-equivalent gate is scoped to them.
+
+    Writes once: an existing owner is never overwritten (the first session to use a contract
+    keeps it, matching upstream's own one-shot stamp semantics).
+    """
+    if not session_id or _text(contract.get("session_id")):
+        return
+    try:
+        contract["session_id"] = session_id
+        path.write_text(json.dumps(contract, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    except OSError:
+        # Ownership is an optimisation for other sessions' Stop gates. Failing to write it
+        # must never turn into a blocked transfer.
+        pass
+
+
+def _foreign_and_live(contract: dict[str, Any], current_session: str, hermes_dir: Path) -> str:
+    """Owner id when this record belongs to a different, still-live Hermes session."""
+    owner = _text(contract.get("session_id"))
+    if not owner or owner == current_session:
+        return ""
+    return owner if session_is_live(hermes_dir, owner) else ""
+
+
 def _load(path: Path) -> tuple[dict[str, Any] | None, str | None]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -255,6 +305,7 @@ def _pre(event: dict[str, Any]) -> None:
         errors.append(f"operation.tool must describe {expected_tool!r} for this command")
     if errors:
         block(f"Transfer contract is incomplete ({path}): " + "; ".join(errors))
+    _stamp_owner(path, contract, event_session_id(event))
     log("INFO", "transfer_contract", "allowed", f"{kind}:{expected_tool}", str(path))
     allow()
 
@@ -311,17 +362,23 @@ def _transfer_files(root: Path) -> list[Path]:
     return paths
 
 
-def _stop_reason(event: dict[str, Any]) -> str | None:
-    """Pure decision (shared by pre_verify and on_session_end): a block-reason string, or
-    None to allow. Unchanged from upstream's evaluate-then-emit split."""
-    root = _repo_root(_event_cwd(event))
+def _stop_issues(root: Path, current_session: str, hermes_dir: Path) -> tuple[list[str], list[str]]:
+    """Return (blocking issues for this session, notes about other live sessions')."""
     issues: list[str] = []
+    deferred: list[str] = []
     for path in _transfer_files(root):
         contract, error = _load(path)
         if error or contract is None:
+            # A record too broken to parse has no readable owner, so it is everyone's
+            # problem until someone repairs it.
             issues.append(f"{path.name}: {error}")
             continue
+        owner = _foreign_and_live(contract, current_session, hermes_dir)
         status = _text(contract.get("status"))
+        if owner:
+            if status in OPEN_STATUSES or _contract_errors(contract) or _verified_path_errors(contract, root):
+                deferred.append(f"{path.name} (status={status}, owner session {owner} still live)")
+            continue
         if status in OPEN_STATUSES:
             issues.append(
                 f"{path.name}: status={status}; next_action={_text(contract.get('next_action')) or 'missing'}"
@@ -329,6 +386,21 @@ def _stop_reason(event: dict[str, Any]) -> str | None:
         elif status in CLOSED_STATUSES:
             issues.extend(f"{path.name}: {item}" for item in _contract_errors(contract))
             issues.extend(f"{path.name}: {item}" for item in _verified_path_errors(contract, root))
+    return issues, deferred
+
+
+def _stop_reason(event: dict[str, Any]) -> str | None:
+    """Pure decision (shared by pre_verify and on_session_end): a block-reason string, or
+    None to allow. Logs (stderr) any contracts deferred to a still-live foreign session."""
+    root = _repo_root(_event_cwd(event))
+    hermes_dir = root / ".hermes"
+    issues, deferred = _stop_issues(root, event_session_id(event), hermes_dir)
+    if deferred:
+        sys.stderr.write(
+            "[transfer_contract] left to their owners (live sessions, not yours): "
+            + " | ".join(deferred)
+            + "\n"
+        )
     if not issues:
         return None
     return (
@@ -353,11 +425,106 @@ def _stop(event: dict[str, Any], hook_event: str) -> None:
     sys.exit(0)
 
 
+def _self_test() -> int:
+    """Prove the ownership rule on real files in a real temp tree."""
+    import tempfile
+
+    fails: list[str] = []
+    base_contract = {
+        "schema_version": 1,
+        "transfer_id": "t",
+        "status": "planned",
+        "source": "ssh://host/src",
+        "destination": "rclone://remote:dst",
+        "purpose": "p",
+        "motivation": "m",
+        "next_action": "n",
+        "deadline": "2026-12-31T00:00:00+00:00",
+        "operation": {"kind": "copy", "tool": "rclone", "settings": "s"},
+        "verification": {"plan": ["check"], "performed": False},
+        "source_cleanup": {"planned": False, "performed": False, "verified": False, "reason": "r"},
+    }
+
+    with tempfile.TemporaryDirectory() as raw:
+        repo = Path(raw) / "repo"
+        hermes_dir = repo / ".hermes"
+        transfers = hermes_dir / "transfers"
+        transfers.mkdir(parents=True)
+
+        live, stale, mine = "live-owner", "stale-owner", "my-session"
+        touch_session_heartbeat(hermes_dir, live)
+        touch_session_heartbeat(hermes_dir, stale)
+        stale_heartbeat = hermes_dir / "sessions" / stale / "heartbeat"
+        import os
+        import time
+
+        ancient = time.time() - 1800 - 600
+        os.utime(stale_heartbeat, (ancient, ancient))
+
+        def put(name: str, **over: Any) -> Path:
+            record = json.loads(json.dumps(base_contract))
+            record.update(over)
+            path = transfers / f"{name}.json"
+            path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+            return path
+
+        cases = [
+            ("open record owned by me", {"session_id": mine}, True),
+            ("open record, owner still live", {"session_id": live}, False),
+            ("open record, owner gone stale", {"session_id": stale}, True),
+            ("open record with no owner at all", {}, True),
+            ("closed record, owner live", {"session_id": live, "status": "cancelled", "closure_reason": "c"}, False),
+        ]
+        for label, over, should_block in cases:
+            for leftover in transfers.glob("*.json"):
+                leftover.unlink()
+            put("case", **over)
+            issues, deferred = _stop_issues(repo, mine, hermes_dir)
+            if bool(issues) != should_block:
+                fails.append(f"{label}: expected block={should_block}, issues={issues}, deferred={deferred}")
+
+        for leftover in transfers.glob("*.json"):
+            leftover.unlink()
+        (transfers / "broken.json").write_text("{not json", encoding="utf-8")
+        if not _stop_issues(repo, mine, hermes_dir)[0]:
+            fails.append("unparseable record did not block")
+
+        for leftover in transfers.glob("*.json"):
+            leftover.unlink()
+        path = put("mine-broken", session_id=mine, status="verified")
+        if not _stop_issues(repo, mine, hermes_dir)[0]:
+            fails.append("verified record without evidence did not block its owner")
+
+        for leftover in transfers.glob("*.json"):
+            leftover.unlink()
+        path = put("stamp")
+        record = json.loads(path.read_text(encoding="utf-8"))
+        _stamp_owner(path, record, mine)
+        if json.loads(path.read_text(encoding="utf-8")).get("session_id") != mine:
+            fails.append("owner was not stamped onto an unowned record")
+        _stamp_owner(path, json.loads(path.read_text(encoding="utf-8")), "someone-else")
+        if json.loads(path.read_text(encoding="utf-8")).get("session_id") != mine:
+            fails.append("existing owner was overwritten")
+
+        if session_is_live(hermes_dir, "no-such-session"):
+            fails.append("an unknown session was reported alive")
+        if event_session_id({"session_id": "../escape"}):
+            fails.append("a path-traversing session id was not rejected")
+
+    for line in fails:
+        print("FAIL:", line)
+    print("transfer-contract-guard self-test:", "FAILED" if fails else "ok")
+    return 1 if fails else 0
+
+
 def main() -> None:
+    if "--self-test" in sys.argv:
+        sys.exit(_self_test())
     event = read_event()
     if not event:
         allow()
     hook_event = _text(event.get("hook_event_name"))
+    touch_session_heartbeat(_event_cwd(event) / ".hermes", event_session_id(event))
     if hook_event == "pre_tool_call":
         _pre(event)
     elif hook_event == "post_tool_call":

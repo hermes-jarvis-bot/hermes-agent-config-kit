@@ -61,3 +61,9 @@ python3 scripts/install_hermes.py --apply --hermes-home /tmp/hermes-home
 | Шаблон | Описание |
 |---|---|
 | [kb-skeleton/](kb-skeleton/) | Готовое дерево директорий базы знаний (глобальная БЗ, слои проекта, нарративы фич) для скаффолдинга скилла feature-layer-architecture (`/layer-new` и `/feature-new`). См. собственный `kb-skeleton/README.md`. |
+
+## Переносы файлов
+
+| Шаблон | Описание |
+|---|---|
+| [transfer-contract.md](transfer-contract.md) | Durable-запись для одной операции clone/copy/move/sync — источник, назначение, план верификации, намерение по очистке источника. Проверяется хуком `transfer-contract-guard.py`; см. скилл `transfer-contracts` для полного workflow. |

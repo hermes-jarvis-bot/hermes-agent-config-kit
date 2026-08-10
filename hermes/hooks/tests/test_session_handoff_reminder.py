@@ -16,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from datetime import datetime
 from pathlib import Path
 
 GUARD = Path(__file__).resolve().parents[1] / "session-handoff-reminder.py"
@@ -65,9 +66,10 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as tmp:
         cwd = Path(tmp)
+        sid = "sess-x"
         check(
             "no .hermes dir at all -> not a Hermes project",
-            {"hook_event_name": "on_session_end", "cwd": str(cwd)},
+            {"hook_event_name": "on_session_end", "cwd": str(cwd), "session_id": sid},
             None,
             None,
         )
@@ -76,16 +78,17 @@ def main() -> int:
         hermes_dir.mkdir()
         check(
             "no session marker yet -> touches it, no reminder",
-            {"hook_event_name": "on_session_end", "cwd": str(cwd)},
+            {"hook_event_name": "on_session_end", "cwd": str(cwd), "session_id": sid},
             None,
             None,
         )
-        session_marker = hermes_dir / ".session-start"
-        assert session_marker.exists(), "session marker should have been created"
+        session_marker = hermes_dir / "sessions" / sid / "session-start"
+        assert session_marker.exists(), "session-scoped marker should have been created"
+        assert (hermes_dir / "sessions" / sid / "heartbeat").exists(), "heartbeat should be touched"
 
         check(
             "session too young (<15 min)",
-            {"hook_event_name": "on_session_end", "cwd": str(cwd)},
+            {"hook_event_name": "on_session_end", "cwd": str(cwd), "session_id": sid},
             None,
             None,
         )
@@ -93,16 +96,16 @@ def main() -> int:
         backdate(session_marker, 20)
         check(
             "old enough, no fresh handoff, pre_verify -> live nudge on stdout",
-            {"hook_event_name": "pre_verify", "cwd": str(cwd)},
+            {"hook_event_name": "pre_verify", "cwd": str(cwd), "session_id": sid},
             "continue",
             None,
         )
-        reminder_marker = hermes_dir / ".handoff-reminded"
+        reminder_marker = hermes_dir / "sessions" / sid / "handoff-reminded"
         assert reminder_marker.exists(), "reminder marker should be set after nudging"
 
         check(
             "already reminded this session -> silent even though still eligible",
-            {"hook_event_name": "pre_verify", "cwd": str(cwd)},
+            {"hook_event_name": "pre_verify", "cwd": str(cwd), "session_id": sid},
             None,
             None,
         )
@@ -110,7 +113,7 @@ def main() -> int:
 
         check(
             "old enough, no fresh handoff, on_session_end -> audit-log only (stderr, no stdout)",
-            {"hook_event_name": "on_session_end", "cwd": str(cwd)},
+            {"hook_event_name": "on_session_end", "cwd": str(cwd), "session_id": sid},
             None,
             "handoff",
         )
@@ -118,16 +121,41 @@ def main() -> int:
 
         handoffs = hermes_dir / "handoffs" / "myproj"
         handoffs.mkdir(parents=True)
-        from datetime import datetime
-
         fresh_name = datetime.now().strftime("%Y-%m-%d_%H-%M") + "_abcd1234.md"
         (handoffs / fresh_name).write_text("fresh handoff")
         check(
             "fresh handoff exists -> silent despite old session",
-            {"hook_event_name": "pre_verify", "cwd": str(cwd)},
+            {"hook_event_name": "pre_verify", "cwd": str(cwd), "session_id": sid},
             None,
             None,
         )
+
+    # Session-scoping (2026-08-10 fix): a second, brand-new session in the same project must
+    # get its own fresh baseline -- not silenced by session sid's already-old marker, and not
+    # able to clear sid's reminded marker either.
+    with tempfile.TemporaryDirectory() as tmp2:
+        cwd2 = Path(tmp2)
+        (cwd2 / ".hermes").mkdir()
+        sid_a, sid_b = "sess-a", "sess-b"
+        run_case({"hook_event_name": "on_session_end", "cwd": str(cwd2), "session_id": sid_a})
+        a_marker = cwd2 / ".hermes" / "sessions" / sid_a / "session-start"
+        backdate(a_marker, 20)
+        run_case({"hook_event_name": "pre_verify", "cwd": str(cwd2), "session_id": sid_a})
+        a_reminded = cwd2 / ".hermes" / "sessions" / sid_a / "handoff-reminded"
+        assert a_reminded.exists(), "session A should have been reminded"
+
+        check(
+            "brand-new session B in the same project -> not silenced by A's state, no reminder yet",
+            {"hook_event_name": "on_session_end", "cwd": str(cwd2), "session_id": sid_b},
+            None,
+            None,
+        )
+        total += 1
+        ok = a_reminded.exists()
+        if not ok:
+            failures += 1
+        label = "session B's first call does not clear session A's reminded marker"
+        print(f"{'PASS' if ok else 'FAIL'}  {label:65}")
 
     print(f"\n{total - failures}/{total} passed")
     return 1 if failures else 0

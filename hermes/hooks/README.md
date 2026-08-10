@@ -44,6 +44,18 @@ like its upstream original:
   `pre_tool_call` (genuine block), `post_tool_call` (audit-log-only), and both `pre_verify`/
   `on_session_end` (dual-registered). See its own section below.
 
+**Multi-session note (added 2026-08-10):** `session-handoff-check.py`, `session-handoff-reminder.py`,
+and `transfer-contract-guard.py` all share a heartbeat mechanism
+(`hermes_hook_common.touch_session_heartbeat()`/`session_is_live()`,
+`.hermes/sessions/<session_id>/heartbeat`, 30-minute TTL, `HERMES_SESSION_HEARTBEAT_TTL`
+override). This is what lets `transfer-contract-guard.py` tell a foreign-but-still-active
+session's open transfer apart from an abandoned one, and it's also why
+`session-handoff-check.py`/`session-handoff-reminder.py` scope their own markers per session
+(`.hermes/sessions/<session_id>/{session-start,handoff-reminded}`) instead of per project — two
+concurrent Hermes sessions in the same project no longer stomp on each other's state. Ported
+from an upstream fix to `transfer-contract-guard.py` specifically; the equivalent fix for the
+other two hooks was this adapter's own addition (upstream has not fixed that pair yet).
+
 ## Available hooks
 
 ### `destructive-command-guard.py`

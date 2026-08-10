@@ -25,14 +25,22 @@ agent/turn_finalizer.py source, have complementary and incomplete coverage on th
 Operator-approved design (2026-08-09): register on BOTH. `on_session_end` is the reliable
 audit-log fallback that covers every long session, coding or not. `pre_verify` is a bonus live
 nudge that actually reaches the model on the turns where the narrow gate holds. Both share the
-same underlying age/freshness check and the same `.hermes/.handoff-reminded` marker, so whichever
-fires first in a given turn suppresses the other for the rest of the session.
+same underlying age/freshness check and the same `handoff-reminded` marker, so whichever fires
+first in a given turn suppresses the other for the rest of the session.
 
 Other adaptations:
   - No `.claude/HANDOFF.md` legacy single-file format -- this is a fresh Hermes-native
     adaptation with no legacy baggage to carry. # simplification: only the
     `.hermes/handoffs/*.md` format is checked.
   - Tunables (SESSION_MIN_MINUTES, HANDOFF_STALE_MINUTES) carried over unchanged from upstream.
+  - Session-scoped, not project-scoped (added 2026-08-10): the marker paths moved from
+    `.hermes/.session-start`/`.hermes/.handoff-reminded` to
+    `.hermes/sessions/<session_id>/{session-start,handoff-reminded}` -- see
+    session-handoff-check.py's docstring for the concurrent-session collision this fixes (found
+    while reviewing an unrelated upstream fix to transfer-contract-guard.py's own session
+    ownership). Also touches the shared heartbeat on every call, since both `pre_verify` and
+    `on_session_end` fire on most/every turn, making this hook a second natural heartbeat
+    producer alongside session-handoff-check.py.
 """
 from __future__ import annotations
 
@@ -42,7 +50,13 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from hermes_hook_common import filename_timestamp, log, read_event  # noqa: E402
+from hermes_hook_common import (  # noqa: E402
+    event_session_id,
+    filename_timestamp,
+    log,
+    read_event,
+    touch_session_heartbeat,
+)
 
 SESSION_MIN_MINUTES = 15
 HANDOFF_STALE_MINUTES = 30
@@ -87,8 +101,12 @@ def main() -> None:
     if not hermes_dir.exists():
         sys.exit(0)  # not a Hermes-managed project
 
-    reminder_marker = hermes_dir / ".handoff-reminded"
-    session_marker = hermes_dir / ".session-start"
+    session_id = event_session_id(event)
+    touch_session_heartbeat(hermes_dir, session_id)
+    session_dir = hermes_dir / "sessions" / session_id if session_id else hermes_dir
+
+    reminder_marker = session_dir / "handoff-reminded"
+    session_marker = session_dir / "session-start"
 
     if reminder_marker.exists():
         sys.exit(0)  # already reminded this session

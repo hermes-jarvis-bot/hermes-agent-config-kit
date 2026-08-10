@@ -41,6 +41,19 @@ Reviewed-hook lane (см. `SECURITY.md`). Это Hermes-native реимплем�
   зарегистрированный на `pre_tool_call` (реальный блок), `post_tool_call` (только аудит-лог) и
   оба `pre_verify`/`on_session_end` (двойная регистрация). См. его собственную секцию ниже.
 
+**Заметка про multi-session (добавлена 2026-08-10):** `session-handoff-check.py`,
+`session-handoff-reminder.py` и `transfer-contract-guard.py` делят общий heartbeat-механизм
+(`hermes_hook_common.touch_session_heartbeat()`/`session_is_live()`,
+`.hermes/sessions/<session_id>/heartbeat`, TTL 30 минут, override
+`HERMES_SESSION_HEARTBEAT_TTL`). Именно он позволяет `transfer-contract-guard.py` отличить
+чужую, но всё ещё живую сессию от заброшенной, и именно поэтому
+`session-handoff-check.py`/`session-handoff-reminder.py` теперь scoped свои маркеры на сессию
+(`.hermes/sessions/<session_id>/{session-start,handoff-reminded}`), а не на проект — две
+параллельные Hermes-сессии в одном проекте больше не топчут состояние друг друга. Портировано
+из апстримного фикса конкретно для `transfer-contract-guard.py`; эквивалентный фикс для
+остальных двух хуков — собственное добавление этого адаптера (апстрим эту пару пока не
+исправил).
+
 ## Доступные хуки
 
 ### `destructive-command-guard.py`

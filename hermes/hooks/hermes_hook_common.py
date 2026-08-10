@@ -32,6 +32,7 @@ import json
 import os
 import re
 import sys
+import time as _time
 from pathlib import Path
 
 try:
@@ -161,6 +162,66 @@ def filename_timestamp(path: Path) -> float | None:
         return dt.timestamp()
     except ValueError:
         return None
+
+
+SESSION_HEARTBEAT_TTL_ENV = "HERMES_SESSION_HEARTBEAT_TTL"
+DEFAULT_SESSION_HEARTBEAT_TTL = 1800  # 30 minutes, matches upstream's FOREIGN_LIVE_SECONDS
+
+
+def event_session_id(event: dict) -> str:
+    """The current session's id, straight from the wire payload's top-level `session_id`.
+
+    Hermes always populates this field (`_serialize_payload`: `kwargs.get("session_id") or
+    kwargs.get("parent_session_id") or ""`), unlike Claude Code, where the equivalent lookup
+    needs a multi-key fallback chain (session_id/sessionId/conversation_id/transcript_path)
+    because hook events don't always self-identify the same way. Rejects a value containing a
+    path separator (defensive: this id is used to build a filesystem path).
+    """
+    value = str(event.get("session_id") or "")
+    if not value or "/" in value or "\\" in value:
+        return ""
+    return value
+
+
+def _session_heartbeat_path(hermes_dir: Path, session_id: str) -> Path:
+    return hermes_dir / "sessions" / session_id / "heartbeat"
+
+
+def touch_session_heartbeat(hermes_dir: Path, session_id: str) -> None:
+    """Record that `session_id` is active right now in this project.
+
+    Call this unconditionally near the top of any session-scoped hook's main() -- cheap, and
+    it is what lets OTHER sessions' liveness checks (session_is_live()) recognize this session
+    as still active. Multiple hooks touching the same file on their own events is exactly the
+    point: whichever of them fires most often keeps the heartbeat freshest.
+    # simplification: heartbeat directories are never garbage-collected, mirroring upstream's
+    own unbounded per-session transcript accumulation under ~/.claude/projects/ -- acceptable
+    since it's a few bytes per session, not a correctness issue.
+    """
+    if not session_id:
+        return
+    try:
+        p = _session_heartbeat_path(hermes_dir, session_id)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.touch()
+    except OSError:
+        pass
+
+
+def session_is_live(hermes_dir: Path, session_id: str, ttl_seconds: int | None = None) -> bool:
+    """True if `session_id` touched its heartbeat within the TTL (default 30 minutes)."""
+    if not session_id:
+        return False
+    if ttl_seconds is None:
+        try:
+            ttl_seconds = int(os.environ.get(SESSION_HEARTBEAT_TTL_ENV, "") or DEFAULT_SESSION_HEARTBEAT_TTL)
+        except ValueError:
+            ttl_seconds = DEFAULT_SESSION_HEARTBEAT_TTL
+    try:
+        p = _session_heartbeat_path(hermes_dir, session_id)
+        return p.exists() and (_time.time() - p.stat().st_mtime) <= ttl_seconds
+    except OSError:
+        return False
 
 
 def untrusted_block(payload: str, source: str) -> str:

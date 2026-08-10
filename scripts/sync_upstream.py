@@ -573,6 +573,17 @@ SUPPORTED = {
         "name": "moa-gemini-delegation-eval",
         "description": "Decide whether a multi-model panel is justified through bounded, representative evaluation of quality, evidence, latency, cost, and privacy without enabling delegation or sending prompts to external providers.",
     },
+    "rules/transfer-contracts.md": {
+        "target": "hermes/skills/transfer-contracts/SKILL.md",
+        "name": "transfer-contracts",
+        "description": "Record a durable JSON contract for every clone/copy/move/sync operation -- source, destination, verification plan, and source-cleanup intent -- so a later agent can resume without reconstructing intent from shell history.",
+    },
+    "templates/transfer-contract.json": {
+        "target": "hermes/templates/transfer-contract.md",
+        "name": "transfer-contract",
+        "description": "Record a project-approved transfer contract (source, destination, verification plan, source-cleanup intent) for one clone/copy/move/sync operation without activating a workflow.",
+        "type": "template",
+    },
     "skills/operational/cross-harness-continuation/SKILL.md": {
         "target": "hermes/skills/cross-harness-continuation/SKILL.md",
         "name": "cross-harness-continuation",
@@ -2016,6 +2027,132 @@ justified; it does not provide the mechanics for using it.
 Report the decision scope, cases and selection rationale, compared conditions,
 scores and evidence references, cost/latency observations, privacy boundary,
 limitations, recommendation, and the next operator-confirmation point.
+"""
+    if source_path == "rules/transfer-contracts.md":
+        return """# Transfer Contracts
+
+File movement is shared mutable state. A later agent must be able to answer, without reading
+shell history: what moved, from where, to where, with which settings, why, by when, what was
+verified, and whether the source was removed.
+
+## Required workflow
+
+1. Create one JSON record under `.hermes/transfers/` before running the command. Use
+   [transfer-contract.md](../templates/transfer-contract.md) as the starting shape. Keep
+   records in the project repository or its private operational state; never put credentials
+   in a public repository.
+2. Add the marker to the command:
+
+   ```text
+   git clone https://example.invalid/repo D:/work/repo # transfer-contract: .hermes/transfers/2026-08-09_clone-repo.json
+   ```
+
+3. The reviewed transfer-contract guard hook (see `mappings/reviewed-hooks.yaml`) blocks
+   the command unless the record is complete and its operation matches the command
+   (`git clone`, `gh repo clone`, `robocopy`, `rclone`, `rsync`, `scp`, `sftp`, `xcopy`, `cp`,
+   `copy`, `Copy-Item`, or `Move-Item`).
+4. After the command, update `status` to `verification_pending` (or `failed`). Run the checks
+   named in `verification.plan`, put the result and durable evidence paths/commands in
+   `verification`, and only then use `verified`.
+5. Source cleanup is a separate decision. Set `source_cleanup.planned` and explain it. If it is
+   planned, the record cannot be `verified` until `performed=true` and `verified=true`.
+   Deletion still requires the existing human-confirmation and post-delete verification gates
+   (see the `safe-deletion` skill).
+6. The session-end gate blocks while any record is open or invalid. A genuinely blocked,
+   failed, or cancelled transfer may close only with a non-empty `closure_reason` and a useful
+   `next_action`, so another agent can resume it. An open record owned by a different, still-
+   live Hermes session is deferred instead of blocked -- see the hook's own docstring.
+
+## Contract fields
+
+| Field | Meaning |
+| --- | --- |
+| `source`, `destination` | Exact local path, repository URL, host path, or remote endpoint. |
+| `operation.kind/tool/settings` | Copy, move, clone, or sync; tool used; flags and relevant settings. |
+| `purpose`, `motivation`, `deadline` | Why the transfer exists and when it should be complete. |
+| `verification.plan` | The checks that prove destination integrity before cleanup. |
+| `verification.performed/result/evidence` | What was actually checked, the verdict, and where proof lives. |
+| `source_cleanup` | Whether source deletion was planned, performed, and independently verified. |
+| `session_id` | Which session opened the record; stamped automatically, used to scope the session-end gate to its actual owner. |
+| `next_action`, `closure_reason` | The handoff for the next agent and why a non-success state is closed. |
+
+The hook does not claim that an external/remote check happened. For remote paths, record the
+command, log, checksum, manifest, or other durable evidence in `verification.evidence`. For
+local verified destinations, the hook also checks that the destination exists; when cleanup is
+claimed, it checks that the local source is gone.
+
+## Mechanical wiring (Hermes-native)
+
+The reviewed transfer-contract guard hook is registered on four Hermes events, not the three
+Claude-Code events (`PreToolUse`/`PostToolUse`/`Stop`) this rule was originally written for:
+`pre_tool_call` is the hard start gate (genuinely blocks); `post_tool_call` leaves an explicit
+reminder (audit-log-only -- Hermes discards this event's return value); `pre_verify` and
+`on_session_end` together are the orphan-transfer gate (`pre_verify` nudges the live agent on
+file-edit turns, `on_session_end` is the reliable audit-log fallback for every turn). See the
+hook's own docstring under `hermes/hooks/` for the exact mapping and the session-ownership
+mechanism.
+"""
+    if source_path == "templates/transfer-contract.json":
+        return """# Transfer Contract Record
+
+Use this data-only template to record a durable contract for one clone/copy/move/sync operation before running it. It does not create directories, run the transfer, verify a destination, delete a source, or activate a workflow. Keep it in a project-approved location (for example `.hermes/transfers/<id>.json`) and obtain operator confirmation before write-impacting, external, security-sensitive, or production work. See the `transfer-contracts` skill for the full workflow this record supports.
+
+## Identity and status
+
+| Field | Value |
+| --- | --- |
+| Transfer ID | {{transfer_id}} |
+| Status | planned |
+| Source | {{exact_local_path_or_repository_url_or_remote_endpoint}} |
+| Destination | {{exact_local_path_or_repository_url_or_remote_endpoint}} |
+| Purpose | {{why_the_transfer_exists}} |
+| Motivation | {{why_now}} |
+| Deadline | {{ISO-8601_date_or_time}} |
+| Owner | {{session_or_agent_id}} |
+
+Status is one of: `planned`, `running`, `verification_pending`, `verified`, `failed`, `blocked`, `cancelled`.
+
+## Operation
+
+| Field | Value |
+| --- | --- |
+| Kind | {{copy_move_clone_or_sync}} |
+| Tool | {{tool_used}} |
+| Settings | {{flags_or_relevant_settings}} |
+
+## Verification
+
+| Field | Value |
+| --- | --- |
+| Plan | {{list_of_checks_that_prove_destination_integrity}} |
+| Performed | false |
+| Result | {{pass_or_fail_once_run}} |
+| Evidence | {{durable_evidence_paths_commands_or_checksums}} |
+
+Do not claim `verified` without `performed=true`, a `pass` result, and non-empty evidence. For
+remote destinations, record the command, log, checksum, or manifest that proves integrity; a
+local destination additionally needs the path confirmed to exist.
+
+## Source cleanup
+
+| Field | Value |
+| --- | --- |
+| Planned | {{true_or_false}} |
+| Performed | false |
+| Verified | false |
+| Reason | {{why_cleanup_is_or_is_not_planned}} |
+
+Source deletion is a separate decision from the transfer itself, and still requires this
+adapter's own deletion-confirmation and post-delete-verification gates (see `safe-deletion`).
+A `verified` record with `source_cleanup.planned=true` requires both `performed=true` and
+`verified=true`.
+
+## Next action and closure
+
+| Field | Value |
+| --- | --- |
+| Next action | {{one_concrete_step_for_the_next_agent}} |
+| Closure reason | {{required_if_status_is_failed_blocked_or_cancelled}} |
 """
     if source_path == "skills/development/system-and-data-design/SKILL.md":
         return """# System and Data Design

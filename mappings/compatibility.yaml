@@ -1686,6 +1686,22 @@ rules/moa-gemini-delegation-eval.md:
   description: Decide whether a multi-model panel is justified through bounded, representative evaluation of quality, evidence, latency, cost, and privacy without enabling delegation or sending prompts to external providers.
   risk: medium
 
+rules/transfer-contracts.md:
+  status: supported
+  target: hermes/skills/transfer-contracts/SKILL.md
+  type: rule_skill
+  name: transfer-contracts
+  description: Record a durable JSON contract for every clone/copy/move/sync operation -- source, destination, verification plan, and source-cleanup intent -- so a later agent can resume without reconstructing intent from shell history.
+  risk: low
+
+templates/transfer-contract.json:
+  status: supported
+  target: hermes/templates/transfer-contract.md
+  type: template
+  name: transfer-contract
+  description: Record a project-approved transfer contract (source, destination, verification plan, source-cleanup intent) for one clone/copy/move/sync operation without activating a workflow.
+  risk: low
+
 rules/cross-harness-agents-md.md:
   status: supported
   target: hermes/skills/portable-project-context/SKILL.md
