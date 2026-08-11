@@ -47,7 +47,7 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `alternatives/` | 19 | 0 | 0 | 19 |
 | `docs/` | 22 | 0 | 0 | 22 |
 | `evals/` | 2 | 0 | 0 | 2 |
-| `hooks/` | 59 | 19 | 10 | 30 |
+| `hooks/` | 59 | 24 | 13 | 22 |
 | `principles/` | 31 | 30 | 0 | 1 |
 | `references/` | 1 | 0 | 0 | 1 |
 | `rules/` | 35 | 29 | 0 | 6 |
@@ -55,11 +55,11 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `skills/` | 240 | 155 | 0 | 85 |
 | `templates/` | 49 | 34 | 0 | 15 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **551** | **267** | **11** | **273** |
+| **Total** | **551** | **272** | **14** | **265** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
-- `hooks/`: reviewed-lane Ported (19): `backup-retention-cleanup.py`, `command-injection-guard.py`, `db-snapshot-guard.py`, `destructive-command-guard.py`, `docs-staleness-guard.py`, `git-auto-backup.py`, `git-destructive-guard.py`, `github-workflow-security.py`, `handoff-resume-gate.py`, `kb-validate-gate.py`, `over-engineering-advisor.py`, `repeated-attempt-guard.py`, `safety_common.py`, `self-harm-guard.py`, `session-drift-validator.py`, `session-handoff-check.py`, `session-handoff-reminder.py`, `transfer-contract-guard.py`, `verify-deleted-guard.py`; Rejected (10): `conversation-history-capture.py`, `coord-claim-guard.py`, `directory-creation-guard.py`, `git-source-gate.py`, `plan-gate.py`, `pre-push-personal-email-guard.py`, `pre-push-public-repo-scan.py`, `precompact-handoff-guard.py`, `problems-md-validator.py`, `secret-leak-guard.py`
+- `hooks/`: reviewed-lane Ported (24): `backup-retention-cleanup.py`, `command-injection-guard.py`, `db-snapshot-guard.py`, `destructive-command-guard.py`, `docs-staleness-guard.py`, `git-auto-backup.py`, `git-destructive-guard.py`, `github-workflow-security.py`, `handoff-closure-audit-guard.py`, `handoff-resume-gate.py`, `kb-validate-gate.py`, `live-tree-guard.py`, `long-run-detector.py`, `over-engineering-advisor.py`, `repeated-attempt-guard.py`, `safety_common.py`, `self-harm-guard.py`, `session-drift-validator.py`, `session-handoff-check.py`, `session-handoff-reminder.py`, `task-inbox-show.py`, `test-muting-guard.py`, `transfer-contract-guard.py`, `verify-deleted-guard.py`; Rejected (13): `api-key-leak-detector.py`, `conversation-history-capture.py`, `coord-claim-guard.py`, `directory-creation-guard.py`, `git-source-gate.py`, `launch-watch-guard.py`, `open-items-are-work-orders.py`, `plan-gate.py`, `pre-push-personal-email-guard.py`, `pre-push-public-repo-scan.py`, `precompact-handoff-guard.py`, `problems-md-validator.py`, `secret-leak-guard.py`
 - `scripts/`: Rejected (1): `gemini-switch.sh`
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
@@ -1287,8 +1287,8 @@ Candidate groups:
   deferred: its decision logic (block reading `.env`/key files) mechanically enforces a stance
   this operator has explicitly rejected (secrets are working data, the only hard boundary is a
   public-repo push scan). See `mappings/rejected-hooks.yaml` and `SECURITY.md`'s "Rejected
-  hooks". `api-key-leak-detector.py` is an unevaluated sibling that may share the same conflict —
-  check before porting, not after.
+  hooks". **`api-key-leak-detector.py` evaluated 2026-08-11 and also REJECTED** (same
+  policy-conflict class — see below). This candidate group is now closed.
 - destructive command guards — **all 6 Tier-1 candidates ported**: `destructive-command-guard.py`,
   `git-destructive-guard.py`, `self-harm-guard.py`, `command-injection-guard.py` (2026-08-07/08,
   `pre_tool_call`, can genuinely block), and `verify-deleted-guard.py`,
@@ -1296,20 +1296,38 @@ Candidate groups:
   Hermes discards a post_tool_call hook's return value so neither can nudge the live agent turn
   the way their upstream originals do). This candidate group is now closed.
 - handoff/session guards — **`session-handoff-check.py` and `session-handoff-reminder.py`
-  ported** (2026-08-09, see below). `handoff-closure-audit-guard.py`, `launch-watch-guard.py`,
-  `live-tree-guard.py`, `open-items-are-work-orders.py` remain unevaluated.
+  ported** (2026-08-09, see below). **`handoff-closure-audit-guard.py` and `live-tree-guard.py`
+  ported** (2026-08-11, see below). **`launch-watch-guard.py` evaluated 2026-08-11 and
+  REJECTED** (needs a blocking Stop-equivalent Hermes lacks). **`open-items-are-work-orders.py`
+  evaluated 2026-08-11 and REJECTED** (`UserPromptSubmit`, no Hermes equivalent). This candidate
+  group is now closed.
 - docs freshness and KB validation — **`docs-staleness-guard.py` and `kb-validate-gate.py`
   ported** (2026-08-09, see below). This candidate group is now closed.
-- task inbox and feedback display — unevaluated (`unbuffered-progress-advisor.py`,
-  `task-inbox-show.py`, `feedback-pending-show.py`).
-- long-run feature validators — unevaluated (`feature-list-validator.py`, `long-run-detector.py`
-  — `feature-list-validator.py` has an already-ported skill companion, `long-run-feature-tracking`).
-- dependency/supply-chain guards — unevaluated (`dependency-currency-guard.py`,
-  `dependency-provenance-guard.py` — both already informed a prose enrichment of
+- task inbox and feedback display — **`task-inbox-show.py` ported** (2026-08-11, see below).
+  `feedback-pending-show.py` and `unbuffered-progress-advisor.py` deferred (see the "Round 3"
+  audit note below) — the former is functionally inert without `session-feedback-capture.py`
+  (already deferred, see the 2026-08-10 "Inventory audit" note above, for the same
+  `on_session_end`-payload-has-no-transcript gap), the latter needs a non-blocking
+  "allow-but-show-a-visible-advisory" channel this adapter has not confirmed Hermes exposes.
+- long-run feature validators — **`long-run-detector.py` ported** (2026-08-11, see below).
+  `feature-list-validator.py` deferred — needs a blocking Stop-equivalent Hermes lacks; the only
+  available fallback (`pre_verify`) is already at its 3-consumer budget cap
+  (session-handoff-reminder.py, kb-validate-gate.py, transfer-contract-guard.py), and the
+  operator explicitly chose (2026-08-11) to leave it deferred rather than dilute that budget
+  further. Has an already-ported skill companion, `long-run-feature-tracking`.
+- dependency/supply-chain guards — **deliberately deferred to a dedicated future round**
+  (operator decision, 2026-08-11): `dependency-currency-guard.py` and
+  `dependency-provenance-guard.py` have clean `pre_tool_call` mappings and no policy conflict,
+  but a heavy build cost (live PyPI/npm/registry calls, caching, multi-ecosystem parsing,
+  typosquat/slopsquat detection) that warrants its own round rather than folding into a batch of
+  otherwise-lightweight hooks. Both already informed a prose enrichment of
   `supply-chain-defense` in v0.3.79; a real guard here would formalize that enrichment
-  mechanically).
-- test/quality gates — unevaluated (`test-gate-stop-hook.py`, `test-muting-guard.py` — the former
-  has an already-ported skill companion, `testing-strategy`).
+  mechanically.
+- test/quality gates — **`test-muting-guard.py` ported** (2026-08-11, see below).
+  `test-gate-stop-hook.py` deferred — same `pre_verify`-budget-cap reasoning as
+  `feature-list-validator.py` above (operator decision, 2026-08-11), despite being flagged as
+  arguably the single highest-value hook found in this whole audit, blocked purely by Hermes's
+  event model. Has an already-ported skill companion, `testing-strategy`.
 - likely not portable (Claude-Code-specific, no Hermes equivalent concept identified) —
   `claude-attribution-guard.py`, `pre-push-claude-attribution.py`, `keyword-skill-router.py`
   (explicitly redundant given Hermes's own semantic skill loader, per `runtime-wiring.md`),
@@ -1369,6 +1387,38 @@ reported logic before any decision) and disposed of:
   NEEDS-DISCUSSION to LIKELY-PORT after verifying `post_tool_call`'s `extra` payload DOES carry
   Hermes's own derived `status`/`error_type` fields (`model_tools.py`'s
   `_emit_post_tool_call_hook`/`_tool_result_observer_fields`) — ported this batch.
+
+**Round 3 candidate-group audit (2026-08-11):** with the uncatalogued-hooks gap closed, this
+round evaluated the remaining named-but-unevaluated groups above (14 files: handoff/session
+siblings, task-inbox/feedback display, long-run validators, dependency/supply-chain guards,
+test/quality gates, plus `api-key-leak-detector.py` as the unevaluated `secret-leak-guard.py`
+sibling flagged since 2026-08-07). Characterized via a research subagent's full read first, per
+this session's established discipline. Disposition:
+- **Ported (5, this batch, see below):** `handoff-closure-audit-guard.py`, `live-tree-guard.py`,
+  `task-inbox-show.py`, `long-run-detector.py`, `test-muting-guard.py`.
+- **Rejected (3, `mappings/rejected-hooks.yaml`):** `launch-watch-guard.py` (needs a blocking
+  Stop-equivalent Hermes lacks; its recording half alone was judged not worth a standalone port
+  without the enforcement it feeds), `open-items-are-work-orders.py` (`UserPromptSubmit`, no
+  Hermes equivalent), `api-key-leak-detector.py` (policy conflict — its own prescribed
+  remediation text explicitly tells the user to "rotate the exposed key(s)" and "consider the
+  session compromised", the exact rotation-nagging secrets-as-data.md forbids by name; same
+  rejection class as `secret-leak-guard.py`, just on a detective PostToolUse hook instead of a
+  blocker).
+- **Operator decisions on two genuine architectural forks, both resolved toward NOT expanding
+  scope this round:** (1) `dependency-currency-guard.py`/`dependency-provenance-guard.py` have
+  clean mappings but a heavy live-registry-call/multi-ecosystem-parsing build cost — deferred to
+  a dedicated future round rather than folded into this lightweight batch. (2)
+  `test-gate-stop-hook.py`/`feature-list-validator.py` both fundamentally want a blocking
+  Stop-equivalent Hermes doesn't have; the only path in is degrading them onto the already-
+  saturated 3-consumer `pre_verify` budget (session-handoff-reminder.py, kb-validate-gate.py,
+  transfer-contract-guard.py) — left deferred rather than diluting that budget for a 4th/5th
+  consumer. `test-gate-stop-hook.py` in particular was flagged as arguably the single
+  highest-*value* hook found across both audit rounds, blocked purely by Hermes's event model,
+  not by any quality or policy concern with the hook itself.
+- **Deferred without a decision (2, carried over, not re-litigated):** `feedback-pending-show.py`
+  (functionally inert without the already-deferred `session-feedback-capture.py`),
+  `unbuffered-progress-advisor.py` (needs a non-blocking "allow but show a visible advisory"
+  channel this adapter has not confirmed Hermes exposes at `pre_tool_call`).
 
 Acceptance criteria:
 
@@ -1996,6 +2046,71 @@ assertion passed for the wrong reason) and a false fail for `handoff-resume-gate
 data existed at the real cwd). Fixed by actually `os.chdir()`-ing into the fixture directory
 before each `run_once()` call, matching the pattern `git-auto-backup.py`'s own verification
 already used correctly from the start.
+
+#### `handoff-closure-audit-guard.py`, `live-tree-guard.py`, `task-inbox-show.py`, `long-run-detector.py`, `test-muting-guard.py` ported (2026-08-11) — nineteenth through twenty-third Wave 4 guards, closes 4 remaining candidate groups
+
+Operator asked to continue Wave 4 again. With the uncatalogued-hooks gap closed the prior round,
+this round evaluated the remaining named-but-unevaluated candidate groups (see the "Round 3
+candidate-group audit" note above for the full 14-file disposition). Two genuine architectural
+forks were surfaced to the operator before implementing, rather than decided unilaterally:
+whether to fold the network-dependent `dependency-currency-guard.py`/`dependency-provenance-guard.py`
+pair into this round (operator: defer to a dedicated round), and whether to degrade
+`test-gate-stop-hook.py`/`feature-list-validator.py` onto the already-saturated 3-consumer
+`pre_verify` budget (operator: leave both deferred). Both matched the recommended option.
+
+**Ported (5):**
+- **`handoff-closure-audit-guard.py`** — `pre_tool_call` on `write_file`/`patch`, blocks a
+  handoff write unless it contains a `## Closure Audit` section with all 5 required fields and
+  cross-checks against PROBLEMS.md tickets opened this project, today, that are still open and
+  unmentioned. Watched paths extended to recognize `.hermes/handoffs/` alongside upstream's
+  `.claude/`/`.agent/`/`.codex/` variants (multi-harness recognition, matching
+  transfer-contract-guard.py's pattern).
+- **`live-tree-guard.py`** — `pre_tool_call` on `write_file`/`patch`, opt-in per-repo marker file
+  makes the primary git checkout receive-only, forcing concurrent agent sessions into separate
+  `git worktree`s. Directly matches this adapter's own recorded operating condition (memory:
+  "a concurrent Codex main agent edits this tree live; stage explicit paths, don't sweep its
+  work").
+- **`task-inbox-show.py`** and **`long-run-detector.py`** — `pre_llm_call`+`is_first_turn`,
+  read-only, inject a provider-agnostic pending-task summary and a long-run-project-adoption
+  nudge respectively. Both look under `.hermes/` first with a `.claude/` cross-harness fallback.
+- **`test-muting-guard.py`** — `pre_tool_call` on `write_file`/`patch`, blocks a newly-added
+  skip/xfail/`.only()`/`@Ignore`/`t.Skip` pattern across pytest/unittest/Jest-Mocha-Vitest/
+  JUnit/Go/Rust/RSpec conventions -- "muted failing test" being how bugs ship.
+
+**Rejected (3)**: `launch-watch-guard.py`, `open-items-are-work-orders.py`,
+`api-key-leak-detector.py` — see the "Round 3 candidate-group audit" note above and
+`mappings/rejected-hooks.yaml` for the specific reasoning per hook, not just this prose.
+
+**Real bug found and fixed mid-port, in already-shipped shared code, not in a new hook itself:**
+while writing `handoff-closure-audit-guard.py`'s bypass-marker test case (the first ever
+`<!-- hermes-bypass: NAME -->` HTML-comment-form test in this adapter — every earlier bypass()
+caller only exercised the `#`/`//` forms), found that `hermes_hook_common.bypass_marker()`'s
+regex claimed to support that form in its own docstring but never actually matched it: a greedy
+character class swallowed the comment's own closing `--` before `>`, so the captured name came
+out as `"incomplete-handoff --"` instead of `"incomplete-handoff"`. Fixed with a non-greedy
+capture group plus an explicit `-->`-or-line-end terminator; re-verified all 4 documented forms
+(bash `#`, js `//`, html `<!-- -->`, multi-name comma list) plus 2 control negatives directly,
+then re-ran the full pre-existing 145-case hook-test suite to confirm no regression before
+proceeding.
+
+New/updated test coverage: 5 new test files (`test_handoff_closure_audit_guard.py` 8 cases,
+`test_live_tree_guard.py` 3 plus the hook's own 11-case `--self-test`, `test_task_inbox_show.py`
+6, `test_long_run_detector.py` 7 plus the hook's own 6-case `--self-test`,
+`test_test_muting_guard.py` 9), bringing the combined hook-test tally to 178 (up from 145).
+`test_test_muting_guard.py`'s own mute-pattern test strings are built via concatenation rather
+than written as literal decorator text in the source, since an earlier draft's literal
+`@pytest.mark.skip` string in a test-payload dict was itself blocked by the live Claude-Code
+test-muting guard installed in this working environment — a real, direct demonstration of
+exactly the failure mode this hook (both the upstream original and this port) exists to catch,
+encountered from the inside while building its own test.
+
+All 5 hooks additionally verified against Hermes's real dispatch code path
+(`agent.shell_hooks.run_once`): a real `write_file` dispatch to an incomplete handoff genuinely
+blocks; a real `patch` dispatch to a tracked file in a live-tree-marked disposable git repo
+genuinely blocks; `task-inbox-show.py`/`long-run-detector.py` genuinely inject
+`{"context": ...}` from a real dispatch call (calling process chdir'd into the fixture directory
+first, per the cwd-handling lesson recorded in the prior batch's entry above); a real
+`write_file` dispatch adding a skip marker to a new test file genuinely blocks.
 
 ## Reviewed-script lane pilot — status (2026-08-04)
 

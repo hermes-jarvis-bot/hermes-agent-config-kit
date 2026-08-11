@@ -384,6 +384,80 @@ block threshold), `HERMES_RETRY_WINDOW_SEC` (default 3600), `HERMES_RETRY_STATE`
 path). Bypass: `HERMES_ALLOW_RETRY_LOOP=1` or `# hermes-bypass: retry-loop` in the command.
 Self-test: `python3 repeated-attempt-guard.py --self-test`.
 
+### `handoff-closure-audit-guard.py`
+
+Blocks a handoff write unless it contains a `## Closure Audit` section with all 5 required
+fields (Primary request status, Acceptance/checklist verified, Related/scope-adjacent tasks
+checked, Unfinished related tasks, Why not continuing now), and cross-checks against
+PROBLEMS.md tickets opened this project, today, that are still open and unmentioned.
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "write_file|patch"
+      command: "python3 ~/.hermes/hooks/config-kit/handoff-closure-audit-guard.py"
+      timeout: 10
+```
+
+Bypass: `HERMES_ALLOW_INCOMPLETE_HANDOFF=1` or a `<!-- hermes-bypass: incomplete-handoff -->`
+marker in the handoff content.
+
+### `live-tree-guard.py`
+
+Opt-in per repo (a `live-tree` marker under `.hermes/`/`.claude/`/`.agent/`/`.codex/`): makes the
+primary git checkout receive-only, blocking edits to tracked files there so concurrent agent
+sessions are structurally forced into separate `git worktree`s instead of racing on the same
+tree. Handoffs/chronicles/briefs/research and untracked new files are exempt.
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "write_file|patch"
+      command: "python3 ~/.hermes/hooks/config-kit/live-tree-guard.py"
+      timeout: 15
+```
+
+Bypass: `HERMES_ALLOW_LIVE_TREE_EDIT=1`, or remove the marker file. Self-test:
+`python3 live-tree-guard.py --self-test`.
+
+### `task-inbox-show.py` and `long-run-detector.py`
+
+Both `pre_llm_call`+`is_first_turn`, read-only, genuinely inject context. The first reads a
+provider-agnostic task-tracker-inbox directory (populated by an external poller script this
+adapter does not provide) and injects a priority-sorted pending-task summary. The second
+mechanically detects long-running-project signals (multi-session handoffs, commit/file counts,
+PROBLEMS.md) and nudges toward adopting a long-run harness, while keeping the actual adoption
+decision human.
+
+```yaml
+hooks:
+  pre_llm_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/task-inbox-show.py"
+      timeout: 10
+    - command: "python3 ~/.hermes/hooks/config-kit/long-run-detector.py"
+      timeout: 10
+```
+
+Both look under `.hermes/` first, falling back to `.claude/` (cross-harness). No bypass on
+either — they never block, only inject context or stay silent. `long-run-detector.py` has a
+14-day per-project nudge cooldown and its own `--self-test`.
+
+### `test-muting-guard.py`
+
+Blocks an edit that newly introduces a skip/xfail/`.only()`/`@Ignore`/`t.Skip` pattern not
+already present in the old content, across pytest/unittest/Jest-Mocha-Vitest/JUnit/Go/Rust/
+RSpec conventions — "muted failing test" being how bugs ship.
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "write_file|patch"
+      command: "python3 ~/.hermes/hooks/config-kit/test-muting-guard.py"
+      timeout: 10
+```
+
+Bypass: `HERMES_ALLOW_TEST_MUTING=1`.
+
 ## Activating any hook
 
 Add the relevant block above to your own `~/.hermes/config.yaml`, then approve it at the

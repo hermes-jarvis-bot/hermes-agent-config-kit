@@ -383,6 +383,79 @@ hooks:
 (путь к state-файлу). Обход: `HERMES_ALLOW_RETRY_LOOP=1` или `# hermes-bypass: retry-loop` в
 команде. Self-test: `python3 repeated-attempt-guard.py --self-test`.
 
+### `handoff-closure-audit-guard.py`
+
+Блокирует запись хендоффа, если в нём нет секции `## Closure Audit` со всеми 5 обязательными
+полями (Primary request status, Acceptance/checklist verified, Related/scope-adjacent tasks
+checked, Unfinished related tasks, Why not continuing now), и перекрёстно проверяет тикеты
+PROBLEMS.md, открытые в этом проекте сегодня, которые всё ещё открыты и не упомянуты.
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "write_file|patch"
+      command: "python3 ~/.hermes/hooks/config-kit/handoff-closure-audit-guard.py"
+      timeout: 10
+```
+
+Обход: `HERMES_ALLOW_INCOMPLETE_HANDOFF=1` или маркер
+`<!-- hermes-bypass: incomplete-handoff -->` в содержимом хендоффа.
+
+### `live-tree-guard.py`
+
+Опционально per-repo (маркер `live-tree` под `.hermes/`/`.claude/`/`.agent/`/`.codex/`): делает
+основной git-чекаут receive-only, блокируя правки трекнутых файлов там, чтобы параллельные
+агентские сессии структурно вынуждались работать в отдельных `git worktree` вместо гонки по
+одному дереву. Хендоффы/хроники/briefs/research и новые нетрекнутые файлы — исключение.
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "write_file|patch"
+      command: "python3 ~/.hermes/hooks/config-kit/live-tree-guard.py"
+      timeout: 15
+```
+
+Обход: `HERMES_ALLOW_LIVE_TREE_EDIT=1`, или удали маркер-файл. Self-test:
+`python3 live-tree-guard.py --self-test`.
+
+### `task-inbox-show.py` и `long-run-detector.py`
+
+Оба `pre_llm_call`+`is_first_turn`, read-only, реально инжектят контекст. Первый читает
+provider-agnostic директорию инбокса трекера задач (заполняется внешним poller-скриптом, который
+этот адаптер не поставляет) и инжектит сводку задач по приоритету. Второй механически детектит
+признаки long-running проекта (multi-session хендоффы, число коммитов/файлов, PROBLEMS.md) и
+нуджит на adoption long-run харнесса, оставляя решение об adoption человеку.
+
+```yaml
+hooks:
+  pre_llm_call:
+    - command: "python3 ~/.hermes/hooks/config-kit/task-inbox-show.py"
+      timeout: 10
+    - command: "python3 ~/.hermes/hooks/config-kit/long-run-detector.py"
+      timeout: 10
+```
+
+Оба сначала смотрят под `.hermes/`, потом под `.claude/` (cross-harness). Без обхода на обоих —
+никогда не блокируют, только инжектят контекст или молчат. `long-run-detector.py` имеет
+14-дневный per-project cooldown на нудж и свой `--self-test`.
+
+### `test-muting-guard.py`
+
+Блокирует правку, которая добавляет новый skip/xfail/`.only()`/`@Ignore`/`t.Skip` паттерн,
+которого не было в старом содержимом, для pytest/unittest/Jest-Mocha-Vitest/JUnit/Go/Rust/RSpec
+конвенций — «заткнутый падающий тест» это способ выпустить баг в прод.
+
+```yaml
+hooks:
+  pre_tool_call:
+    - matcher: "write_file|patch"
+      command: "python3 ~/.hermes/hooks/config-kit/test-muting-guard.py"
+      timeout: 10
+```
+
+Обход: `HERMES_ALLOW_TEST_MUTING=1`.
+
 ## Активация любого хука
 
 Добавь соответствующий блок выше в свой `~/.hermes/config.yaml`, затем подтверди на запросе

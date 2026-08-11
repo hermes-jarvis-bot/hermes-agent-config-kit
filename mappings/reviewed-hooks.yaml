@@ -879,3 +879,177 @@
     genuine block response through the exact _spawn/_parse_response code path the live CLI uses.
   files:
     - hermes/hooks/tests/test_repeated_attempt_guard.py
+
+- path: hermes/hooks/handoff-closure-audit-guard.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/handoff-closure-audit-guard.py
+  source_sha256: a2a2c4c58ff75bbdef6377854ecf635c1ee8579071c9a53c1c091d87e5c3724
+  reviewed_at: "2026-08-11"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision, plus a 14-file candidate-group audit via a research subagent before selecting this round's scope)"
+  summary: >
+    pre_tool_call on write_file/patch of a handoff file: blocks the write unless the content
+    contains a `## Closure Audit` section with all 5 required fields, a valid Primary request
+    status value, an Unfinished-related-tasks value that either says NONE or cites a durable
+    tracker, and no evasive/uncertain wording. Also cross-checks against PROBLEMS.md tickets
+    opened THIS project, TODAY, that are still open and unmentioned in the handoff content --
+    catching the specific failure this exists for: a problem found mid-session, written down,
+    and left for later while the session ends. Ported unchanged: all validation regex/logic
+    (harness-agnostic text matching, no upstream-specific dependency at all). Adapted:
+    `Write`/`Edit`/`MultiEdit` -> Hermes's `write_file`/`patch` (`mode="replace"` reconstructs
+    post-edit content the same way upstream's Edit branch did; `mode="patch"` V4A multi-file
+    bodies are NOT reconstructed -- a handoff write is realistically always single-file, so this
+    falls through to the same "cannot reconstruct, use a full write instead" guidance upstream
+    gives for any tool shape it can't handle); watched paths extended to recognize
+    `.hermes/handoffs/`/`.hermes/HANDOFF.md` (Hermes-native default) alongside upstream's
+    `.claude/`/`.agent/`/`.codex/` variants, matching transfer-contract-guard.py's multi-harness
+    recognition pattern; bypass via `<!-- hermes-bypass: incomplete-handoff -->` or
+    HERMES_ALLOW_INCOMPLETE_HANDOFF=1.
+  functional_test: >
+    (1) hermes/hooks/tests/test_handoff_closure_audit_guard.py, 8/8 cases: non-handoff paths and
+    wrong tools pass through; a write with no Closure Audit section blocks, naming the missing
+    section; a write with a complete Closure Audit is allowed; a bypass marker suppresses the
+    block; INDEX.md is exempt. (2) Direct verification against Hermes's real dispatch code path
+    (agent.shell_hooks.run_once): a real write_file dispatch to an incomplete handoff produced a
+    genuine `{"action":"block",...}` response. (3) Found and fixed a real, previously-undetected
+    bug in hermes_hook_common.bypass_marker() while writing this hook's bypass-marker test case:
+    its own docstring claims to support the `<!-- hermes-bypass: NAME -->` HTML-comment form,
+    but the regex's greedy character class swallowed the comment's own closing `--` before `>`,
+    so the captured name never matched (e.g. "incomplete-handoff --" instead of
+    "incomplete-handoff"). No prior hook in this adapter had ever exercised that specific form in
+    a test -- every earlier bypass() caller only used the `#`/`//` forms. Fixed with a
+    non-greedy capture plus an explicit `-->`-or-line-end terminator; re-verified against all 4
+    documented forms (bash `#`, js `//`, html `<!-- -->`, multi-name comma list) plus 2 control
+    negatives, then re-ran the full existing hook-test suite (145/145) to confirm no regression.
+  files:
+    - hermes/hooks/tests/test_handoff_closure_audit_guard.py
+
+- path: hermes/hooks/live-tree-guard.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/live-tree-guard.py
+  source_sha256: 59dcd39e08bff9b820d1f0ce4967cf2b14646bdac11706fe921a24d1f563f28
+  reviewed_at: "2026-08-11"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  summary: >
+    pre_tool_call on write_file/patch: opt-in (per-repo marker file) guard that makes the
+    primary git checkout receive-only, blocking edits to tracked files there so concurrent
+    agent sessions are structurally forced into separate `git worktree`s instead of racing on
+    the same tree -- directly matching this adapter's own recorded operating condition (memory:
+    "a concurrent Codex main agent edits this tree live; stage explicit paths, don't sweep its
+    work"). Exempts append-only artifacts (handoffs/chronicles/briefs/research), untracked new
+    files, and anything inside a linked worktree. Ported unchanged: the git-dir-vs-common-dir
+    linked-worktree detection, the tracked/append-only classification logic, the upstream
+    `--self-test` (including its own regression case for a BOM-prefixed stdin payload that used
+    to make the guard silently pass everything). Adapted: `Write`/`Edit`/`MultiEdit`/
+    `NotebookEdit` -> Hermes's `write_file`/`patch` (no separate NotebookEdit tool exists);
+    marker file and APPEND_ONLY prefixes extended to recognize `.hermes/` alongside
+    `.claude/`/`.agent/`/`.codex/` (any one marker present is enough, matching
+    transfer-contract-guard.py's multi-harness pattern); block verdict via
+    hermes_hook_common.block() instead of upstream's raw `{"decision":"block",...}` dict.
+  functional_test: >
+    (1) The hook's own `--self-test` (11 cases, all passing), against a REAL disposable git
+    repo including a real `git worktree add` checkout: no-marker silent, a tracked file in the
+    marked primary tree blocks, a handoff is exempt, an untracked new file is allowed, the same
+    file inside the linked worktree is allowed, a file outside any repo is silent, and both a
+    plain and a BOM-prefixed stdin payload still block correctly. (2) Direct verification
+    against Hermes's real dispatch code path (agent.shell_hooks.run_once, against a real
+    disposable git repo with a real `.hermes/live-tree` marker): confirmed a genuine
+    `{"action":"block",...}` response on a real patch dispatch to a tracked file.
+  files:
+    - hermes/hooks/tests/test_live_tree_guard.py
+
+- path: hermes/hooks/task-inbox-show.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/task-inbox-show.py
+  source_sha256: 18ab07214c884ca2fa7d4b0f80df4ef369e84c93c01b6fcfba3a30e06b4b6b9
+  reviewed_at: "2026-08-11"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  summary: >
+    pre_llm_call (is_first_turn only), read-only: reads a provider-agnostic task-tracker-inbox
+    directory (populated by an external, harness-agnostic poller script this adapter does not
+    provide) and injects a compact, priority-sorted pending-task summary via pre_llm_call's
+    genuine `{"context": ...}` channel. Silent when no inbox is configured. Ported unchanged:
+    the inbox-discovery walk, the JSON snapshot schema, the priority-sort/formatting logic.
+    Adapted: looks under both `.hermes/<name>/` (Hermes-native default) and `.claude/<name>/`
+    (cross-harness -- a poller already writing under Claude Code's convention needs no
+    migration) in cwd and up to 3 parent directories; same is_first_turn substitution as
+    session-handoff-check.py for Hermes's lack of a SessionStart-equivalent whose output reaches
+    the model.
+  functional_test: >
+    (1) hermes/hooks/tests/test_task_inbox_show.py, 6/6 cases: an inbox with 2 tasks injects
+    context with the higher-priority one listed first; not-first-turn and no-inbox-at-all are
+    silent; a `.claude/`-convention inbox (cross-harness) is also recognized. (2) Direct
+    verification against Hermes's real dispatch code path (agent.shell_hooks.run_once, calling
+    process chdir'd into a disposable project with a real inbox file): confirmed a genuine
+    `{"context": ...}` response naming the real pending task.
+  files:
+    - hermes/hooks/tests/test_task_inbox_show.py
+
+- path: hermes/hooks/long-run-detector.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/long-run-detector.py
+  source_sha256: cccc9b20e064842bb2fedd21beb7b60c671ac1b9fd0641b7eb7cc1e7d61a998
+  reviewed_at: "2026-08-11"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  summary: >
+    pre_llm_call (is_first_turn only), read-only: mechanically DETECTS long-running-project
+    signals (>=3 session handoffs, or 2-of-{>=40 commits, >=200 tracked files, PROBLEMS.md
+    present}) and nudges toward a project's own long-run adoption checklist, while keeping the
+    actual adoption decision human (never auto-writes any marker itself) -- a manual gate rots
+    without mechanical detection backing it. Suppressed for already-adopted projects,
+    aggregation hubs (>5 project subdirs under the handoffs tree -- a hub still gets a
+    missing-agent-context nudge instead, a distinct check), non-projects, and within a 14-day
+    per-project cooldown. Ported unchanged: the signal thresholds, the aggregation-hub
+    exemption, the hub-context-gap check, the upstream `--self-test`. Adapted: looks for the
+    handoffs tree under `.hermes/handoffs` first, falling back to `.claude/handoffs`
+    (this adapter has no established convention for merging counts across both conventions at
+    once, and a project consistently using one is the expected case); cooldown stamp moved to
+    `.hermes/.longrun-nudged` (or `.claude/` if only that dir exists); "is this a real project"
+    check accepts either `.hermes` or `.claude` present, not just Claude Code's directory.
+  functional_test: >
+    (1) The hook's own `--self-test` (6 cases, all passing): long-run signals detected; an
+    adopted project is silent; an aggregation hub is silent for the adoption nudge but still
+    flags a missing-context gap until AGENTS.md/CLAUDE.md/feature_list.json are all present; a
+    trivial project is silent. (2) hermes/hooks/tests/test_long_run_detector.py, 7/7 cases: a
+    project with 3 handoffs injects a LONG-RUN-candidate context and writes the cooldown stamp;
+    a second call within the cooldown window is silent; not-first-turn and already-adopted
+    projects are silent. (3) Direct verification against Hermes's real dispatch code path
+    (agent.shell_hooks.run_once, calling process chdir'd into a disposable project with 3 real
+    handoff files): confirmed a genuine `{"context": ...}` response.
+  files:
+    - hermes/hooks/tests/test_long_run_detector.py
+
+- path: hermes/hooks/test-muting-guard.py
+  source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/test-muting-guard.py
+  source_sha256: cae7ccc5a6b51952f23543b4f16f114fd0d6f92d552613709eb6b1d80cf7126
+  reviewed_at: "2026-08-11"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (fully read personally before this decision)"
+  summary: >
+    pre_tool_call on write_file/patch of a test file: blocks an edit that newly introduces a
+    skip/xfail/`.only()`/`@Ignore`/`t.Skip` pattern not already present in the old content --
+    "muted failing test" being how bugs ship (recurring real-incident pattern: a skip added to
+    hide a recently broken test, a leftover `.only()` silently narrowing a suite to 1 test, an
+    `it.skip()` surviving a merge conflict). Covers pytest/unittest/Jest-Mocha-Vitest/JUnit/Go/
+    Rust/RSpec conventions. Ported unchanged: the test-path matcher, the full multi-language
+    mute-pattern list, the old-vs-new added-pattern diff logic. Adapted: `Edit`/`Write`/
+    `NotebookEdit` -> Hermes's `write_file`/`patch` (no separate NotebookEdit tool exists);
+    `patch` mode="patch" (V4A, can span multiple files) treats every "+"-prefixed line across
+    the whole patch body as "new" and every "-"-prefixed line as "old" (V4A bodies don't carry
+    separate old/new full-file strings the way mode="replace" does) -- an approximate signal for
+    the rarer multi-file-patch-touching-a-test-file case, matching the same class of
+    simplification over-engineering-advisor.py already accepts for V4A patches; bypass via
+    HERMES_ALLOW_TEST_MUTING=1 (same naming convention as this adapter's other guards).
+  functional_test: >
+    (1) hermes/hooks/tests/test_test_muting_guard.py, 9/9 cases: a non-test file and a wrong
+    tool pass through; a new test file with an added skip marker blocks; a clean test file is
+    allowed; a `patch` mode=replace edit adding a skip blocks, but re-adding the SAME skip
+    already present in old_string is not re-flagged; a bypass marker suppresses the block; a
+    V4A multi-file patch touching a test file with an added skip also blocks. Test-payload mute
+    strings are built via concatenation rather than written as literal decorator text, since this
+    file's own content would otherwise read as a test-muting edit to the live Claude-Code guard
+    installed in this working environment (confirmed by directly triggering it while writing an
+    earlier draft of this test file). (2) Direct verification against Hermes's real dispatch code
+    path (agent.shell_hooks.run_once): a real write_file dispatch adding a skip marker to a new
+    test file produced a genuine `{"action":"block",...}` response.
+  files:
+    - hermes/hooks/tests/test_test_muting_guard.py

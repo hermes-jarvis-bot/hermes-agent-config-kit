@@ -103,8 +103,13 @@ def bypass_marker(command_or_content: str, name: str) -> bool:
     """
     if not command_or_content or not name:
         return False
-    pattern = r"(?:#|//|<!--)\s*hermes-bypass\s*:\s*([a-z0-9_, \-]+)"
-    for m in re.finditer(pattern, command_or_content, re.IGNORECASE):
+    # Non-greedy name group + an explicit `-->`-or-line-end terminator: a greedy
+    # `[a-z0-9_, \-]+` here used to swallow the closing comment's own `--` before `>`,
+    # so `<!-- hermes-bypass: NAME -->` never matched (found while porting
+    # handoff-closure-audit-guard.py, the first hook to actually use this HTML-comment
+    # form in a test -- every prior bypass() caller only ever used the `#`/`//` forms).
+    pattern = r"(?:#|//|<!--)\s*hermes-bypass\s*:\s*([a-z0-9_,\s-]+?)\s*(?:-->|$)"
+    for m in re.finditer(pattern, command_or_content, re.IGNORECASE | re.MULTILINE):
         names = [x.strip().lower() for x in m.group(1).split(",")]
         if name.lower() in names or "all" in names:
             return True

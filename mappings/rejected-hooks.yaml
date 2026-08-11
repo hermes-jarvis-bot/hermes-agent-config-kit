@@ -251,3 +251,78 @@
     live source, not assumed) before a faithful port is possible -- the same blocker already on
     record for git-source-gate.py above. An advisory-only variant could be written today as its
     own, separate decision.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/launch-watch-guard.py
+  source_sha256: a21ec58436bd6012f396fabef9ab6957db5562d18448fd6d21fec7ddf0a12ad
+  reviewed_at: "2026-08-11"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (characterized via a research subagent's full read, findings cross-checked personally against the reported logic before this decision)"
+  decision: rejected
+  context: >
+    One of 14 files in this round's candidate-group audit (handoff/session siblings, task-inbox/
+    feedback display, long-run validators, dependency/supply-chain guards, test/quality gates,
+    plus api-key-leak-detector.py as an unevaluated sibling of the already-rejected
+    secret-leak-guard.py).
+  reason: >
+    Records backgrounded/launch-verb commands on PostToolUse (fire-and-forget is fine, it is
+    just a JSONL append), but the actual enforcement -- blocking Stop if any launch in the last
+    N hours was never followed by a liveness probe -- needs a genuinely blocking Stop-equivalent
+    event. Hermes's `on_session_end` fires every turn but discards its return value entirely
+    (verified against agent/turn_finalizer.py, same gap already on record for
+    git-source-gate.py/problems-md-validator.py above). The recording half is portable; the
+    half that gives this hook its actual value is not.
+  revisit_condition: >
+    Would need Hermes to expose a genuinely blocking session-end-class event (verified against
+    live source) before the enforcement half becomes portable. The recording half alone,
+    without any enforcement, was judged not worth a standalone port -- it is dead weight without
+    the block it exists to feed.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/open-items-are-work-orders.py
+  source_sha256: b4728b22c9144a78c8c4de327bdfc7c7c7b64e8e2ff13b936e31237f69cc03d
+  reviewed_at: "2026-08-11"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (characterized via a research subagent's full read, findings cross-checked personally against the reported logic before this decision)"
+  decision: rejected
+  context: >
+    Same 14-file candidate-group audit as launch-watch-guard.py above.
+  reason: >
+    Registers on Claude Code's UserPromptSubmit event -- fires per user turn on the prompt's
+    content itself, injecting the actual open PROBLEMS.md entries when the user asks "what's
+    still open". Hermes has no UserPromptSubmit-equivalent hook event at all (confirmed: not
+    among the 5 verified Hermes hook events this adapter has established -- pre_tool_call,
+    post_tool_call, pre_llm_call, pre_verify, on_session_end -- none of which fire on
+    per-user-message content before any tool/LLM activity). There is no channel to attach this
+    hook's logic to, regardless of how well its underlying idea fits this adapter's own
+    no-pre-existing-evasion-style principles.
+  revisit_condition: >
+    Would need Hermes to expose a pre-user-message hook event (verified against live source)
+    before this becomes portable at all -- the same blocker already on record for plan-gate.py
+    above.
+
+- source_repo: AnastasiyaW/claude-code-config
+  source_path: hooks/api-key-leak-detector.py
+  source_sha256: 293620dece6af6fcc33839b88ff2506d2174b048df463c7baec6b6c562ba5b2
+  reviewed_at: "2026-08-11"
+  reviewed_by: "operator-directed Wave 4 continuation, hermes-agent-config-kit session b45ab3c7 (characterized via a research subagent's full read, findings cross-checked personally against the reported logic before this decision -- this was flagged as an unevaluated sibling of secret-leak-guard.py in the Wave 4 candidate-group notes since 2026-08-07, explicitly to be checked before porting, not after)"
+  decision: rejected
+  context: >
+    Same 14-file candidate-group audit as launch-watch-guard.py above. Deliberately evaluated
+    this round rather than left further unevaluated, per the standing note attached to
+    secret-leak-guard.py's own rejection.
+  reason: >
+    Same policy-conflict class as secret-leak-guard.py, on a PostToolUse detective hook rather
+    than a PreToolUse blocker: scans tool output for API-key-shaped strings (Anthropic/OpenAI/
+    GitHub/AWS/Stripe/Slack/Google/private-key/JWT patterns) and, on a hit, its own logged/
+    printed action items explicitly tell the user to "rotate the exposed key(s)" and "consider
+    the session compromised". This mechanically enforces exactly the rotation-nagging behavior
+    secrets-as-data.md forbids by name ("НЕ ноем «надо ротировать токен» как про открытую
+    задачу"). The mechanism is otherwise clean (post_tool_call, fire-and-forget, no policy issue
+    with the detection itself) -- the rejection is specifically the prescribed remediation
+    text, not the pattern-matching.
+  revisit_condition: >
+    Could be reconsidered if rewritten to drop the rotation/compromise-assumption language and
+    instead only log the detection for the operator's own audit trail (matching this adapter's
+    other audit-log-only hooks' framing), or -- more in keeping with secrets-as-data.md's actual
+    stated hard boundary -- retargeted at the point a change is about to reach a PUBLIC
+    repository rather than at every tool output. Either would be a materially different hook, so
+    it would need its own review entry rather than an edit to this one.
