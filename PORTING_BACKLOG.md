@@ -45,17 +45,17 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `.github/` | 1 | 0 | 0 | 1 |
 | `agents/` | 8 | 0 | 0 | 8 |
 | `alternatives/` | 19 | 0 | 0 | 19 |
-| `docs/` | 22 | 0 | 0 | 22 |
+| `docs/` | 26 | 0 | 0 | 26 |
 | `evals/` | 2 | 0 | 0 | 2 |
-| `hooks/` | 59 | 24 | 13 | 22 |
+| `hooks/` | 79 | 24 | 13 | 42 |
 | `principles/` | 31 | 30 | 0 | 1 |
-| `references/` | 1 | 0 | 0 | 1 |
+| `references/` | 6 | 0 | 0 | 6 |
 | `rules/` | 35 | 29 | 0 | 6 |
-| `scripts/` | 68 | 0 | 1 | 67 |
-| `skills/` | 240 | 155 | 0 | 85 |
-| `templates/` | 49 | 34 | 0 | 15 |
+| `scripts/` | 74 | 0 | 1 | 73 |
+| `skills/` | 245 | 155 | 0 | 90 |
+| `templates/` | 50 | 34 | 0 | 16 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **551** | **272** | **14** | **265** |
+| **Total** | **592** | **272** | **14** | **306** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
@@ -64,7 +64,7 @@ Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only 
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
 
-_Last recomputed against upstream commit `ec5a6cd67f3039b907555a74c2fbf0f40d8e423d` (`upstream.lock.json`'s `last_synced_sha`)._
+_Last recomputed against upstream commit `29032daa344656a012470faf52dd4de366111a7a` (`upstream.lock.json`'s `last_synced_sha`)._
 
 <!-- END SNAPSHOT_BASELINE_TABLE -->
 

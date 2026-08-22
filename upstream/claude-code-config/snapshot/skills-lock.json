@@ -1,8 +1,8 @@
 {
   "lockfile_version": 2,
-  "generated_at": "2026-08-04T22:36:13+00:00",
-  "skill_count": 49,
-  "aggregate_hash": "sha256:f3504551025bbd37600f8aab906ab177d5aa61329cf7ea58ec72dad64bcd3095",
+  "generated_at": "2026-08-14T10:47:32+00:00",
+  "skill_count": 50,
+  "aggregate_hash": "sha256:414a1d5fde76b023fc97d13b92b1f576596af8446a12e4227519b952cdeadb8c",
   "skills": {
     "agent-harness-design": {
       "content_hash": "sha256:9737ec747c5409c33f0e1eed31092010260cb857a39fcfdb0f64bff40c45f659",
@@ -196,8 +196,8 @@
       ]
     },
     "development/architecture-first": {
-      "content_hash": "sha256:961af5e1f58742f45fc33c3eb058a09693c0bfc324fb4a7ac7b2237d71f80299",
-      "size_bytes": 339517,
+      "content_hash": "sha256:37649bb37e9ab8847e86a032eec95e67d702354ffdaf66d0f7094a4bb4be121b",
+      "size_bytes": 340881,
       "file_count": 13,
       "files": [
         "SKILL.md",
@@ -302,12 +302,14 @@
       ]
     },
     "development/proof-verify": {
-      "content_hash": "sha256:3eb9ed403436dfe54958bfc4195be293c71fe1ba25cbbe2c59362e551da35046",
-      "size_bytes": 10312,
-      "file_count": 2,
+      "content_hash": "sha256:9b0c2fa8cbf354490d515b9d06128256120c67372c84ee289a67e575f06fad3f",
+      "size_bytes": 24825,
+      "file_count": 4,
       "files": [
         "SKILL.md",
-        "references/kb-aware-verification.md"
+        "references/kb-aware-verification.md",
+        "references/proven-stage-contracts.md",
+        "scripts/validate_stage_ledger.py"
       ]
     },
     "development/refactoring-safely": {
@@ -358,8 +360,8 @@
       ]
     },
     "development/testing-strategy": {
-      "content_hash": "sha256:3ef246f6ba3f6a1023520a144be85146d9ef1b1bba9f9562d46109345b9d7968",
-      "size_bytes": 7386,
+      "content_hash": "sha256:a7f366d4a5adfefffe83fa0fad680fa5e9f8004b6304b0375ca9d70f9092fff1",
+      "size_bytes": 8067,
       "file_count": 1,
       "files": [
         "SKILL.md"
@@ -374,8 +376,8 @@
       ]
     },
     "development/verify-this": {
-      "content_hash": "sha256:4814c3f00a784f532ca00f8075a6ae68e2fb2372c096042b5823ab9c176809e1",
-      "size_bytes": 4369,
+      "content_hash": "sha256:6a15f68eec33d4cbc0fd81030c0e84567e93bbe6ff989bbc694fdd9352be4743",
+      "size_bytes": 4698,
       "file_count": 1,
       "files": [
         "SKILL.md"
@@ -437,6 +439,16 @@
       "files": [
         "SKILL.md",
         "references/CONTINUITY.example.json"
+      ]
+    },
+    "operational/deepseek-provider-contract": {
+      "content_hash": "sha256:b0063d82b764281425f61e810ed0215260968e21644a641b1584073cb34aaf5f",
+      "size_bytes": 8616,
+      "file_count": 3,
+      "files": [
+        "SKILL.md",
+        "scripts/test_validate_deepseek_history.py",
+        "scripts/validate_deepseek_history.py"
       ]
     },
     "operational/desktop-sessions-discovery": {

@@ -27,6 +27,21 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from safety_common import allow, block, log, read_event  # noqa: E402
 
+# One definition of "what in this command can actually run", shared with the
+# destructive guards. This copy is the one settings.json registers - a second,
+# divergent copy under ~/.claude/hooks/ received an earlier repair and never
+# ran, which an independent review caught by reading the manifest rather than
+# the file. A swallowed ImportError here would repeat exactly that, so it is
+# announced instead: a guard that quietly loses a security helper is a guard
+# that is not there.
+try:
+    from safety_common import executable_text as _executable_text  # noqa: E402
+except ImportError as error:  # pragma: no cover - deployment fault, not logic
+    print(f"[transfer-contract-guard] safety_common.executable_text is missing "
+          f"({error}); scanning the RAW command text, which over-blocks on "
+          f"quoted and commented mentions.", file=sys.stderr)
+    _executable_text = None
+
 
 # Transfer records live in one shared directory, but a Stop gate belongs to one
 # session. Without an owner, session A is blocked by session B's in-flight
@@ -41,6 +56,25 @@ SESSION_ROOT = Path(
 # A live session's transcript is appended to continuously. Half an hour of
 # silence means the owner is not going to close this record on its own.
 FOREIGN_LIVE_SECONDS = int(os.environ.get("CLAUDE_TRANSFER_OWNER_TTL", "1800"))
+
+# Ownership helpers now live in safety_common so both Stop gates share one
+# definition; a second copy would drift and only one would get the next fix.
+try:
+    from safety_common import (  # noqa: E402
+        same_session as _same_session,
+        session_alive as _session_alive,
+        transcripts_for as _transcripts_for,
+    )
+except ImportError:  # fail CLOSED: unknown liveness must never downgrade a block
+    def _transcripts_for(session_id: str) -> list:
+        return []
+
+    def _same_session(a: str, b: str) -> bool:
+        return True
+
+    def _session_alive(session_id: str, now: float | None = None) -> bool:
+        return False
+
 
 
 TRANSFER_MARKER = re.compile(
@@ -76,34 +110,25 @@ def _event_session(event: dict[str, Any]) -> str:
         stem = Path(transcript).stem
         if stem and stem not in {".", ".."}:
             return stem
-    return ""
+    # Last resort, and the only one that survives a payload that did not parse:
+    # measured 2026-08-10, the harness exports CLAUDE_CODE_SESSION_ID into every
+    # hook process. Ownership therefore does not depend on the event at all.
+    return _text(os.environ.get("CLAUDE_CODE_SESSION_ID"))
 
 
-def _session_alive(session_id: str, now: float | None = None) -> bool:
-    """True while the owning session's transcript is still being written.
 
-    The transcript is `<project-slug>/<session-id>.jsonl` and a worktree session
-    lives under its own slug, so the lookup globs every project.
-    """
-    if not session_id or "/" in session_id or "\\" in session_id:
-        return False
-    moment = time.time() if now is None else now
-    try:
-        for transcript in SESSION_ROOT.glob(f"*/{session_id}.jsonl"):
-            try:
-                if moment - transcript.stat().st_mtime <= FOREIGN_LIVE_SECONDS:
-                    return True
-            except OSError:
-                continue
-    except OSError:
-        return False
-    return False
 
 
 def _foreign_and_live(contract: dict[str, Any], current_session: str) -> str:
-    """Owner id when this record belongs to a different, still-live session."""
-    owner = _text(contract.get("session_id"))
-    if not owner or owner == current_session:
+    """Owner id when this record belongs to a different, still-live session.
+
+    `opened_by` counts too. The stamp writes `session_id`, but a record opened by
+    hand names its opener in `opened_by` - and reading only one key made those
+    records look ownerless, so a peer's finished-but-old-shaped contract blocked
+    every other session instead of only its own.
+    """
+    owner = _text(contract.get("session_id")) or _text(contract.get("opened_by"))
+    if not owner or _same_session(owner, current_session):
         return ""
     return owner if _session_alive(owner) else ""
 
@@ -168,6 +193,12 @@ def _marker_path(command: str, cwd: Path) -> Path | None:
 
 
 def _transfer_kind(command: str) -> tuple[str, str] | None:
+    # Read what executes, not what is written: a `grep` for the word rsync, a
+    # comment mentioning scp, and a here-doc documenting an rsync flag are not
+    # transfers. A here-doc piped into `bash -s` over ssh is one, and stays in
+    # scope. See safety_common.executable_text for the rule and its limits.
+    if _executable_text is not None:
+        command = _executable_text(command)
     checks = (
         (r"\bgit\s+clone\b", "clone", "git"),
         (r"\bgh\s+repo\s+clone\b", "clone", "gh"),
@@ -327,7 +358,34 @@ def _pre(event: dict[str, Any]) -> None:
     allow()
 
 
+def _stamp_written_contract(event: dict[str, Any]) -> bool:
+    """Give a freshly written contract its owner, before any transfer runs.
+
+    Stamping only at PreToolUse left a gap: a session that writes the record and
+    then works for a while owns nothing on paper, so its in-flight record blocks
+    every sibling session's Stop gate. Hit twice on 2026-08-09/10. The record is
+    created by Write/Edit, so that is where ownership should be established.
+    """
+    if _text(event.get("tool_name")) not in {"Write", "Edit", "MultiEdit"}:
+        return False
+    raw = _text(_tool_input(event).get("file_path"))
+    if not raw:
+        return False
+    path = _contract_path(raw, _event_cwd(event))
+    if path is None or not path.is_file():
+        return False
+    try:
+        contract = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    if not isinstance(contract, dict):
+        return False
+    _stamp_owner(path, contract, _event_session(event))
+    return True
+
+
 def _post(event: dict[str, Any]) -> None:
+    _stamp_written_contract(event)
     tool = _text(event.get("tool_name"))
     if tool not in {"Bash", "PowerShell"}:
         allow()
@@ -453,6 +511,9 @@ def _self_test() -> int:
         sessions = tmp / "projects"
         (sessions / "slug").mkdir(parents=True)
         SESSION_ROOT = sessions
+        # the shared helper resolves the root per call from the env,
+        # so the seam this test relies on has to be set there too
+        os.environ["CLAUDE_SESSION_ROOT"] = str(sessions)
         live, stale, mine = "live-owner", "stale-owner", "my-session"
         (sessions / "slug" / f"{live}.jsonl").write_text("{}", encoding="utf-8")
         old = sessions / "slug" / f"{stale}.jsonl"
@@ -478,6 +539,12 @@ def _self_test() -> int:
             ("open record with no owner at all", {}, True),
             ("closed record, owner live", {"session_id": live, "status": "cancelled",
                                            "closure_reason": "c"}, False),
+            # A record opened by hand names its opener in `opened_by`. Reading
+            # only `session_id` made it look ownerless, so one peer's record
+            # blocked every other session's Stop instead of only its owner's.
+            ("open record, opened_by a live session", {"opened_by": live}, False),
+            ("open record, opened_by a stale session", {"opened_by": stale}, True),
+            ("open record, opened_by me", {"opened_by": mine}, True),
         ]
         for label, over, should_block in cases:
             for leftover in transfers.glob("*.json"):
@@ -513,6 +580,29 @@ def _self_test() -> int:
         if json.loads(path.read_text(encoding="utf-8")).get("session_id") != mine:
             fails.append("existing owner was overwritten")
 
+        # Writing a contract must establish ownership, whether or not a transfer
+        # command ever runs -- that gap is what wedged sibling sessions twice.
+        for leftover in transfers.glob("*.json"):
+            leftover.unlink()
+        written = put("written")
+        event = {"tool_name": "Write", "session_id": mine, "cwd": str(repo),
+                 "tool_input": {"file_path": str(written)}}
+        if not _stamp_written_contract(event):
+            fails.append("writing a contract was not recognised as a stamping opportunity")
+        if json.loads(written.read_text(encoding="utf-8")).get("session_id") != mine:
+            fails.append("a contract written by Write was left without an owner")
+        for label, bad_event in (
+            ("a file outside transfers/", {"tool_name": "Write", "session_id": mine,
+                                           "cwd": str(repo),
+                                           "tool_input": {"file_path": str(repo / "notes.json")}}),
+            ("a non-write tool", {"tool_name": "Read", "session_id": mine, "cwd": str(repo),
+                                  "tool_input": {"file_path": str(written)}}),
+            ("no path at all", {"tool_name": "Write", "session_id": mine, "cwd": str(repo),
+                                "tool_input": {}}),
+        ):
+            if _stamp_written_contract(bad_event):
+                fails.append(f"{label} was treated as a contract write")
+
         if _session_alive("no-such-session"):
             fails.append("an unknown session was reported alive")
         if _session_alive("../escape"):
@@ -520,15 +610,28 @@ def _self_test() -> int:
 
         # The id must survive whichever key this harness uses, including the
         # transcript-filename fallback that Stop events always carry.
-        for label, event, expected in (
-            ("snake_case", {"session_id": mine}, mine),
-            ("camelCase", {"sessionId": mine}, mine),
-            ("transcript fallback", {"transcript_path": f"/x/y/{mine}.jsonl"}, mine),
-            ("nothing usable", {"transcript_path": ""}, ""),
-        ):
-            got = _event_session(event)
-            if got != expected:
-                fails.append(f"session id from {label}: expected {expected!r}, got {got!r}")
+        saved_env = os.environ.pop("CLAUDE_CODE_SESSION_ID", None)
+        try:
+            for label, event, expected in (
+                ("snake_case", {"session_id": mine}, mine),
+                ("camelCase", {"sessionId": mine}, mine),
+                ("transcript fallback", {"transcript_path": f"/x/y/{mine}.jsonl"}, mine),
+                ("nothing usable, no env", {"transcript_path": ""}, ""),
+            ):
+                got = _event_session(event)
+                if got != expected:
+                    fails.append(f"session id from {label}: expected {expected!r}, got {got!r}")
+            # The env var is what survives a payload that did not parse, but it
+            # must never outrank an id the event actually carried.
+            os.environ["CLAUDE_CODE_SESSION_ID"] = "env-owner"
+            if _event_session({}) != "env-owner":
+                fails.append("env fallback did not supply the session id for an empty event")
+            if _event_session({"session_id": mine}) != mine:
+                fails.append("env fallback overrode an id present in the event")
+        finally:
+            os.environ.pop("CLAUDE_CODE_SESSION_ID", None)
+            if saved_env is not None:
+                os.environ["CLAUDE_CODE_SESSION_ID"] = saved_env
 
     for line in fails:
         print("FAIL:", line)
