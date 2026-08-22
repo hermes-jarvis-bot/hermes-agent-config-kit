@@ -52,6 +52,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from safety_common import (  # noqa: E402
+    GIT_FORCE_BRANCH_DELETE_PATTERNS,
     allow,
     any_match,
     bash_command,
@@ -70,6 +71,18 @@ DESTRUCTIVE_INTENT = [
     r"\brmdir\s+",
     r"(?:^|[;&|])\s*mv\s+",
     r"\bmove-item\b",
+    # PowerShell, which this guard explicitly accepts as a tool and which is the
+    # primary shell on this machine. An independent review scanned the raw list
+    # and found `Remove-Item` - the commonest destructive PowerShell command -
+    # matched NOTHING at all, along with Clear-Content, Stop-Service and the
+    # machine-stopping verbs. Only `Move-Item` was covered, by luck of naming.
+    r"\bremove-item\b",
+    r"\bclear-content\b",
+    r"\bstop-service\b",
+    r"\bstop-computer\b",
+    r"\brestart-computer\b",
+    r"\bremove-partition\b",
+    r"\bformat-volume\b",
     r"\brobocopy\b.*\/(?:move|mov)\b",
     r"\brclone\s+move\b",
     r"\bfind\s+\S+.*-delete\b",
@@ -116,12 +129,7 @@ DESTRUCTIVE_INTENT = [
     # Git destructive (also covered by block_git_destructive)
     r"\bgit\s+reset\s+[^|]*--hard\b",
     r"\bgit\s+push\s+[^|]*(-f\b|--force\b)",
-    # -D must stay uppercase: any_match() applies re.IGNORECASE to every
-    # pattern, so a bare -D also caught the safe lowercase -d, which refuses
-    # to delete unmerged branches. Same fix as in git-destructive-guard.py.
-    r"\bgit\s+branch\s+(?-i:-D)\b",
-    r"\bgit\s+branch\s+.*--delete\b.*--force\b",
-    r"\bgit\s+branch\s+.*--force\b.*--delete\b",
+    *GIT_FORCE_BRANCH_DELETE_PATTERNS,
     r"\bgit\s+clean\s+-[fdx]+",
     r"\bgit\s+filter-branch\b",
     r"\bgit\s+filter-repo\b",
@@ -317,7 +325,7 @@ def main() -> None:
         allow()
 
     # Step 1: any destructive intent?
-    hit = any_match(cmd, DESTRUCTIVE_INTENT)
+    hit = any_match(cmd, DESTRUCTIVE_INTENT, command=True)
     if not hit:
         allow()
 
