@@ -1,12 +1,12 @@
 {
   "lockfile_version": 2,
-  "generated_at": "2026-08-04T22:36:13+00:00",
-  "skill_count": 49,
-  "aggregate_hash": "sha256:f3504551025bbd37600f8aab906ab177d5aa61329cf7ea58ec72dad64bcd3095",
+  "generated_at": "2026-09-04T01:36:27+00:00",
+  "skill_count": 57,
+  "aggregate_hash": "sha256:d83969a613d7eb32b44e8b4672e611b21892cc6e7af840106bd05a28fdd140fa",
   "skills": {
     "agent-harness-design": {
-      "content_hash": "sha256:9737ec747c5409c33f0e1eed31092010260cb857a39fcfdb0f64bff40c45f659",
-      "size_bytes": 95375,
+      "content_hash": "sha256:698f850dd8e71ec4dcde9bdaa670c067852e47a67f97dcdcbe72db385e29621a",
+      "size_bytes": 96468,
       "file_count": 12,
       "files": [
         "SKILL.md",
@@ -21,6 +21,36 @@
         "references/agent-tool-design.md",
         "references/agentic-rag-model-policy.md",
         "references/context-trust-labels.md"
+      ]
+    },
+    "agents-best-practices": {
+      "content_hash": "sha256:1f8e3277086ca3330457e1049c17ad74b06dca6cb5ce953fdbb009b39e52247d",
+      "size_bytes": 271838,
+      "file_count": 23,
+      "files": [
+        "SKILL.md",
+        "references/agent-legibility-feedback-loops.md",
+        "references/agentic-loop.md",
+        "references/architecture.md",
+        "references/checklists.md",
+        "references/coding-agents.md",
+        "references/completion-reconciliation.md",
+        "references/context-memory-compaction.md",
+        "references/coverage-audit.md",
+        "references/environment-adaptive-tools.md",
+        "references/evals.md",
+        "references/mvp-agent-blueprint.md",
+        "references/planning-and-goals.md",
+        "references/prompt-caching-and-cost.md",
+        "references/provider-api-patterns.md",
+        "references/security-observability.md",
+        "references/self-refining-recursive-harnesses.md",
+        "references/skills-and-connectors.md",
+        "references/source-links.md",
+        "references/speculative-tool-execution.md",
+        "references/system-prompts-instructions.md",
+        "references/tools-and-permissions.md",
+        "references/workflow-orchestration.md"
       ]
     },
     "ai-ml/diffusion-engineering": {
@@ -196,8 +226,8 @@
       ]
     },
     "development/architecture-first": {
-      "content_hash": "sha256:961af5e1f58742f45fc33c3eb058a09693c0bfc324fb4a7ac7b2237d71f80299",
-      "size_bytes": 339517,
+      "content_hash": "sha256:37649bb37e9ab8847e86a032eec95e67d702354ffdaf66d0f7094a4bb4be121b",
+      "size_bytes": 340881,
       "file_count": 13,
       "files": [
         "SKILL.md",
@@ -221,6 +251,20 @@
       "file_count": 1,
       "files": [
         "SKILL.md"
+      ]
+    },
+    "development/bug-reproducer": {
+      "content_hash": "sha256:9e623d1540cac51c5ffc7be4c231b588eb0ba7eba314aba06610779b2cfd9b83",
+      "size_bytes": 38717,
+      "file_count": 7,
+      "files": [
+        "SKILL.md",
+        "references/bug-discovery-playbook.md",
+        "references/report-schema.md",
+        "references/reproduction-playbook.md",
+        "scripts/capture_command.py",
+        "scripts/compare_evidence.py",
+        "scripts/generate_report.py"
       ]
     },
     "development/code-complexity": {
@@ -269,8 +313,8 @@
       ]
     },
     "development/deep-review": {
-      "content_hash": "sha256:e652850424276398fda2bfb32946221570e2997f6bbfb30bd611d14fc61ddf1f",
-      "size_bytes": 14498,
+      "content_hash": "sha256:0169daefddd7b5d97139464568fd5dd594830ba53c02caac4e803e6ca78fdc1e",
+      "size_bytes": 16345,
       "file_count": 1,
       "files": [
         "SKILL.md"
@@ -302,12 +346,14 @@
       ]
     },
     "development/proof-verify": {
-      "content_hash": "sha256:3eb9ed403436dfe54958bfc4195be293c71fe1ba25cbbe2c59362e551da35046",
-      "size_bytes": 10312,
-      "file_count": 2,
+      "content_hash": "sha256:9b0c2fa8cbf354490d515b9d06128256120c67372c84ee289a67e575f06fad3f",
+      "size_bytes": 24825,
+      "file_count": 4,
       "files": [
         "SKILL.md",
-        "references/kb-aware-verification.md"
+        "references/kb-aware-verification.md",
+        "references/proven-stage-contracts.md",
+        "scripts/validate_stage_ledger.py"
       ]
     },
     "development/refactoring-safely": {
@@ -358,8 +404,8 @@
       ]
     },
     "development/testing-strategy": {
-      "content_hash": "sha256:3ef246f6ba3f6a1023520a144be85146d9ef1b1bba9f9562d46109345b9d7968",
-      "size_bytes": 7386,
+      "content_hash": "sha256:a7f366d4a5adfefffe83fa0fad680fa5e9f8004b6304b0375ca9d70f9092fff1",
+      "size_bytes": 8067,
       "file_count": 1,
       "files": [
         "SKILL.md"
@@ -374,8 +420,8 @@
       ]
     },
     "development/verify-this": {
-      "content_hash": "sha256:4814c3f00a784f532ca00f8075a6ae68e2fb2372c096042b5823ab9c176809e1",
-      "size_bytes": 4369,
+      "content_hash": "sha256:6a15f68eec33d4cbc0fd81030c0e84567e93bbe6ff989bbc694fdd9352be4743",
+      "size_bytes": 4698,
       "file_count": 1,
       "files": [
         "SKILL.md"
@@ -404,6 +450,63 @@
         "references/layout-css.md",
         "references/performance-a11y.md",
         "references/visual-styles.md"
+      ]
+    },
+    "frontend/motion-framer": {
+      "content_hash": "sha256:40571e165d79af6d74d8fcd9b36d0f5184e7f5c7b7865009780110224ff2c8dc",
+      "size_bytes": 70977,
+      "file_count": 4,
+      "files": [
+        "SKILL.md",
+        "references/api_reference.md",
+        "scripts/animation_generator.py",
+        "scripts/variant_builder.py"
+      ]
+    },
+    "frontend/ui-design": {
+      "content_hash": "sha256:a1f53b84e31ea2293594d3181ecdcc6d76b572eaf1dc5a126f20b8513ca40933",
+      "size_bytes": 5844,
+      "file_count": 1,
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    "frontend/ui-ux-pro-max": {
+      "content_hash": "sha256:2edc6c158ae5740e65020485e0ddde988ab71a70baec31748fc32d168181577c",
+      "size_bytes": 476937,
+      "file_count": 31,
+      "files": [
+        "SKILL.md",
+        "references/pro-rules.md",
+        "references/quick-reference.md",
+        "scripts/core.py",
+        "scripts/design_system.py",
+        "scripts/reasoning_contract.py",
+        "scripts/search.py",
+        "scripts/tests/fixtures/catalogs/google-api.json",
+        "scripts/tests/fixtures/catalogs/google-catalog.json",
+        "scripts/tests/fixtures/catalogs/google-existing.csv",
+        "scripts/tests/fixtures/catalogs/google-metadata.json",
+        "scripts/tests/fixtures/catalogs/google-overrides.json",
+        "scripts/tests/fixtures/catalogs/icons-curated.csv",
+        "scripts/tests/fixtures/catalogs/phosphor-core.json",
+        "scripts/tests/fixtures/catalogs/phosphor-package.json",
+        "scripts/tests/fixtures/catalogs/phosphor-react-exports.json",
+        "scripts/tests/fixtures/catalogs/phosphor-react-package.json",
+        "scripts/tests/fixtures/relevance-baseline.json",
+        "scripts/tests/fixtures/relevance-cases.json",
+        "scripts/tests/fixtures/relevance-thresholds.json",
+        "scripts/tests/test_catalog_refresh.py",
+        "scripts/tests/test_core.py",
+        "scripts/tests/test_core_data_quality.py",
+        "scripts/tests/test_data_contracts.py",
+        "scripts/tests/test_design_system_mode.py",
+        "scripts/tests/test_native_desktop_stack_freshness.py",
+        "scripts/tests/test_relevance_evaluator.py",
+        "scripts/tests/test_style_taxonomy.py",
+        "scripts/tests/test_text_layout_resilience.py",
+        "scripts/tests/test_web_stack_freshness.py",
+        "scripts/validate_data.py"
       ]
     },
     "ios/ios-development": {
@@ -439,6 +542,16 @@
         "references/CONTINUITY.example.json"
       ]
     },
+    "operational/deepseek-provider-contract": {
+      "content_hash": "sha256:b0063d82b764281425f61e810ed0215260968e21644a641b1584073cb34aaf5f",
+      "size_bytes": 8616,
+      "file_count": 3,
+      "files": [
+        "SKILL.md",
+        "scripts/test_validate_deepseek_history.py",
+        "scripts/validate_deepseek_history.py"
+      ]
+    },
     "operational/desktop-sessions-discovery": {
       "content_hash": "sha256:9bce354da0ba04cc7777b64563ed4eba33eb5cc30636a94bb03ce5eb6fd1e1d8",
       "size_bytes": 47030,
@@ -449,6 +562,14 @@
         "scripts/sessions_inventory.py",
         "scripts/sessions_registry.py",
         "scripts/sessions_restore.py"
+      ]
+    },
+    "operational/epistemic-challenge": {
+      "content_hash": "sha256:c051e376efad86cbaec59449576aac971dba7553cd426359289a27f27213fada",
+      "size_bytes": 4686,
+      "file_count": 1,
+      "files": [
+        "SKILL.md"
       ]
     },
     "operational/gemini-delegate": {
@@ -540,6 +661,14 @@
     "writing/article-structure-review": {
       "content_hash": "sha256:ffa43478e8eba809395eaee12b080e75417a6a5844ee51257685c3ce6300db3b",
       "size_bytes": 12695,
+      "file_count": 1,
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    "writing/caveman": {
+      "content_hash": "sha256:4cc9df88d2579b3520227e3d89cffd6530b47406a110a1030cc6f4761c80ed6a",
+      "size_bytes": 12234,
       "file_count": 1,
       "files": [
         "SKILL.md"

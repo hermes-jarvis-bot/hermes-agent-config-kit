@@ -46,7 +46,9 @@ This module is adapted for Hermes Agent. Upstream instructions are treated as re
   копия на месте).
 
 ## Hermes adaptation — guard candidates, not active hooks
-- `a reviewed guard candidate` (pre-action guard concept) — требует подтверждения для destructive intent.
+- `a reviewed guard candidate` (pre-action guard concept) — до появления host-verifiable approval
+  record блокирует destructive intent; текстовый маркер в команде не является
+  подтверждением пользователя.
 - `a reviewed guard candidate` / `a reviewed guard candidate` — блок катастрофических удалений.
 - `a reviewed guard candidate` — снапшот БД перед destructive SQL.
 - `a reviewed guard candidate` (post-action verification concept) — проверяет, что destructive-операция реально завершилась.

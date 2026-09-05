@@ -41,6 +41,13 @@ LOCAL_ONLY_SKILLS = {
     "harness-audit",
 }
 
+# This hook is shared by Claude and Codex.  An unprofiled registration must be
+# conservative: it cannot truthfully require a skill that is only available in
+# one client.  Manifest owners pass the concrete client profile; old manifests
+# safely fall back to the common capability set until upgraded.
+VALID_PROFILES = frozenset({"claude", "codex", "shared"})
+DEFAULT_PROFILE = "shared"
+
 # ─── Keyword → Skill mapping ───
 # Each entry: pattern (regex, case-insensitive) → skill name + description
 # Patterns should be specific enough to avoid false positives on normal conversation
@@ -73,6 +80,7 @@ ROUTES = [
             "references/retouch-native.md",
         ],
         "required": True,
+        "profiles": ["claude"],
     },
     # Retouch security / ethical hacking / release hardening
     {
@@ -88,6 +96,7 @@ ROUTES = [
             "references/sources.md",
         ],
         "required": True,
+        "profiles": ["claude"],
     },
     # ComfyUI driven through MCP / comfy-cli (agent-orchestrated graphs)
     {
@@ -127,6 +136,7 @@ ROUTES = [
             "references/advanced-cpp.md",
         ],
         "required": True,
+        "profiles": ["claude"],
     },
     # Clean architecture guardrails — keep this as an advisory rule, not a
     # skill route. The old target (clean-architecture) is not installed in the
@@ -176,6 +186,22 @@ ROUTES = [
         ],
         "skill": "control-cli",
         "description": "Drive an interactive CLI/TUI with deterministic input and transcript evidence",
+    },
+    # A product interface is one delivery surface: visual decisions, frontend
+    # implementation, and proof belong to one route. `control-ui` below remains
+    # a narrower browser/CDP evidence companion, so a screenshot request can
+    # legitimately select both without turning every UI task into a test-only task.
+    {
+        "patterns": [
+            r"\b(ui|ux)\b.{0,100}\b(design|redesign|layout|responsive|accessib\w*|a11y|animation|motion|implement|build|fix|component|dashboard|form|page|landing)\b",
+            r"\b(design|redesign|layout|responsive|accessib\w*|a11y|animation|motion|implement|build|fix)\b.{0,100}\b(ui|ux|interface|frontend|dashboard|form|page|landing)\b",
+            r"\b(interface|frontend|dashboard|form|page|landing|component|website)\b.{0,100}\b(prettier|spacing|mobile|desktop|visual|design|redesign|layout|responsive|accessib\w*|a11y|animation|motion)\b",
+            r"\b(интерфейс\w*|ui|ux|дашборд\w*|лендинг\w*|страниц\w*|форм\w*|компонент\w*|верстк\w*)\b.{0,100}\b(дизайн\w*|редизайн\w*|сделай|создай|почини|исправь|сверстай|адаптив\w*|доступност\w*|анимац\w*)\b",
+            r"\b(дизайн\w*|редизайн\w*|сверстай|адаптив\w*|доступност\w*|анимац\w*)\b.{0,100}\b(интерфейс\w*|ui|ux|дашборд\w*|лендинг\w*|страниц\w*|форм\w*|компонент\w*|верстк\w*)\b",
+        ],
+        "skill": "ui-design",
+        "description": "REQUIRED for one UI-design loop: evidence-led visual decisions, native frontend implementation, and focused real-surface proof",
+        "required": True,
     },
     {
         "patterns": [
@@ -237,6 +263,24 @@ ROUTES = [
         "skill": "observability-monitoring",
         "description": "Evidence-backed monitoring, alerting, SLI/SLO, telemetry, and incident workflows",
     },
+    # Explicitly asking for challenge, not automatic contrarianism.  The skill
+    # turns a claim into a falsifiable question and asks for discriminating
+    # evidence; it does not manufacture a counterargument for ordinary tasks.
+    {
+        "patterns": [
+            r"\b(не соглаш\w*|не поддакив\w*|критичн\w*.*ответ|оспор\w*|контраргумент\w*|проверь.*гипотез\w*)\b",
+            r"\b(sycophan\w*|challenge (my|the) (claim|assumption|idea)|devil.?s advocate|critical response|counter[- ]?argument|disagree.*evidence)\b",
+        ],
+        # Literal transformation can quote the exact trigger phrase without
+        # asking for the procedure itself. Keep this narrow: a substantive
+        # research/decision task that merely mentions translation still routes.
+        "exclude_patterns": [
+            r"\b(translate|translation|перевед\w*|перевод)\b.{0,120}\b(literal|string|phrase|фраз\w*|строк\w*|текст\w*)\b",
+        ],
+        "skill": "epistemic-challenge",
+        "description": "REQUIRED when the user asks for critical independence: separate evidence, counterevidence, uncertainty, and a falsifier before agreeing",
+        "required": True,
+    },
     # Harness/configuration audit
     {
         "patterns": [
@@ -282,6 +326,7 @@ ROUTES = [
         ],
         "skill": "investigate",
         "description": "Systematic investigation with root cause analysis",
+        "profiles": ["claude"],
     },
     # Debugging
     {
@@ -291,6 +336,7 @@ ROUTES = [
         ],
         "skill": "investigate",
         "description": "Root cause investigation (Iron Law: no fixes without root cause)",
+        "profiles": ["claude"],
     },
     # Simplify / Clean
     {
@@ -378,6 +424,7 @@ ROUTES = [
         ],
         "skill": "claude-seo:seo",
         "description": "site review / SEO audit - technical SEO, schema, sitemaps, hreflang, Core Web Vitals, GEO/AEO. Use claude-seo:seo-page for one page, claude-seo:seo-audit for a full crawl",
+        "profiles": ["claude"],
     },
     # Init new project
     {
@@ -390,11 +437,31 @@ ROUTES = [
 ]
 
 
-def detect_keywords(user_message: str) -> list[dict]:
-    """Return matching skills for the user's message."""
+def normalize_profile(value: object) -> str:
+    """Return a known client profile; unknown values fail closed to shared."""
+    profile = str(value or DEFAULT_PROFILE).strip().lower()
+    return profile if profile in VALID_PROFILES else DEFAULT_PROFILE
+
+
+def route_available_in_profile(route: dict, profile: str) -> bool:
+    """Whether the receiving client is declared able to load this route."""
+    allowed = route.get("profiles", ("claude", "codex"))
+    if not isinstance(allowed, (list, tuple, set, frozenset)):
+        return False
+    allowed_profiles = {str(item).strip().lower() for item in allowed}
+    if profile == "shared":
+        return {"claude", "codex"}.issubset(allowed_profiles)
+    return profile in allowed_profiles
+
+
+def detect_keywords(user_message: str, *, profile: str = DEFAULT_PROFILE) -> list[dict]:
+    """Return matches without naming unavailable skills as usable routes."""
+    profile = normalize_profile(profile)
     matches = []
     by_skill = {}
     for route in ROUTES:
+        if any(re.search(pattern, user_message, re.IGNORECASE) for pattern in route.get("exclude_patterns", [])):
+            continue
         for pattern in route["patterns"]:
             if re.search(pattern, user_message, re.IGNORECASE):
                 if "suggest" in route:
@@ -407,6 +474,12 @@ def detect_keywords(user_message: str) -> list[dict]:
                     "refs": route.get("refs", []),
                     "required": route.get("required", False),
                 }
+                if not route_available_in_profile(route, profile):
+                    matches.append({
+                        "unavailable_skill": item["skill"],
+                        "profile": profile,
+                    })
+                    break
                 existing = by_skill.get(item["skill"])
                 if existing:
                     existing["required"] = existing.get("required", False) or item.get("required", False)
@@ -422,7 +495,13 @@ def detect_keywords(user_message: str) -> list[dict]:
     return matches
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    profile = DEFAULT_PROFILE
+    if argv:
+        if len(argv) == 2 and argv[0] == "--profile":
+            profile = normalize_profile(argv[1])
+        else:
+            return 2
     # Read the hook event from stdin
     try:
         raw_input = sys.stdin.read().lstrip("\ufeff")
@@ -445,7 +524,12 @@ def main() -> int:
     if not message or len(message) < 5:
         return 0
 
-    matches = detect_keywords(message)
+    # Fixtures and future launchers may use the event form.  Installed
+    # manifests should pass --profile so the client capability is fixed outside
+    # user-controlled prompt text.
+    if not argv:
+        profile = normalize_profile(event.get("skill_router_profile", profile))
+    matches = detect_keywords(message, profile=profile)
     if not matches:
         return 0
 
@@ -454,6 +538,13 @@ def main() -> int:
     for m in matches:
         if "suggest" in m:
             suggestions.append(f"  {m['suggest']}")
+            continue
+        if "unavailable_skill" in m:
+            suggestions.append(
+                "  BLOCKED_SKILL_UNAVAILABLE: "
+                f"{m['unavailable_skill']} is not available in the {m['profile']} profile; "
+                "do not claim that this skill was applied."
+            )
             continue
         if m.get("required"):
             suggestions.append(f"  REQUIRED: Use skill {m['skill']} - {m['description']}")
@@ -471,4 +562,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

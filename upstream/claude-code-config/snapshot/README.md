@@ -20,6 +20,9 @@ what is inference, and what the fix does not cover.
 | **[The form was available, so it was taken for the content](docs/form-mistaken-for-content.md)** | One failure shape in six materials — including three times inside the tool built to catch it. What formal verification, pytest, ESLint and mutation testing each already answer, and why "empty" has to be its own outcome. |
 | **[A launch is a promise to look at it](docs/a-launch-is-a-promise.md)** | A job that died in its first second looks exactly like one running quietly, and "is it running" is three independent questions of which liveness is only the first. 2,958 launches measured, 42 never checked at all. Ships as [`hooks/launch-watch-guard.py`](hooks/launch-watch-guard.py). |
 | **[The deferral moves to whichever form is not guarded](docs/finishing-what-you-started.md)** | Who has already built "keep going until it is done", what it cost when it looped, and why 27 of 51 open tickets here carry the same one of five legitimate reasons. Ships as the today's-tickets gate in [`hooks/handoff-closure-audit-guard.py`](hooks/handoff-closure-audit-guard.py). |
+| **[A passing test is not a release](docs/a-passing-test-is-not-a-release.md)** | An unavailable signer, VM, or account should block only its own stage, not erase proof of an unchanged parent. Introduces `VERIFIED / SEALED / BLOCKED / SUPERSEDED`, a minimal stage ledger, and the boundary where the ledger would just become bureaucracy. Ships as [`proof-verify`](skills/development/proof-verify/SKILL.md) + [`hooks/plan-gate.py`](hooks/plan-gate.py). |
+| **[A save log is not a retention guarantee](docs/a-save-log-is-not-a-retention-guarantee.md)** | Why a handler return or message journal cannot prove photo/document preservation; defines the live read-after-write, cleanup, and restart receipt that must exist before destructive cleanup. |
+| **[Runtime wiring and hook lifecycle](docs/runtime-wiring.md)** | Where request intake, safety guards, verification, compaction, and close-out belong; how continuity stays durable without putting archive/index work on every prompt. |
 
 ---
 
@@ -51,11 +54,15 @@ python ~/claude-code-config/scripts/install_hooks.py --global
 mkdir -p ~/.claude/skills
 cp -r ~/claude-code-config/skills/ai-ml/ml-research-lab ~/.claude/skills/
 
-# Codex desktop: sync all public skills with backups for changed local copies
-python ~/claude-code-config/scripts/sync_skills_to_codex.py --apply
+# Codex desktop, its shared ~/.agents root, and Claude Code: sync public skills
+# with independent backups for changed local copies. Target-only skills remain intact.
+python ~/claude-code-config/scripts/sync_skills_to_codex.py --apply --also-claude --also-agents
 ```
 
-`~/.claude/hooks/` stores the hook scripts; `~/.claude/settings.json` is where they are registered. The install script merges safe defaults into your existing settings.
+The canonical tracked checkout's `hooks/` directory stores the global hook scripts;
+`~/.claude/settings.json` and `~/.codex/hooks.json` register that exact source.
+The installer must not create a second active `~/.claude/hooks/` tree; it merges
+safe defaults into the existing manifests and keeps backups before changes.
 
 ### Option 3: Project-local (hooks/skills only in this project)
 
@@ -145,13 +152,13 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [keyword-skill-router](hooks/keyword-skill-router.py) | `UserPromptSubmit` | Detects natural-language keywords and suggests matching skills (bilingual RU/EN) |
 | [api-key-leak-detector](hooks/api-key-leak-detector.py) | `PostToolUse` | Scans tool output for exposed API keys, tokens, secrets |
 | [command-injection-guard](hooks/command-injection-guard.py) | `PreToolUse` | Blocks shell substitution with non-trivial commands |
-| [git-destructive-guard](hooks/git-destructive-guard.py) | `PreToolUse` | Blocks `git reset --hard`, `push --force`, `branch -D` |
+| [git-destructive-guard](hooks/git-destructive-guard.py) | `PreToolUse` | Blocks `git reset --hard`, `push --force`, force branch deletion (`-D`, `-fD`, `-Df`, long flags); allows merged-only `branch -d` |
 | [git-auto-backup](hooks/git-auto-backup.py) | `PreToolUse` | Creates backup branch before destructive git operations |
 | [self-harm-guard](hooks/self-harm-guard.py) | `PreToolUse` | Prevents agent from killing its own process, locking SSH, bare reboot |
 | [test-muting-guard](hooks/test-muting-guard.py) | `PreToolUse` | Blocks adding `@skip`, `.only()`, `@Ignore` to existing tests |
 | [backup-retention-cleanup](hooks/backup-retention-cleanup.py) | `Stop` | Cleans up old backup branches (14-day retention) |
 | [file-cohesion-guard](hooks/file-cohesion-guard.py) | `PreToolUse` | Advisory: warns when a durable file is written to a scratch location (home root, Desktop, Downloads, /tmp) instead of the project structure |
-| [human-confirmation-guard](hooks/human-confirmation-guard.py) | `PreToolUse` | Requires explicit user confirmation before any deletion-intent command |
+| [human-confirmation-guard](hooks/human-confirmation-guard.py) | `PreToolUse` | Blocks destructive actions until a host-verifiable approval record can be checked |
 | [ask-question-guard](hooks/ask-question-guard.py) | `PreToolUse` | Blocks deferral/menu `AskUserQuestion` ("what next?", "which of these?") on reversible work — decide and proceed instead |
 | [over-engineering-advisor](hooks/over-engineering-advisor.py) | `PostToolUse` | Advisory nudge when an edit adds a large code block or a new dependency — "is this the minimal solution?" (never blocks) |
 | [module-shape-advisor](hooks/module-shape-advisor.py) | `PostToolUse` | The mirror of the row above: advisory nudge when the whole FILE has outgrown its shape — "where is the seam?" Fires on cumulative size, not on your edit, because that is how a file gets there (never blocks) |
@@ -161,11 +168,13 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [pre-push-public-repo-scan](hooks/pre-push-public-repo-scan.py) | git `pre-push` | Two independent scans — regex and semantic — of a push to a PUBLIC repo; either one alarming blocks it. Private repos skip. Host and script names load from a local list, never from this file |
 | [shape_common](hooks/shape_common.py) | *(library)* | Not a hook: the one definition of "what shape is this file in", shared by `module-shape-advisor` and `scripts/architecture_audit.py` so the two cannot answer differently |
 | [harness-load-advisor](hooks/harness-load-advisor.py) | `Stop` | Notices when a closing message reports a high-cost or specialized gate (signing, VM/GPU/OS/browser/performance) blocking lower-risk work, and says so. A feedback guard, not a bypass — it never lifts the gate |
+| [outward-claim-evidence-guard](hooks/outward-claim-evidence-guard.py) | `Stop` | Blocks a narrow set of externally measurable claims (hash, filename-derived hash, size, version, deploy) when the final report lacks a probe/result line. It enforces reporting discipline, not truth by itself. |
 | [repeated-attempt-guard](hooks/repeated-attempt-guard.py) | `PreToolUse` + `PostToolUse` | Stops the guess-and-retry loop: advisory on the third failed attempt at the same target, blocking on the fourth, unless something has been read since the last failure. One `Read` clears it — the block is lifted by the action that would have solved it three attempts earlier. Needs **both** events: `PostToolUse` records outcomes, `PreToolUse` decides |
 | [launch-watch-guard](hooks/launch-watch-guard.py) | `PostToolUse` + `Stop` | Starting a job is a promise to look at it. Records every launch (`nohup`, detached `docker run`, `sbatch`, `schtasks`, `run_in_background`) and refuses to end the session while one has never been probed — a job that died in its first second looks exactly like one running quietly. One `nvidia-smi`, `docker ps` or `tail` of its log clears it. Measured: 2,958 launches over 30 days, 42 never probed at all, across 28 of 175 sessions |
 | [open-items-are-work-orders](hooks/open-items-are-work-orders.py) | `UserPromptSubmit` | "What is still open?" is a work order, not a status request. Answers the question with the actual open `PROBLEMS.md` entries — oldest first, ages attached, dominant label called out — and states that they get closed in this turn rather than restated. Fires on 0.06% of real messages (context only, never blocks) |
 | [unbuffered-progress-advisor](hooks/unbuffered-progress-advisor.py) | `PreToolUse` | A backgrounded Python run with no `-u` block-buffers its stdout, so a stall looks exactly like slowness — twice worth half an hour. Advisory, gated on the harness's own `run_in_background` rather than on parsing the command text: the text-matching version fired 459 times on real history, all false (never blocks) |
 | [live-tree-guard](hooks/live-tree-guard.py) | `PreToolUse` | The primary checkout receives finished work; it is not where work is done. Blocks editing a **tracked** file in the primary tree of a repo that opted in with `.claude/live-tree` — a lock says "please do not", a separate worktree means there is nothing to overwrite. Exempt: linked worktrees, append-only per-session artifacts, untracked new files. See [live-tree-is-receive-only](rules/live-tree-is-receive-only.md) |
+| [shared-branch-guard](hooks/shared-branch-guard.py) | `PreToolUse` | In a repo opted in with `.claude/shared-branch`, blocks any `git reset` and pathless `git commit`; these commands can rewrite or publish another worker's staged state. |
 | [pre-push-personal-email-guard](hooks/pre-push-personal-email-guard.py) | *(git pre-push)* | Refuses to publish commits authored with a personal email address — commit metadata in a public repo is readable through the API without cloning, and an address plus proven activity is a ready-made phishing target |
 | [activity-journal-guard](hooks/activity-journal-guard.py) | `PreToolUse` | Enforces the shared activity journal — blocks a mutating command on a tracked shared resource that does not log to its journal |
 | [coord-claim-guard](hooks/coord-claim-guard.py) | `PreToolUse` | Claim-before-edit gate for multi-session / coord-enabled repos (blocks editing a file without an active claim) |
@@ -184,7 +193,7 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [test-gate-stop-hook](hooks/test-gate-stop-hook.py) | `Stop` | Selects fast/integration evidence by Git-visible risk and blocks closing while selected tests are red or unproven |
 | [problems-md-validator](hooks/problems-md-validator.py) | `Stop` | Blocks closing with OPEN problems lacking a valid deferral reason |
 | [task-inbox-show](hooks/task-inbox-show.py) | `SessionStart` | Surfaces pending tasks from `.claude/task-inbox/` |
-| [plan-gate](hooks/plan-gate.py) | `UserPromptSubmit` | Non-blocking nudge: substantive build/refactor ask + no plan artifact in the project -> one-line "freeze acceptance criteria first" reminder (max once/day) |
+| [plan-gate](hooks/plan-gate.py) | `UserPromptSubmit` | Non-blocking nudge: substantive build/refactor with no concrete plan -> freeze acceptance criteria; multi-stage/release work without `.proof/stage-ledger.json` also gets a separate once/day reminder to seal accepted inputs and record external blockers |
 
 **Supporting hooks and shared utilities** (wire these when the project needs the corresponding workflow):
 
