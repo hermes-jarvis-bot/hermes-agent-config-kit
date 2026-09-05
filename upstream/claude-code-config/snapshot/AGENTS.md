@@ -37,6 +37,21 @@ destination, operation/settings, purpose, motivation, deadline, verification,
 source cleanup, and the next action. The transfer Stop hook blocks unfinished
 or invalid records; never remove a source before the destination is verified.
 
+## Long-running completion supervisors
+
+When the user's acceptance condition is a finished job, dataset, migration, rollout, or other
+terminal outcome, a schedule/watchdog is a **completion supervisor**, not a passive status monitor.
+An early process exit without a terminal receipt is `INTERNAL_FIXABLE` or `RETRYABLE`: reconcile
+the possible side effect, then perform the next safe idempotent resume/repair within a durable
+attempt budget. A `.failed` marker or failed receipt proves that an attempt failed; it does not
+prove that the cause is external. A reproducible local input or software defect remains
+`INTERNAL_FIXABLE`: preserve its evidence, make the minimal Git-backed causal repair and successor
+contract, then resume from the last valid checkpoint. A generated prompt may use
+report-only/never-restart behavior only when the user
+explicitly requested observation-only operation or a measured external/irreversible boundary makes
+recovery unauthorized. Persist process identity, checkpoint/output, idempotency key, attempt/limit,
+recovery predicate, and terminal proof; a heartbeat or blocker paragraph is not progress by itself.
+
 ## Reasoning Policy: Selection Before Expansion
 
 Core rule: **a sufficient solution is a reason to stop expanding, not an invitation to
@@ -106,6 +121,18 @@ python scripts/test_test_strategy.py
 After installing into a local Codex/Claude environment, also run
 `python scripts/test_task_completion_hooks.py` and consult
 [`docs/runtime-wiring.md`](docs/runtime-wiring.md).
+
+## Delegating agents
+
+Before dispatching any subagent, render the task-bound contract with
+`python hooks/agent-skill-contract.py --task "<child task>"` and append it to
+the exact child prompt. It selects the minimum curated skill set (or an explicit
+no-route result), requires source-backed decisions, and records `INCONCLUSIVE`
+when no current source is available. Claude Code checks the contract at its
+native `Task` boundary. Codex adds the same universal discipline automatically
+through `SubagentStart` and requires one decision-source receipt at
+`SubagentStop`, but neither event can inspect or block a task-specific route;
+use the renderer as well when the coordinator can pass the exact prompt.
 
 ## Context engineering notes
 
