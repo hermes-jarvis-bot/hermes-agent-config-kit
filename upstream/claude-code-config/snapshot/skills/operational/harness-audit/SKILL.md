@@ -1,53 +1,52 @@
 ---
 name: harness-audit
 description: Score a project's agent harness across 5 subsystems (Instructions / State / Verification / Scope / Lifecycle), identify the bottleneck, and produce a prioritized improvement plan. Use when assessing if a project is ready to graduate to [LONG-RUN] status, when an agent keeps failing despite good models, or when adopting our stack on a new codebase. Do NOT use to design or build a new harness from scratch — this only scores an existing one; for greenfield harness/agent architecture use harness-design (or agent-harness-design).
-when_to_use: |
-  Trigger on phrases like: "audit my harness", "evaluate my agent setup", "score my CLAUDE.md", "is my project ready for long-run", "5-subsystem assessment", "what's missing from my project setup", "/harness-audit". Run proactively when joining an unfamiliar codebase that has agent artifacts (CLAUDE.md, .claude/, AGENTS.md) but obvious gaps. Skip for single-file scripts and pure exploration.
 license: MIT
 ---
 
 # Harness Audit
 
-Score a project's agent harness across five subsystems and tell the user which one to fix first.
+Trigger on phrases like: "audit my harness", "evaluate my agent setup", "score my CLAUDE.md", "is my project ready for long-run", "5-subsystem assessment", "what's missing from my project setup", "/harness-audit". Run proactively when joining an unfamiliar codebase that has agent artifacts (CLAUDE.md, .claude/, AGENTS.md) but obvious gaps. Skip for single-file scripts and pure exploration.
+
+Score a project's agent harness across five subsystems and tell the user which evidenced bottleneck to address first. Distinguish an artifact's presence from demonstrated behavior; never present metadata alone as runtime proof.
 
 **Source**: Five-subsystem framework adapted from [Learn Harness Engineering](https://walkinglabs.github.io/learn-harness-engineering/) (walkinglabs, MIT). Adapted to our concrete stack: CLAUDE.md, `.claude/rules/`, PROBLEMS.md, `feature_list.json`, `init.sh`, hooks, handoffs, chronicles.
 
 ## What This Skill Does
 
-Given a project directory, produces a scorecard like this:
+Given a project directory, produces a scorecard like this. This example assumes
+`project-xyz` delivers features across sessions and uses pull requests:
 
 ```
 === Harness Audit: project-xyz ===
 
-Instructions  4/5  ✓ CLAUDE.md present, modular rules in .claude/rules/
-                   ✗ No project-level REVIEW.md for PR review guidance
-State         2/5  ✓ .claude/handoffs/ exists (3 files)
-                   ✗ No PROBLEMS.md - issues scattered in handoffs
-                   ✗ No feature_list.json - scope state not machine-readable
-Verification  3/5  ✓ Tests run, pytest configured
-                   ✗ No init.sh - new sessions take 15+ min to bootstrap
-                   ✗ 3-layer gate not documented in CLAUDE.md
-Scope         3/5  ✓ no-pre-existing-evasion principle in CLAUDE.md
-                   ✗ No WIP=1 (no feature_list.json to enforce it)
+Instructions  4/5  ✓ Agent entrypoint and modular rules are documented and used
+                   ~ PR review guidance is not found in the inspected evidence
+State         2/5  ✓ 3 handoffs preserve some continuation state
+                   ✗ No current record locates active scope and deferred work
+                   ~ PROBLEMS.md / feature_list.json are suitable conventions, not prerequisites
+Verification  3/5  ✓ Documented test command; pytest is configured
+                   ~ No current execution receipt supplied
+                   ✗ No documented staged validation/proof route
+Scope         3/5  ✓ in-scope principle in CLAUDE.md
+                   ~ shared-resource policy is unknown; no serialized lane is declared
                    ✗ Definition of Done not explicit
-Lifecycle     2/5  ✗ No SessionStart hook (no .claude/settings.json)
-                   ✗ No Stop hook for clean-state check
+Lifecycle     2/5  ✗ Needed session-boundary entry/stop behavior is not documented or demonstrated
                    ~ Manual cleanup convention exists but not enforced
 
-Bottleneck: State (2/5) — lack of structured progress tracking
+Bottleneck: State (2/5) — no current locator for feature scope and deferred work
 
-Top 3 improvements (in order):
-1. Create PROBLEMS.md (1h)   ↗ State 2→4
-   Template: claude-code-skills/templates/long-run-project/ has examples
-2. Create feature_list.json + init.sh (30min)   ↗ State 2→5, Verification 3→4
-   Drop-in: claude-code-skills/templates/long-run-project/
-3. Add Stop hook stop-test-gate.py (15min)   ↗ Lifecycle 2→4
-   Source: claude-code-skills/hooks/stop-test-gate.py
-
-After top 3: Instructions 4 + State 5 + Verification 4 + Scope 3 + Lifecycle 4 = 20/25 (was 14/25)
+Priority improvement (only when the user asks for recommendations):
+- Record an execution receipt for the existing test command   ↗ Verification evidence
 ```
 
-The skill does **not** make changes. It produces the scorecard. The user decides whether to apply recommendations.
+For an **audit-only** request, this skill produces the scorecard without making
+changes or running probes merely to convert `unknown` into a pass. If the user
+also requested correction or implementation, the scorecard is an intermediate
+result: return the confirmed findings to the owning task and execute its
+necessary, authorized reversible fixes, verification and delivery. Do not stop
+at a report or assign agent-owned fixes back to the user. Preserve the original
+acceptance criteria and real external/irreversible boundaries.
 
 ---
 
@@ -57,8 +56,8 @@ The skill does **not** make changes. It produces the scorecard. The user decides
 |---|---|
 | **Instructions** | `CLAUDE.md` (root + `~/.claude/`), `.claude/rules/*.md` (project), `~/.claude/rules/*.md` (global), optional `REVIEW.md` |
 | **State** | `PROBLEMS.md`, `feature_list.json`, `.claude/handoffs/`, `.claude/chronicles/` |
-| **Verification** | `init.sh`, tests configured, 3-Layer Validation Gate referenced in CLAUDE.md, Proof Loop usage |
-| **Scope** | `no-pre-existing-evasion.md` rule applied, WIP=1 enforced (one `in-progress` in feature_list.json), explicit Definition of Done |
+| **Verification** | a documented command plus current receipt appropriate to the target, tests/config where applicable, Proof Loop usage |
+| **Scope** | explicit in-scope/Definition of Done policy and a concurrency policy appropriate to the work |
 | **Lifecycle** | SessionStart hooks, Stop hooks (stop-test-gate, check-problems-md), cleanup convention |
 
 See `references/checklist-per-subsystem.md` for per-subsystem concrete checks.
@@ -83,16 +82,20 @@ Read these files in order (skip silently if missing):
 9. `.claude/chronicles/` (count files)
 10. Sample test config: `pytest.ini` / `package.json` test script / `Cargo.toml`
 
-Use `Glob` + `Read`. Don't `grep` across entire codebase — this is metadata audit, not code review.
+Use `Glob` + `Read` for the harness, then inspect the smallest relevant evidence path: a current test/CI receipt, hook execution trace, or sampled state artifact. This is not a broad code review; absence of behavioral evidence is `~ unknown`, not `✓ working`.
 
 ### Phase 2 — Score
 
-For each subsystem, run the checks in `references/checklist-per-subsystem.md`. Each check is a binary pass/fail. Score:
+For each subsystem, first identify the project delivery model and applicable
+outcomes in `references/checklist-per-subsystem.md`. Mark every finding as
+`documented`, `demonstrated`, or `unknown`; score from evidence rather than file
+presence alone. The canonical files in the table are useful conventions, not
+universal prerequisites.
 
-- **5** = all checks pass + documented + consistently followed
-- **4** = most checks pass, 1-2 gaps
-- **3** = covers basics, missing polish
-- **2** = weak, several checks fail
+- **5** = applicable outcomes are documented, demonstrated, and consistently followed
+- **4** = documented and demonstrated with bounded gaps
+- **3** = only documented, only demonstrated, materially partial, or unknown at a relevant boundary
+- **2** = isolated or stale structure does not meet most applicable outcomes
 - **1** = missing or actively harmful
 
 For each subsystem, list:
@@ -104,21 +107,11 @@ For each subsystem, list:
 
 The lowest-scoring subsystem is the bottleneck. **Even if other subsystems are weaker by absolute count of checks**, the lowest score is the one to fix first because it limits the value of the rest.
 
-Tie-breaker (multiple subsystems at same low score): pick the one whose improvement *unlocks* progress in others. State usually wins ties because feature_list.json + PROBLEMS.md unlock Verification and Scope checks.
+Tie-breaker (multiple subsystems at same low score): pick the one whose improvement *unlocks* progress in others. State often wins when the project lacks a durable locator for active scope and unresolved work; do not assume two particular filenames are required.
 
 ### Phase 4 — Prioritized Improvement Plan
 
-Output exactly 3 next steps in order, each with:
-- **Effort** estimate (15min / 30min / 1h / 1d)
-- **Subsystem(s)** it improves and by how much (2→4, etc.)
-- **Pointer** to a template or example in `claude-code-skills/` if available
-
-The 3 steps must:
-1. Address the bottleneck first
-2. Each step independently shippable (no item depends on a later one)
-3. Together raise the total score by at least 4 points (out of 25)
-
-Do not give more than 3. Three is enough scope for one focused session.
+Only if the user requests recommendations, propose the smallest number of independently shippable actions that address the evidenced bottleneck. For each, name the expected evidence and a local template/example if one actually fits. Do not invent effort, score gains, or a fixed number of steps. Do not expand an audit-only request into implementation; when implementation was already requested, continue that owning task after the audit instead of requesting the same authorization again.
 
 ---
 
@@ -129,8 +122,8 @@ Use the visual scorecard format shown at the top of this skill. Sections:
 1. **Header**: `=== Harness Audit: <project-name> ===` (one line)
 2. **Scorecard**: 5 lines, one per subsystem, with score + ✓/✗ findings
 3. **Bottleneck**: one line naming the subsystem and score
-4. **Top 3 improvements**: numbered list with effort + impact + pointer
-5. **Projected total**: optional, only if user asked for "after" state
+4. **Priority improvements**: only when requested, with expected evidence + pointer
+5. **Projected total**: optional, only if user asks and the stated evidence supports a bounded projection
 
 Keep the entire output under 50 lines. The user is scanning for next steps, not reading an essay. Detail goes into the per-subsystem checklist file, not the audit output.
 
@@ -140,9 +133,9 @@ Keep the entire output under 50 lines. The user is scanning for next steps, not 
 
 - **Not a code review** — does not look at source code quality
 - **Not a security audit** — does not check for vulnerabilities (use `/security-review` instead)
-- **Not a test runner** — does not execute `init.sh` or tests, just checks existence
-- **Not a fix tool** — produces recommendations only, user applies them
-- **Not for short-term projects** — if the project is <5 features or <5 sessions, the harness overhead is not yet warranted; say so and skip the audit
+- **Not a broad test runner** — does not manufacture a green result from configuration. It may inspect a current CI/test receipt, or run one user-authorized, task-relevant probe when runtime evidence is part of the requested audit
+- **Not a standalone implementation methodology** — an audit-only request ends with its findings; an audit inside an already authorized repair returns control to that repair, not to user homework
+- **Not for short-lived work without a durable handoff need** — state why the audit is disproportionate instead of applying arbitrary feature/session thresholds
 
 ---
 
@@ -163,12 +156,12 @@ Keep the entire output under 50 lines. The user is scanning for next steps, not 
 
 ---
 
-## Quick Self-Audit (for skill development)
+## Gotchas
 
-This skill is itself a `[LONG-RUN]`-style artifact. To audit the audit:
+- A scorecard example must use the same evidence rules as the checklist; a missing filename alone does not prove a missing outcome.
+- Presence of this skill or its rubric is not proof that auditors apply it consistently. Do not cite an example-evaluation file unless it actually exists and was inspected.
 
-- **Instructions**: SKILL.md is this file (✓)
-- **State**: Scoring decisions are reproducible from `references/scoring-rubric.md` (✓)
-- **Verification**: 5 example evals in `references/example-audits.md` (TODO if added)
-- **Scope**: Clear "what this skill is NOT" section (✓)
-- **Lifecycle**: No hooks needed — this is a query skill, not a continuous one (N/A)
+## Troubleshooting
+
+- **Two auditors give different scores to the same evidence:** compare the declared delivery model and applicable outcomes, then resolve the checklist/example contradiction; do not add files just to raise the score.
+- **An authorized repair ends at the scorecard:** return each confirmed finding to the original task, implement the necessary correction and verify it. An audit-only request remains read-only.

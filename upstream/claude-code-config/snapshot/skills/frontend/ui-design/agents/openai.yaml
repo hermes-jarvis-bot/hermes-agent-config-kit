@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI Design — интерфейсы и визуальные блоки"
+  short_description: "Interface design, editable visuals, and working UI."
+  default_prompt: "Use $ui-design to design and implement this interface, keep visual blocks editable, and verify the changed user flow."

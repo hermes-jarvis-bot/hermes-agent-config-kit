@@ -1,21 +1,15 @@
 ---
 name: architecture-first
 description: >
-  Decide the shape BEFORE the first file, and keep the boundaries honest afterwards:
-  what the modules are, which way dependencies point, where state is owned, and what
-  each module is allowed to know. Merges the layering rules (dependency rule, SOLID,
-  component cohesion, Humble Object, entities vs use cases, frameworks-and-DB-as-details)
-  with domain boundaries (ubiquitous language, bounded contexts, aggregates, domain
-  events, repositories). Use when starting a project, service, site, API or new
-  subsystem; when adding a feature that does not obviously belong to an existing module;
-  when asked "where should this live", "how do we structure this", "what are the
-  modules"; when writing an ARCHITECTURE.md or an ADR; when a dependency points the
-  wrong way or a circular import appears. Do NOT use for a one-file script or a
-  throwaway experiment, for a bug fix inside an existing seam, for word-level naming and
-  function shape (use code-complexity), for splitting a module that is ALREADY too large
-  (use refactoring-safely), or for capacity, storage and scaling decisions (use
-  system-and-data-design). This decides where code LIVES; it is not a licence to add
-  layers the project has not earned.
+  Decide module boundaries before the first file: what modules exist, which way
+  dependencies point, who owns state, and what each module may know. Use when starting
+  a project, service, site, API, or subsystem; adding a feature with no obvious home;
+  resolving a circular import or inverted framework dependency; or writing an
+  ARCHITECTURE.md or ADR. Do not use for a one-file script, throwaway experiment, bug
+  fix inside an established seam, naming/function-shape cleanup (use code-complexity),
+  an existing oversized module (use refactoring-safely), or capacity/data scaling
+  decisions (use system-and-data-design). This defines earned boundaries; it does not
+  license speculative layers.
 ---
 
 # Architecture first — the shape before the first file
@@ -34,6 +28,7 @@ Match the ceremony to the problem. Over-applying this is its own failure mode.
 | One module, <500 lines, one reason to change | Name the module and its one job. Stop. |
 | Service / site / API, several concerns | The full pre-code checklist below. |
 | Multiple teams or deployables, shared domain | Checklist + bounded-context map + one ADR per boundary |
+| Multi-stage work or external release prerequisite | Checklist + a small stage map before the first implementation boundary |
 
 ## The one law
 
@@ -67,6 +62,28 @@ and no framework?* If not, something outer leaked inward.
 7. **Record it.** One page: modules, ownership, data flow, external systems. Plus one
    short ADR per decision that was genuinely a choice (context, options, decision,
    consequences). Both live in git, next to the code.
+8. **Name the promotion boundaries.** When one verified result becomes the input to
+   another stage, name its contract, inputs, output, and invalidation keys before
+   implementation. A missing signer, VM, account, or remote service is a future
+   `BLOCKED` stage, not a reason to keep reopening already-proven code.
+
+## Stage contracts - when proof becomes an input
+
+For multi-stage work, architecture includes delivery boundaries as well as module
+boundaries. Keep these states separate:
+
+- `VERIFIED`: the scoped behavior passed at one exact revision.
+- `SEALED`: the verified scope has an immutable receipt and may be consumed by a
+  following stage.
+- `BLOCKED`: a named external prerequisite is absent; upstream proof remains valid.
+- `SUPERSEDED`: a contract, source, or input digest changed, so a successor must be
+  verified instead of editing history.
+
+The stage map is deliberately smaller than a release plan. For each boundary, name
+the owning scope, frozen contract, inputs, output, and what invalidates it. Use the
+machine-readable ledger only when there is a real hand-off between stages:
+`../proof-verify/references/proven-stage-contracts.md`. Do not add it to a one-file
+change merely because the word "stage" exists.
 
 ## Review checklist — once code exists
 
