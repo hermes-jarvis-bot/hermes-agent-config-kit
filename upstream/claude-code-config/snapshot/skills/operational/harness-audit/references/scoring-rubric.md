@@ -1,166 +1,90 @@
 # Scoring Rubric
 
-The five-subsystem audit produces a score from 1 to 5 in each dimension. The numbers are anchored — they are not vibes.
+Score each subsystem against the project's applicable outcomes in [the checklist](checklist-per-subsystem.md), its declared acceptance, and the evidence actually inspected. The numbers are anchored; exact filenames, a fixed line count, or a fixed number of artifacts are not.
 
----
+## Evidence boundary and caps
 
-## The Five Levels
+- `documented` proves that a convention is stated or configured. It does not prove a runtime, CI, hook, schema, or workflow result.
+- `demonstrated` requires a current inspectable receipt appropriate to the claim: for example, a command result, hook trace, validated record, or sampled handoff that actually supports the stated status.
+- If an applicable subsystem is only documented, cap it at **3**. If it is demonstrated but not documented well enough to repeat safely, cap it at **3**. If it is documented and demonstrated but consistency is unknown, cap it at **4**.
+- Do not require runtime evidence for a documentation-only acceptance. When runtime behavior is part of the declared acceptance, lack of runtime evidence is `unknown`, not a pass.
+- If a requirement is not applicable to the project's delivery model, say why and omit it from the subsystem judgment; do not turn that omission into a failure or an automatic 5.
+
+## The five levels
 
 ### 5 — Exemplary
 
-- All hard checks pass
-- Most soft checks pass
-- Convention is **documented** (it exists in writing, not just in someone's head)
-- Convention is **consistently followed** (sample 3 recent artifacts and the convention is visible)
-- **Mechanical enforcement** present where applicable (hooks, scripts, schemas)
-
-A 5/5 subsystem is one the user would point to as a model for other projects.
+All applicable outcomes are documented, demonstrated by current inspectable evidence, and consistently followed in the available relevant sample. Mechanical enforcement, schemas, hooks, or CI have execution evidence where they are the chosen control. This subsystem is a credible model for comparable projects.
 
 ### 4 — Good, mostly complete
 
-- All hard checks pass
-- Some soft checks pass
-- Convention is mostly documented but with one or two gaps
-- Sampled artifacts follow the convention 80%+ of the time
-- Some mechanical enforcement present but not comprehensive
+The applicable foundation is documented and demonstrated. One or two bounded gaps remain, such as incomplete enforcement coverage, a weaker supporting signal, or limited but sufficient continuity evidence. It is functional and unlikely to be the bottleneck.
 
-A 4/5 subsystem is functional and unlikely to be the bottleneck. Improvement is polish, not foundation.
+### 3 — Adequate, partial, or uncertain
 
-### 3 — Adequate, covers basics
-
-- Hard checks split: half pass, half fail
-- Soft checks mostly miss
-- Convention exists but is informal (no document, just behavior)
-- Sampled artifacts inconsistent
-- No mechanical enforcement
-
-A 3/5 subsystem works but degrades over time and across handoffs. Adding structure here gives real returns.
+Some applicable outcomes work, but the evidence is incomplete: the subsystem is only documented, only demonstrated, lacks a material continuity element, or has a relevant unknown boundary. It provides a usable base but is likely to degrade or become unreliable across handoffs.
 
 ### 2 — Weak, incomplete
 
-- Most hard checks fail
-- Soft checks irrelevant (the foundation isn't there)
-- Convention only exists by accident (one person did it once)
-- Sampled artifacts show it usually doesn't happen
-- No enforcement
-
-A 2/5 subsystem is a leak: every session has to rebuild it. This is almost certainly the bottleneck.
+The project has isolated structure or historical artifacts, but it does not meet most applicable outcomes. The remaining convention is accidental, stale, or cannot support the stated delivery model. This is normally the bottleneck.
 
 ### 1 — Missing or actively harmful
 
-- No hard checks pass
-- The subsystem is structurally absent
-- OR: the subsystem exists but is **actively wrong** (e.g., CLAUDE.md contains contradictory rules; init.sh runs `rm -rf node_modules` unconditionally)
+The applicable subsystem is structurally absent, or its documented behavior is actively unsafe, contradictory, or misleading. Fix it before adjacent improvements can reliably pay back.
 
-A 1/5 subsystem must be fixed before any work in adjacent subsystems pays back.
+## Calibration rules
 
----
+### Project model before artifact names
 
-## How to Pick Between Adjacent Scores
+`PROBLEMS.md` and `feature_list.json` are strong conventions for a long-running feature project, but neither is a universal State requirement. A current issue tracker, changelog, release record, or other inspectable durable source can satisfy a project's actual continuity need. Conversely, a feature project with no current locator for active scope or deferred work has a material State gap even if it has many handoffs.
 
-The hard part of scoring is 3 vs 4, or 4 vs 5. Use these tiebreakers, in order:
+Likewise, a 400-line instruction entrypoint is a navigability concern to investigate, not an automatic Instructions failure. Score whether the agent can find applicable constraints and startup guidance, whether the hierarchy is coherent, and whether current evidence supports use. Use the 200-line signal to recommend a simplification only when the observed instructions are difficult to navigate or causing drift.
 
-### 1. Documented vs Behavioral
+### Evidence and enforcement
 
-- If the convention is **only** behavioral ("we usually do X"), cap at 3.
-- If documented but not consistently followed: cap at 4.
-- Both documented AND followed: eligible for 5.
+Inspect enough recent, relevant artifacts to establish a pattern without fabricating a sample size. A configured hook, non-empty evidence field, existing `init.sh`, or validator script is not a behavior receipt. When no receipt is available, report `unknown` and apply the caps rather than inferring success.
 
-### 2. Mechanical Enforcement
+Mechanical enforcement is evidence only when it is the project's chosen control and its execution is inspectable. Do not lower a knowledge repository merely because it lacks hooks designed for an application deployment; do lower a project that relies on hooks but cannot show that they execute.
 
-- No enforcement at all: cap at 3.
-- Soft enforcement (rule says "should"): cap at 4.
-- Hard enforcement (hook blocks Stop, schema validates, CI fails): eligible for 5.
+### Avoid double counting and grade drift
 
-### 3. Sample 3 Recent Artifacts
+Assign a gap to the subsystem it affects. A missing documented verification command is Verification, not Lifecycle. Do not reward intent or a plan to add an artifact. Do not grade-inflate merely because a familiar filename exists, and do not grade-deflate a project that meets its actual contract through a different, inspectable mechanism.
 
-Pick 3 recent files in the subsystem's domain (handoffs, problems entries, feature_list updates, commits). Ask: does each follow the convention?
+## Calibration examples
 
-- 3/3 follow: eligible for 5
-- 2/3 follow: cap at 4
-- 1/3 or 0/3: cap at 3
+These are text-scenario evaluations of the contract below, not runtime execution receipts.
 
-This is the most reliable tiebreaker. Documentation can lie about reality; sampling can't.
+### Example 1: Fresh prototype repository
 
----
+- 50-line `CLAUDE.md`, mostly project description; one test file; no `.claude/` directory; some recent commits.
 
-## Common Pitfalls
+- Instructions: **2** — an entrypoint exists, but it does not supply usable project guidance or constraints.
+- State: **1** — no evidence of continuity, active scope, or deferred-work record for work that must continue.
+- Verification: **2** — a test exists, but no documented verification path or current receipt establishes the boundary.
+- Scope: **2** — no explicit scope/done/defer policy; drift is not controlled.
+- Lifecycle: **1** — no documented boundary behavior or evidence of a recovery convention.
 
-### Don't grade-inflate
+### Example 2: Mature feature project with older conventions
 
-The point of the rubric is signal. If every subsystem scores 4-5 by default, the user gets no actionable information. When in doubt, score lower. The user can correct ("actually we do X very well") and the conversation will be more productive than starting from "everything is fine."
+- 400-line but navigable `CLAUDE.md`; five modular rule files; a current handoff demonstrates the startup route and rule use.
+- Thirty handoffs over six months and a current index, but no current record that locates active scope and deferred work.
+- A current CI or local receipt demonstrates the documented Makefile-based verification command.
+- Settings define SessionStart and Stop hooks; one current hook execution trace is available. Recent records demonstrate the project-specific scope policy.
 
-### Don't grade-deflate
+- Instructions: **4** — documented and demonstrated; length is a bounded navigability signal, not a failed prerequisite.
+- State: **3** — demonstrated handoff continuity, but the feature project lacks a material current scope/deferred-work locator. `PROBLEMS.md` and `feature_list.json` would be suitable fixes, not scoring prerequisites.
+- Verification: **4** — documented command plus current receipt; bounded gaps remain.
+- Scope: **4** — documented and demonstrated; no serialized WIP limit is required because there is no declared serialized lane.
+- Lifecycle: **4** — documented hooks plus a current trace; remaining lifecycle evidence is bounded.
 
-Conversely, don't score 1 when 2 fits. 1 is reserved for "structurally missing" or "actively harmful". A project with weak handoffs but no PROBLEMS.md is a 2, not a 1.
+### Example 3: Public knowledge/skill repository
 
-### Don't double-count
+- Agent instructions, principles, rules, templates, hooks, maintenance guidance, and current validators.
+- A current changelog/release record serves as the project's durable continuity record; it has no feature-delivery backlog and no reason to serialize independent documentation work.
+- Validators exist, but the repository has no documented command that maps required validators to the project acceptance and no current aggregate receipt.
 
-If `init.sh` is missing, that's a Verification problem (3/5 instead of 4/5). It's not also a Lifecycle problem (Lifecycle is about hooks and session boundaries, not about whether init.sh exists). Don't penalize the same gap twice.
-
-### Don't reward intent
-
-"They were going to add PROBLEMS.md" is not 3/5. It's 2/5 until the file exists with content. Scoring rewards what's present, not what's planned.
-
----
-
-## Calibration Examples
-
-### Example 1: Fresh prototype repo
-
-- 1 CLAUDE.md file (50 lines, mostly project description)
-- 1 test file
-- No .claude/ directory
-- Some recent commits
-
-Scoring:
-
-- Instructions: 2 (CLAUDE.md exists but is description, not guidance)
-- State: 1 (no handoffs, no PROBLEMS.md, no feature_list)
-- Verification: 2 (tests exist but no init.sh, no doc on validation gate)
-- Scope: 2 (no scope rules, recent commits show drift)
-- Lifecycle: 1 (no hooks, no settings.json)
-
-Total: 8/25. Bottleneck: State (1/5) or Lifecycle (1/5) — tiebreaker: State (fixing it unlocks others).
-
-### Example 2: Mature project with old conventions
-
-- CLAUDE.md (400 lines, mostly current)
-- `.claude/rules/` with 5 files
-- `.claude/handoffs/` with 30 files going back 6 months, INDEX.md current
-- No PROBLEMS.md, no feature_list.json
-- `init.sh` exists and works (Makefile-based)
-- `.claude/settings.json` has SessionStart + Stop hooks
-- 3 hooks configured: auto_backup_git, stop-test-gate, remind_handoff
-
-Scoring:
-
-- Instructions: 4 (good CLAUDE.md, modular rules, slightly long)
-- State: 3 (rich handoffs but missing PROBLEMS.md and feature_list)
-- Verification: 4 (init.sh exists, tests run, 3-layer not explicit but Proof Loop referenced)
-- Scope: 4 (no-pre-existing rule present, no WIP=1 yet because no feature_list)
-- Lifecycle: 5 (hooks configured, settings.json complete, all hard + most soft)
-
-Total: 20/25. Bottleneck: State (3/5). One concrete weakness in an otherwise mature project — and a fixable one.
-
-### Example 3: Public OSS skill repo
-
-A repo like `claude-code-skills` itself:
-
-- CLAUDE.md, AGENTS.md, principles/, rules/, templates/, hooks/, MAINTENANCE.md
-- UPDATES.md changelog
-- Skills with their own SKILL.md following a schema
-- No `feature_list.json` (this is a knowledge base, not a feature-delivering project)
-- No `init.sh` (no build step)
-
-Scoring (adjusted for project type):
-
-- Instructions: 5
-- State: 4 (UPDATES.md serves as a chronicle, but no PROBLEMS.md tracking active issues)
-- Verification: 3 (validators exist in scripts/ but no init.sh entry point)
-- Scope: 4 (no-pre-existing rule, but no WIP=1 since project type doesn't need it)
-- Lifecycle: 3 (some hooks but not full lifecycle coverage)
-
-Total: 19/25. Bottleneck: Verification (3/5). The skill repo would benefit from an init.sh that runs all validators in one command.
-
-**Note**: For project types that don't need a subsystem (e.g., a knowledge base doesn't need WIP=1), score based on appropriate-to-type criteria. Don't penalize a knowledge repo for lacking feature delivery infrastructure.
+- Instructions: **4** — project-specific guidance is documented and current maintenance artifacts demonstrate its use; additional review routing would be improvement, not a universal requirement.
+- State: **4** — the current release/changelog record demonstrably meets this knowledge repository's continuity need without a feature tracker.
+- Verification: **2** — validators alone are isolated structure; the usable verification path and current result are not established.
+- Scope: **4** — the documented model and maintenance history cover scope; a WIP=1 policy is not applicable to independent documentation work.
+- Lifecycle: **3** — boundary conventions exist, but lifecycle execution coverage is partial or unknown.

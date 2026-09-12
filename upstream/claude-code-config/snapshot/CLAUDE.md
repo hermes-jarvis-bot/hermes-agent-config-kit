@@ -3,12 +3,12 @@
 ## Core Working Rules (always-on, mechanical)
 
 Hard user directives, codified as drop-in `rules/` + mirrored on hooks:
-- [`rules/secrets-as-data.md`](rules/secrets-as-data.md) -- secrets are working data, used freely; do NOT scrub tokens or nag about rotation; the only hard line is **nothing leaks into a PUBLIC repo** (pre-push scan).
+- [`rules/secrets-as-data.md`](rules/secrets-as-data.md) -- secrets are working data, used freely; the closed Claude/Codex working chat is inside our trust boundary, so an exact credential needed for the task may be read, used, and shown here without masking; do NOT scrub tokens or nag about rotation; the only hard line is **nothing leaks into a PUBLIC repo** (pre-push scan). Do not dump unrelated credentials without a work need.
 - [`rules/quality-code.md`](rules/quality-code.md) -- code quality between two poles: no monkey-patches (don't cut corners at the cost of stability) AND no over-engineering (YAGNI ladder); sweet spot = minimal correct architecture + verify. `/lean-code` = on-demand intensifier (our own skill).
-- [`rules/finish-the-task.md`](rules/finish-the-task.md) -- **the single work-discipline canon (4 pillars, all in one place):** finish everything to the end (nothing "for later") · cover ALL related branches, not the minimum that works · quality over token economy · difficulty is no reason to defer. Aggregates the depth rules (`no-pre-existing-evasion`, `quality-over-tokens-independent-verify`) by reference. Enforced by `stop-phrase-guard` + `session-handoff-*`; near-overflow -> write a handoff.
+- [`rules/finish-the-task.md`](rules/finish-the-task.md) -- **the single work-discipline canon (6 pillars, all in one place):** finish to runtime · cover all accepted branches of the current milestone · quality over token economy · difficulty is no reason to defer · fix every exact reproduced cause immediately with one minimal causal test · execute available reversible machine steps instead of telling the user to copy/paste/run them; ask only for the irreducibly human OTP/CAPTCHA/physical approval after reaching that prompt · explicit user instructions outrank skill methodology, and a skill-caused pause names the exact instruction · never block the current sufficient milestone on a future, unavailable, optional, or production-only capability unless it is an explicit current acceptance criterion or causally required for correctness/safety. Broad repeated reviews/tests are forbidden unless a concrete changed risk requires them. Enforced by `stop-phrase-guard` + `session-handoff-*`; near-overflow -> write a handoff.
 - [`rules/quality-over-tokens-independent-verify.md`](rules/quality-over-tokens-independent-verify.md) -- optimize for quality, NOT token economy; complex/irreversible work gets independent fresh-context agent verification (Generator-Evaluator).
 - [`rules/deletion-confirm-and-verify.md`](rules/deletion-confirm-and-verify.md) -- any deletion needs explicit unambiguous user confirmation; after a delete/copy, re-verify it actually happened. Enforced by `human-confirmation-guard` + `verify-deleted-guard`.
-- [`rules/autonomy-risk-tiers.md`](rules/autonomy-risk-tiers.md) -- act WITHOUT asking on anything reversible (restarts, re-runs, config-with-backup, launching jobs); gate only the irreversible tier (DROP/DELETE, rm of non-regenerable data, force-push, prod migrations) via backup -> verify -> proceed, or wait. No "what should we do?" endings on reversible work. Enforced by `stop-phrase-guard`.
+- [`rules/autonomy-risk-tiers.md`](rules/autonomy-risk-tiers.md) -- necessary reversible steps within the accepted task and verified owned internal contour are authorized by the task; continuation preserves its scope, without a separate magic phrase per file or host. Verify the destination and carry the original request into the normal access request. Do not bypass a real tool denial; identify its layer and retry only with material new evidence or authority. Deletion, irreversible actions and work outside the authorized contour require separate authority; a backup is not authorization. No menus or user homework for agent-owned reversible steps.
 - [`rules/no-guessing.md`](rules/no-guessing.md) -- never guess: every decision rests on a verifiable source (code / probe / docs / checklist / user quote), not memory or intuition; unsure -> research or ask. High-stakes decisions get an independent fresh-context verifier.
 - [`rules/git-source-of-truth.md`](rules/git-source-of-truth.md) -- git is the single source of truth: everything committable gets committed and pushed; deployed == committed; only 4 classes stay out (regenerable, secrets, machine junk, heavy binaries).
 - [`rules/file-organization-cohesion.md`](rules/file-organization-cohesion.md) -- durable artifacts go into the existing structure (repo / KB / project folder); related files stay TOGETHER, not scattered across /tmp, home root, Desktop, Downloads. Advisory hook `file-cohesion-guard` reminds.
@@ -97,6 +97,18 @@ Bad: `"Helps with servers."` -- Good: `"Use when: service hangs, GPU health chec
 **File structure:** Keep SKILL.md under 5000 words. Details go in `references/`. Scripts go in `scripts/`. No `README.md` inside a skill folder.
 
 **Critical validations belong in scripts**, not words. Code is deterministic; language is not.
+
+When no reviewed existing skill covers a routed capability, do not ship a thin
+`SKILL.md` merely to clear the route. Build a research-backed skill from real
+task evidence and current primary sources; record accepted/rejected guidance,
+baseline and held-out behavioral evals, independent review, and an explicit
+owner/version/source-refresh/update/rollback contract. Keep the entry point
+focused through progressive disclosure: quality is coverage and maintainability,
+not file count.
+Research-built skill acceptance uses numerical baseline/candidate suites,
+content-addressed traces, assertion-to-trace links, distinct author/reviewer
+identities, live registration proof, and a task-digest-bound terminal receipt;
+a prose `PASS` or the skill artifact alone does not finish the original task.
 
 ## Agent-Legible Environment -- Foundational Principle (2026-05-16)
 

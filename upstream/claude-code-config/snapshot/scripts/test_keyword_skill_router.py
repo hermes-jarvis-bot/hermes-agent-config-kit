@@ -10,7 +10,9 @@ import sys
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
-HOOK = Path.home() / ".claude" / "claude-code-config" / "hooks" / "keyword-skill-router.py"
+# Test the checkout that owns this test.  Pointing through Path.home() silently
+# tests an older live source while a branch is under review.
+HOOK = Path(__file__).resolve().parent.parent / "hooks" / "keyword-skill-router.py"
 
 CASES = [
     # starting / laying out
@@ -45,7 +47,32 @@ CASES = [
     ("how should we evaluate the coding agent trajectory", "testing-strategy"),
     ("the VM-harness is overloaded and blocks staging smoke", "harness-feedback"),
     ("слишком жесткий gate блокирует staging smoke", "harness-feedback"),
+    ("сделай дашборд заказов: поправь дизайн и адаптивную вёрстку", "ui-design"),
+    ("Redesign this React settings form with accessible focus and responsive layout", "ui-design"),
+    ("native Qt toolbar accessibility correction", "ui-design"),
+    ("Поправь доступность панели инструментов QML", "ui-design"),
+    ("editable PowerPoint from hero", "ui-design"),
+    ("Экспортируй баннер в редактируемый PPTX", "ui-design"),
+    ("Design a standalone poster", None),
+    ("Create a standalone PowerPoint slide deck", None),
+    ("Qt database connection timeout", None),
+    ("не соглашайся со мной без доказательств, проверь гипотезу", "epistemic-challenge"),
+    ("challenge my assumption with evidence, not a devil's-advocate performance", "epistemic-challenge"),
+    ("Translate this literal string to Russian: 'Challenge my assumption with evidence.'", None),
     ("привет, как дела", None),
+]
+
+PROFILE_CASES = [
+    ("shared", "Optimize retouch plugin native C++ tensor memory", "REQUIRED: Use skill native-cpp-memory", "SKILL_GAP"),
+    ("codex", "why error investigate this", "SKILL_GAP: investigate", "BLOCKED_SKILL_UNAVAILABLE"),
+    ("claude", "why error investigate this", "/investigate", "SKILL_GAP"),
+    ("codex", "Optimize retouch plugin native C++ tensor memory", "REQUIRED: Use skill native-cpp-memory", "SKILL_GAP"),
+    ("claude", "Optimize retouch plugin native C++ tensor memory", "REQUIRED: Use skill native-cpp-memory", "SKILL_GAP"),
+    ("codex", "Security audit the retouch Photoshop plugin before release", "REQUIRED: Use skill retouch-security-audit", "SKILL_GAP"),
+    ("claude", "Security audit the retouch Photoshop plugin before release", "REQUIRED: Use skill retouch-security-audit", "SKILL_GAP"),
+    ("codex", "Security audit a generic web application before release", "/deep-review", "retouch-security-audit"),
+    ("codex", "проверь SEO сайта и sitemap", "SKILL_GAP: claude-seo:seo", "BLOCKED_SKILL_UNAVAILABLE"),
+    ("claude", "проверь SEO сайта и sitemap", "/claude-seo:seo", "SKILL_GAP"),
 ]
 
 ok = True
@@ -64,6 +91,18 @@ for prompt, expect in CASES:
     print(f"  [{'ok ' if good else 'FAIL'}] {prompt!r:<44} -> {expect or '(no route)'}")
     if not good:
         print("        got:", out.strip().replace("\n", " ")[:170])
+
+for profile, prompt, want, forbidden in PROFILE_CASES:
+    ev = json.dumps({"prompt": prompt}, ensure_ascii=False)
+    r = subprocess.run([sys.executable, str(HOOK), "--profile", profile], input=ev, capture_output=True,
+                       text=True, encoding="utf-8", errors="replace")
+    out = (r.stdout or "") + (r.stderr or "")
+    good = want in out and forbidden not in out
+    if not good:
+        ok = False
+    print(f"  [{'ok ' if good else 'FAIL'}] {profile:6s} {prompt!r:<42} -> {want}")
+    if not good:
+        print("        got:", out.strip().replace("\n", " ")[:220])
 
 print("\nROUTER:", "PASS" if ok else "FAIL")
 sys.exit(0 if ok else 1)
