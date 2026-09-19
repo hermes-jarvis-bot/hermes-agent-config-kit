@@ -35,19 +35,93 @@ pass.
 | Destructive-operation guards | `PreToolUse` | `PreToolUse` | hook eval cases |
 | Dependency supply-chain guards | `PreToolUse` on manifest edits and install commands | `PreToolUse` on manifest edits and install commands | `scripts/test_dependency_provenance_guard.py` + both guard self-tests + `scripts/dependency-alternatives.py --self-test` |
 | Test scope and overload routing | `Stop` | `Stop` | `scripts/test_test_strategy.py` + `scripts/test_high_risk_review_gate.py` + `scripts/test_harness_load_advisor.py` |
+| Measured outward facts | `Stop` | `Stop` | `scripts/test_task_completion_hooks.py` (hash claim red/green fixtures) |
+| Durable user-task completion | `UserPromptSubmit`, `SessionStart`, `Stop` with stable thread/conversation identity | `UserPromptSubmit`, `SessionStart`, `Stop` with stable session identity | `hooks/tests/test_user_task_completion_guard.py` plus live manifest parity |
 | Handoff completeness | `PreToolUse`, `Stop`, `PreCompact` | `PreToolUse`, `Stop`, `PreCompact` | `test_task_completion_hooks.py` |
 | Handoff to memory continuity | `SessionStart` | `SessionStart` | `test_review_handoff_memory_loop.py` |
+| Correction feedback capture | `Stop` + `SessionStart` backlog signal | `Stop` + `SessionStart` backlog signal | both hook self-tests + live manifest parity |
+| Disk-pressure advisory | shared `SessionStart`; measures only, never deletes | shared `SessionStart`; measures only, never deletes | `hooks/disk-pressure-advisor.py --self-test` + live manifest parity |
 | Claude/Codex continuation contract | `PreToolUse`, `SessionStart` | `PreToolUse`, `SessionStart` | `scripts/test_continuity_contract.py` |
 | Agent-doc freshness | `SessionStart` advisory + `Stop` gate | `SessionStart` advisory + `Stop` gate | hook self-tests |
 | Git source-of-truth setup | `Stop` for long-run projects | `Stop` for long-run projects | `test_lifecycle_hook_contracts.py` |
 | File transfer continuity | `PreToolUse` + `PostToolUse` + `Stop` | `PreToolUse` + `PostToolUse` + `Stop` | `scripts/test_transfer_contract.py` |
-| Skills availability | active skill directory | `~/.claude/skills` | `sync_skills_to_codex.py --check` and `skills-lock.json` |
+| Skills availability | `~/.codex/skills` + shared `~/.agents/skills` | `~/.claude/skills` | `sync_skills_to_codex.py --check --also-claude --also-agents` and `skills-lock.json` |
+| Routed subagent skill assignment | `PreToolUse(Agent)` inserts/validates a task-bound contract, `PostToolUse(Agent)` binds it to `agent_id`, `SubagentStart` reinforces the protocol, and `SubagentStop` checks the bound disposition | coordinator renders a task-bound contract before delegation; `PreToolUse(Task)` denies a child brief without one complete contract | `scripts/test_subagent_skill_context.py`, `scripts/test_subagent_evidence_receipt.py`, `scripts/test_agent_skill_contract.py`; live client events for activation |
 | Skills survive a machine/account move | active skill directory | `~/.claude/skills` | `recover_skill_trees.py --report` |
 | Optional RTK output compression | instruction-level (`AGENTS.md`) | native `PreToolUse` hook | `scripts/test_rtk_integration.py` plus pinned binary verification |
 
 Codex's current plugin loader accepts only a top-level `hooks` object in cached
 plugin hook files. `repair_codex_plugin_hook_schema.py --fix` safely removes the
 otherwise harmless Claude-compatible `description` field and preserves a backup.
+
+## Hook Lifecycle And Continuity
+
+The contract table names which runtime proves each concern. This map names when
+the work happens. Hooks in the synchronous agent path capture a small event or
+check one focused invariant; full archive sync, search indexing, embedding, and
+research enrichment run outside that path.
+
+## Context Budget And Hook Admission
+
+Context discipline is an architecture constraint, not an invitation to put every
+good idea into `UserPromptSubmit` or `Stop`. The default shape is one semantic
+skill router, narrow event-matched guards, and JIT skill loading. Full archive
+search, graph rebuilding, embeddings, and broad audits stay outside the
+synchronous hook path.
+
+Add a hook only when all four answers are concrete:
+
+1. What observed failure or project risk does it own?
+2. What narrow event and input does it need?
+3. What deterministic red/green fixture proves it fires and stays quiet?
+4. Which aggregate signal or review removes it if it proves noisy or redundant?
+
+A hook count alone is not a latency or false-positive measurement. Do not claim a
+harness is low-noise until a real event sample exists; report `UNOBSERVED` rather
+than manufacturing a clean verdict. This follows Anthropic's guidance to pass the
+right context precisely and to use structured handoffs across fresh sessions, not
+an ever-growing active prompt ([long-running harness design](https://www.anthropic.com/engineering/harness-design-long-running-apps)).
+
+```mermaid
+flowchart LR
+    U["User request"] --> P["UserPromptSubmit\nroute and capture"]
+    S["SessionStart\nrestore current state"] --> P
+    P --> W["Agent work"]
+    W --> T["PreToolUse\nprevent unsafe action"]
+    T --> X["Tool execution"]
+    X --> O["PostToolUse\nverify the effect"]
+    W --> C["PreCompact\nwrite checkpoint"]
+    W --> E["Stop\nclose only with proof"]
+    P --> I["Optional append-only inbox"]
+    I --> L["Single writer\nledger and read views"]
+    L --> S
+```
+
+| Lifecycle stage | Responsibility | Boundary |
+|---|---|---|
+| `UserPromptSubmit` | Route high-confidence skills, surface an open work order, or record a small request event. | Never scan a transcript archive or build an index synchronously. |
+| `SessionStart` | Validate configuration and show the current handoff, continuation contract, or open work. | Read durable state; do not infer completion from a prior chat response. |
+| `PreToolUse` | Deny unsafe operations or require the proof/contract that the script owns. | Match narrowly; a script must not silently approve unrelated work. |
+| `PostToolUse` | Verify an observable consequence, or emit an advisory signal. | A command's exit text alone is not proof that deletion, transfer, or launch succeeded. |
+| `PreCompact` | Preserve a compact checkpoint before context is condensed. | A fallback draft is evidence of risk, not a substitute for a reviewed handoff. |
+| `Stop` | Enforce handoff, test, tracked-work, and narrowly scoped evidence closure conditions. | A completion claim needs durable evidence; an unresolved item needs an explicit recorded status. Do not turn it into a generic natural-language fact checker. |
+
+For a long-running, multi-session project, record request and status changes as
+append-only events. A single writer can turn them into a canonical ledger and
+small read views such as active tasks. This avoids concurrent sessions corrupting
+a shared JSON/Markdown state file. Keep raw transcripts, credentials, and
+operational research in the private archive; the public repository documents
+only the pattern and the shareable handlers.
+
+Archiving is not learning. `conversation-history-capture.py` preserves raw Codex
+history, while `session-feedback-capture.py` places both Claude and Codex session
+pointers in the same deferred queue. `feedback-pending-show.py` makes an unprocessed
+backlog visible. Semantic promotion remains human-gated: the synchronous hook never
+turns an untrusted transcript directly into a durable rule.
+
+Other clients can use the same lifecycle stages, but must map them to their own
+native events and permission model. Do not copy Claude Code event names into a
+different client without running the runtime wiring tests.
 
 ## Skill routing layers
 
@@ -61,6 +135,36 @@ There are two deliberately separate routing layers:
    advisory. It catches only high-confidence phrases and prints a suggestion;
    it does not inject a skill and must not become a second copy of the whole
    semantic catalog.
+3. `hooks/agent-skill-contract.py` closes both delegation seams. Before dispatch,
+   a coordinator runs its `--task` renderer, which reuses the curated router to
+   select one primary skill or the explicitly required set for the receiving
+   `claude` or `codex` profile. The result is bound
+   to the exact child prompt, carries the evidence-required decision rule, keeps
+   task instructions above skill methodology, requires exact attribution when a
+   skill causes a pause or divergence, and turns a missing routed skill into a
+   checklist-backed search/review/create/continue branch. An explicit task-level
+   skill opt-out produces `user-opt-out`; an unavailable routed capability is a
+   `skill-gap` with `missing-skills`, while ordinary no-match is a distinct
+   no-route result. Claude Code enforces that a complete contract crosses its
+   native `Task` boundary. Codex exposes `spawn_agent` to `PreToolUse` and
+   `PostToolUse` through matcher alias `Agent`: the pre-hook automatically
+   inserts or validates the contract, and the post-hook binds its route to the
+   returned `agent_id`. `hooks/subagent-skill-context.py` then reinforces the
+   source-required decision discipline, the same task-over-skill precedence,
+   and the missing-skill resolution branch inside every child. The
+   authority-changing `user-opt-out`
+   route is recognized only as a leading top-level directive, never inside a
+   quote, fenced/indented literal, or later payload. Meanwhile,
+   `hooks/subagent-evidence-receipt.py` asks the child to repair a missing
+   route/disposition/basis/evidence receipt once before accepting its result.
+   `NO_MATCH` cannot close a route that named required or missing skills. A
+   research-built skill additionally needs per-source research mappings,
+   numerical baseline/candidate suites recomputed from typed case observations,
+   distinct author/reviewer ids and a digest-bound, evidence-disjoint terminal
+   receipt proving the original task resumed. The hook
+   validates this observable structure, not the truth of an external source or
+   the human reality behind identity strings; a parent or task-specific
+   validator still owns those semantic checks.
 
 A skill the loader cannot read is absent no matter how correct the routing is.
 After a machine or account move, verify the catalog itself before trusting either
@@ -71,6 +175,11 @@ hide a skill without producing an error. See
 ```bash
 python scripts/recover_skill_trees.py --report
 ```
+
+When `scripts/install_hooks.py` runs from the canonical global source, it
+registers that source directly. It must not create a new active
+`~/.claude/hooks` copy: the drift checker correctly treats a second registered
+tree as a split-brain risk.
 
 Run the live boundary audit after changing either side:
 
@@ -95,7 +204,10 @@ python scripts/generate_skills_catalog.py --check
 python evals/hooks/run_hook_evals.py
 python scripts/test_lifecycle_hook_contracts.py
 python scripts/test_task_completion_hooks.py
-python scripts/sync_skills_to_codex.py --check
+python scripts/test_agent_skill_contract.py
+python scripts/test_subagent_skill_context.py
+python scripts/test_subagent_evidence_receipt.py
+python scripts/sync_skills_to_codex.py --check --also-claude --also-agents
 ```
 
 For a plugin update that causes a hook-schema error:

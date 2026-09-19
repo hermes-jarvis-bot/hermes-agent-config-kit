@@ -34,6 +34,74 @@ class ValidateConfigTests(unittest.TestCase):
                 self.assertEqual(MODULE.main([]), 0)
                 self.assertEqual(MODULE.main(["--strict"]), 1)
 
+    def write_automation(self, root: Path, prompt: str) -> Path:
+        target = root / "job" / "automation.toml"
+        target.parent.mkdir(parents=True)
+        target.write_text(
+            'version = 1\nstatus = "ACTIVE"\nkind = "heartbeat"\n'
+            f'prompt = "{prompt}"\n',
+            encoding="utf-8",
+        )
+        return target
+
+    def test_completion_watchdog_without_recovery_contract_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_automation(
+                root,
+                "watchdog PID until terminal marker and 100% completion; "
+                "if PID exits, report blocker and stop",
+            )
+            issues = MODULE.validate_completion_automations(root)
+            self.assertEqual(len(issues), 1)
+            self.assertIn("lacks durable idempotency", issues[0])
+
+    def test_completion_supervisor_with_bounded_resume_is_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_automation(
+                root,
+                "heartbeat PID until terminal marker and 100% completion; "
+                "append-resume with idempotency key, attempt counter, and retry budget",
+            )
+            self.assertEqual(MODULE.validate_completion_automations(root), [])
+
+    def test_failed_marker_cannot_be_declared_external_by_itself(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_automation(
+                root,
+                "heartbeat PID until terminal marker and 100% completion; "
+                "append-resume with idempotency key, attempt counter, and retry budget; "
+                "an explicit failed marker is BLOCKED_EXTERNAL/terminal blocker",
+            )
+            issues = MODULE.validate_completion_automations(root)
+            self.assertEqual(len(issues), 1)
+            self.assertIn("without causal classification", issues[0])
+
+    def test_failed_marker_with_internal_causal_repair_is_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_automation(
+                root,
+                "heartbeat PID until terminal marker and 100% completion; "
+                "append-resume with idempotency key, attempt counter, and retry budget; "
+                "a failed marker is not automatically external: classify the cause; "
+                "a local source or input defect is INTERNAL_FIXABLE and requires a "
+                "Git-backed causal repair, successor contract, and verified resume",
+            )
+            self.assertEqual(MODULE.validate_completion_automations(root), [])
+
+    def test_explicit_user_observation_only_monitor_is_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_automation(
+                root,
+                "watchdog PID until terminal marker and 100% completion; "
+                "user explicitly requested observation-only",
+            )
+            self.assertEqual(MODULE.validate_completion_automations(root), [])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
