@@ -37,6 +37,21 @@ destination, operation/settings, purpose, motivation, deadline, verification,
 source cleanup, and the next action. The transfer Stop hook blocks unfinished
 or invalid records; never remove a source before the destination is verified.
 
+## Long-running completion supervisors
+
+When the user's acceptance condition is a finished job, dataset, migration, rollout, or other
+terminal outcome, a schedule/watchdog is a **completion supervisor**, not a passive status monitor.
+An early process exit without a terminal receipt is `INTERNAL_FIXABLE` or `RETRYABLE`: reconcile
+the possible side effect, then perform the next safe idempotent resume/repair within a durable
+attempt budget. A `.failed` marker or failed receipt proves that an attempt failed; it does not
+prove that the cause is external. A reproducible local input or software defect remains
+`INTERNAL_FIXABLE`: preserve its evidence, make the minimal Git-backed causal repair and successor
+contract, then resume from the last valid checkpoint. A generated prompt may use
+report-only/never-restart behavior only when the user
+explicitly requested observation-only operation or a measured external/irreversible boundary makes
+recovery unauthorized. Persist process identity, checkpoint/output, idempotency key, attempt/limit,
+recovery predicate, and terminal proof; a heartbeat or blocker paragraph is not progress by itself.
+
 ## Reasoning Policy: Selection Before Expansion
 
 Core rule: **a sufficient solution is a reason to stop expanding, not an invitation to
@@ -106,6 +121,34 @@ python scripts/test_test_strategy.py
 After installing into a local Codex/Claude environment, also run
 `python scripts/test_task_completion_hooks.py` and consult
 [`docs/runtime-wiring.md`](docs/runtime-wiring.md).
+
+## Delegating agents
+
+Before dispatching any Claude subagent, render the task-bound contract with
+`python hooks/agent-skill-contract.py --task "<child task>"`; use `--profile
+codex` only for a manually rendered Codex brief. Append it to
+the exact child prompt. It selects the minimum curated skill set (or an explicit
+no-route result), requires source-backed decisions, and records `INCONCLUSIVE`
+when no current source is available. Claude Code checks the contract at its
+native `Task` boundary. Codex `PreToolUse(Agent)` inserts or validates the
+client-specific contract before dispatch, `PostToolUse(Agent)` binds it to the
+returned child id, `SubagentStart` reinforces the method, and `SubagentStop`
+requires the bound decision-source receipt.
+The rendered contract also keeps explicit task instructions above skill
+methodology and requires the child to name the exact skill instruction whenever
+that methodology causes a pause or divergence. A missing routed skill starts a
+bounded search: inventory and audit candidates with the existing install
+checklist; if none passes, build a research-backed local skill with real-task
+evidence, primary sources, baseline and held-out evals, independent review, and
+an owner/version/update/rollback contract, then resume the original task. The
+gate measures behavior and maintainability, not size. It does not stop the task
+or authorize an unreviewed third-party install.
+Codex `PreToolUse(Agent)` adds a client-profile-bound contract before launch and
+its post-hook binds the route to `agent_id`; unavailable capabilities stay in
+`missing-skills`, never masquerade as loaded Claude-only skills. `SubagentStop`
+rejects a routed `NO_MATCH` and accepts `GAP_RESOLVED` only when per-source
+research maps to exact skill instructions, typed case evidence beats the
+baseline, and a separate digest-bound receipt proves the resumed original task.
 
 ## Context engineering notes
 
