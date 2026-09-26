@@ -1,6 +1,6 @@
 ---
 name: proof-verify
-description: Plan-based verification - freeze acceptance criteria before building, then verify after with an independent fresh-context agent (the builder must not verify their own work). Use when - "verify against plan", "proof check", "independent review", "check the implementation", or confirming a feature built from a plan meets spec. Do NOT use for quick one-off checks with no plan, or for letting the builder self-verify.
+description: Plan-based verification - freeze acceptance criteria before building, then verify after with an independent fresh-context agent (the builder must not verify their own work). For multi-stage work, seal accepted inputs with commit/tree, contract, input/output digests, and a fresh verdict so downstream stages do not reopen them. Use when - "verify against plan", "proof check", "independent review", "check the implementation", or confirming a feature built from a plan meets spec. Do NOT use for quick one-off checks with no plan, or for letting the builder self-verify.
 ---
 
 # Proof Verify
@@ -38,6 +38,39 @@ PHASE 4: FIX (if needed)
   Back to PHASE 3 (re-verify)
   Loop until all PASS
 ```
+
+## Stage Ledger - only when proof feeds another stage
+
+For a release, integration, migration, hardware, signer, or other multi-stage
+task, a green check is not enough. The next stage needs a stable input, not a
+summary that the previous stage once looked good.
+
+1. Freeze the stage contract and its scope before building it.
+2. Run the focused proof and obtain the fresh verdict as usual.
+3. Write the stage to `.proof/stage-ledger.json` as `VERIFIED` or `SEALED`.
+   A sealed stage records its source commit/tree, contract digest, named input and
+   output digests, fresh verdict digest, and invalidation keys.
+4. A downstream stage names the sealed parent and exact output digest it consumes.
+   It must not consume a merely `VERIFIED` or `BLOCKED` stage.
+5. If an external dependency is missing, record `BLOCKED` with the exact missing
+   prerequisite. Do not invalidate the sealed upstream code.
+6. If code, contract, or an input digest changes, add a `SUPERSEDED` successor and
+   re-run proof for that successor; do not overwrite the old receipt.
+
+Validate the ledger deterministically:
+
+Resolve `<proof-verify-skill-dir>` to the directory containing the loaded
+`proof-verify` `SKILL.md`; do not assume that a project checkout has a
+`skills/development/` copy:
+
+```text
+python <proof-verify-skill-dir>/scripts/validate_stage_ledger.py \
+  .proof/stage-ledger.json
+```
+
+The ledger is not a signing ceremony for every edit. Use it only when an accepted
+result crosses a real project boundary. Full format, status semantics, and examples:
+`references/proven-stage-contracts.md`.
 
 ## Phase 1: Create Plan
 
@@ -77,7 +110,9 @@ Rules for good ACs:
 - **Testable** - there is a command or check that produces PASS/FAIL
 - **Specific** - "function returns correct value" not "code works"
 - **Independent** - each AC can be verified without the others
-- **3-8 ACs** - fewer than 3 = loopholes, more than 8 = checklist gaming
+- **Sufficient** - use one criterion when one observable contract is all that
+  changed; split criteria only when their behavior, owner, or verification
+  command is meaningfully independent
 - **Frozen** - once written, do not modify during build
 
 ## Phase 2: Build
@@ -203,7 +238,9 @@ If VERDICT.md shows any FAIL:
 4. Verifier runs again (Phase 3)
 5. Loop until all PASS
 
-Typical: 1-2 fix rounds. If 3+ rounds on same AC → the AC itself might be wrong. Revisit PLAN.md.
+If repeated failures stop distinguishing causal hypotheses, re-triage the
+affected owner and evidence. Do not weaken or rewrite an acceptance criterion
+merely to turn the current implementation green.
 
 ## File Structure
 
@@ -214,6 +251,7 @@ Typical: 1-2 fix rounds. If 3+ rounds on same AC → the AC itself might be wron
   EVIDENCE.md    # builder's evidence (Phase 2)
   VERDICT.md     # verifier's verdict (Phase 3)
   PROBLEMS.md    # verifier's findings (Phase 3, if failures)
+  stage-ledger.json # only for multi-stage work; accepted inputs and blockers
 ```
 
 ## Gotchas
@@ -221,7 +259,14 @@ Typical: 1-2 fix rounds. If 3+ rounds on same AC → the AC itself might be wron
 - **Builder reads VERDICT, not the reverse.** Verifier never sees builder's evidence. This prevents confirmation bias.
 - **"PASS with concerns" is FAIL.** Either it passes or it doesn't. No soft passes.
 - **Plan hash in verdict.** If someone edited PLAN.md mid-build, the hash won't match. Catch.
-- **Time limit.** If verification takes >30 min, the ACs are too vague. Rewrite them.
+- **A later blocker is not retroactive failure.** A missing VM, signer, or account
+  blocks its own stage. It does not turn a sealed source or artifact into a failed one.
+- **Do not reuse stale proof.** A changed contract, source tree, or recorded input
+  requires a successor stage and a fresh verdict.
+- **Duration is not a verdict.** Give a long-running check a bounded timeout
+  appropriate to its environment. Prefer a smaller check only when it proves
+  the same contract; do not discard a valid runtime boundary merely because it
+  takes longer than a fixed threshold.
 - **Don't verify style.** ACs should be functional ("function returns X"), not stylistic ("code is clean"). Style is for code review, not proof loop.
 
 ## Troubleshooting
@@ -229,13 +274,16 @@ Typical: 1-2 fix rounds. If 3+ rounds on same AC → the AC itself might be wron
 | Symptom | Cause | Fix |
 |---|---|---|
 | Verifier passes everything | ACs too vague | Rewrite with specific commands |
-| 3+ fix rounds on same AC | AC is wrong or untestable | Revisit PLAN.md |
+| Repeated failures no longer distinguish causal hypotheses | Current owner, evidence, or remedy is no longer discriminating | Re-triage the affected owner and evidence; preserve the frozen acceptance contract unless an explicitly authorized successor contract is required |
 | Verifier disagrees with builder's evidence | Different env or stale state | Both run from clean state |
 | Builder keeps editing PLAN.md | Not frozen | Hash check catches this |
+| A new audit says an old stage is "missing" | It mixed an unavailable next prerequisite with already-proven scope | Check `.proof/stage-ledger.json`; record the external `BLOCKED` stage separately |
+| Downstream proof cannot identify its input | The prior result was a chat claim, not a sealed receipt | Seal the prior stage with commit/tree, digests, and fresh verdict before proceeding |
 
 ## Sources
 
 - [Proof Loop (Principle 02)](../../../principles/02-proof-loop.md) - the theoretical foundation
+- `references/proven-stage-contracts.md` - immutable stage promotion, provenance, and local ledger contract
 - [OpenClaw-RL](https://arxiv.org/abs/2603.10165) - spec freeze → build → fresh verify
 - [Agent-R](https://arxiv.org/abs/2501.11425) - failed-then-fixed trajectories
 - oh-my-claudecode Ralph - PRD-driven persistence (practical inspiration)
