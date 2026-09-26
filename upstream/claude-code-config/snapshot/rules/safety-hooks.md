@@ -25,11 +25,11 @@ Env vars через inline `FOO=1 cmd` НЕ видны хуку — нужен m
 | Hook (script) | Блокирует | Bypass key | Safe-альтернатива |
 |---|---|---|---|
 | `destructive-command-guard.py` | rm -rf корней, DROP/TRUNCATE, docker system prune, mkfs, dd | destructive | targeted rm; DELETE с узким WHERE; явный список контейнеров |
-| `git-destructive-guard.py` | reset --hard, push --force, branch -D, clean -fdx, checkout -- . | git-destructive | stash + reset --keep; push --force-with-lease; branch -d |
+| `git-destructive-guard.py` | reset --hard, push --force, force branch deletion (`-D`, clustered `-fD`/`-Df`, long flags), clean -fdx, checkout -- . | git-destructive | stash + reset --keep; push --force-with-lease; merged-only `branch -d` |
 | `self-harm-guard.py` | restart sshd (единств. сессия), kill node/bun/python, iptables/ufw DROP, reboot | self-harm | только при наличии второго канала на хост |
 | `test-muting-guard.py` | @pytest.mark.skip/xfail, it.skip, @Disabled, t.Skip | test-muting | чинить тест; skip только с reason + issue-link |
 | `command-injection-guard.py` | `$(...)` / backticks с non-trivial body (Bash) | injection | одинарные кавычки; heredoc `'EOF'`; `--body-file`/stdin |
-| `human-confirmation-guard.py` | любой destructive intent без явного подтверждения user | (подтвердить) | спросить user с конкретным списком, что удаляем (см. `deletion-confirm-and-verify.md`) |
+| `human-confirmation-guard.py` | любой destructive intent вне routine safe-targets | host-verifiable approval record (пока отсутствует) | block; текст в команде не является approval (см. `deletion-confirm-and-verify.md`) |
 | `ask-question-guard.py` | deferral/меню-ВОПРОС через `AskUserQuestion` на обратимом | ask (`CLAUDE_ALLOW_ASK=1`) | решить самой и делать; спрашивать только необратимое/genuine-fork конкретным вопросом |
 | `db-snapshot-guard.py` | bypass'нутый destructive SQL без снапшота | — | авто-снапшот БД перед операцией |
 | `file-cohesion-guard.py` | (advisory, не блок) durable-файл в scratch-локации | — | положить в правильное место структуры (см. `file-organization-cohesion.md`) |
@@ -37,7 +37,7 @@ Env vars через inline `FOO=1 cmd` НЕ видны хуку — нужен m
 ## PostToolUse / Stop / SessionStart / PreCompact
 
 - `verify-deleted-guard.py` (PostToolUse) — проверяет, что destructive-операция РЕАЛЬНО завершилась (объект исчез).
-- `transfer-contract-guard.py` (PreToolUse + PostToolUse + Stop) — требует контракт в `.claude/transfers/` для clone/copy/move/sync, напоминает о проверке результата и блокирует незакрытые переносы. **Скоуп по владельцу (2026-08-09):** контракт получает `session_id` первой применившей его сессии (штамп на PreToolUse, чужой не перетирается); на Stop открытый контракт **живой** чужой сессии не блокирует, только строка в stderr. Блокируют свои, безымянные и протухшие — владелец молчит >30 мин по mtime транскрипта (`CLAUDE_TRANSFER_OWNER_TTL`). До этого одна общая папка контрактов запирала Stop всем сессиям сразу. `--self-test`.
+- `transfer-contract-guard.py` (PreToolUse + PostToolUse + Stop) — требует контракт в `.claude/transfers/` для clone/copy/move/sync, напоминает о проверке результата и блокирует незакрытые переносы. **Скоуп по владельцу (2026-08-09, дополнено 2026-08-10):** контракт получает `session_id` сессии, которая его **записала** (штамп на PostToolUse `Write|Edit|MultiEdit`) или первой применила в команде (PreToolUse); чужой владелец не перетирается; на Stop открытый контракт **живой** чужой сессии не блокирует, только строка в stderr. Блокируют свои, безымянные и протухшие — владелец молчит >30 мин по mtime транскрипта (`CLAUDE_TRANSFER_OWNER_TTL`). До этого одна общая папка контрактов запирала Stop всем сессиям сразу. `--self-test`.
 - `api-key-leak-detector.py` (PostToolUse) — detective: сканирует output на API-key паттерны, warning (не блок).
 - `over-engineering-advisor.py` (PostToolUse Write|Edit|MultiEdit) — advisory: большое добавление в код / новая зависимость → нудж «это минимум?» (`quality-code.md`), НЕ блок; bypass `CLAUDE_ALLOW_BLOAT=1`.
 - `module-shape-advisor.py` (PostToolUse Write|Edit|MultiEdit) — advisory: после правки
@@ -117,7 +117,7 @@ allowlist'а серверов: **любой не свой вывод в reason �
 Каждый hook = закон; здесь — что он НЕ покрывает (важно знать предел) + tuning.
 
 - **destructive-command-guard** — `rm -rf /tmp/*` проходит, корни/`$HOME`/`/etc/*` блок (паттерны в `PATTERNS`). НЕ покрывает: деструктив внутри запускаемого скрипта (`./drop.sh`), shell-aliases, `psql -f drop.sql` (файл не виден), Python/Node DB-client API. Сужать regex при false-positive, не отключать категорию.
-- **git-destructive-guard** — safe-альт: `--force-with-lease` (а не `--force`), `branch -d`, `stash`+`reset --keep`. НЕ покрывает: force-push через GitHub Desktop/IDE/lazygit (не через Bash tool), `reflog expire`, interactive-rebase drop. Personal feature-branch → `CLAUDE_ALLOW_GIT_DESTRUCTIVE=1`.
+- **git-destructive-guard** — safe-альт: `--force-with-lease` (а не `--force`), merged-only `branch -d`, `stash`+`reset --keep`. Для подтверждённого разового обхода используй `# claude-bypass: git-destructive`; экспортированный `CLAUDE_ALLOW_GIT_DESTRUCTIVE=1` также работает, но inline `CLAUDE_ALLOW_GIT_DESTRUCTIVE=1 git ...` до sibling-hook не доходит. НЕ покрывает: force-push через GitHub Desktop/IDE/lazygit (не через Bash tool), `reflog expire`, interactive-rebase drop.
 - **self-harm-guard** — тест перед действием: «сломает → есть второй способ зайти на хост?» нет → НЕ делать. НЕ покрывает: `/etc/hosts.deny`, systemd mask через конфиг, NetworkManager/systemd-networkd firewall, BMC/IPMI. Нестандартный SSH-порт = долгое восстановление через rescue.
 - **command-injection-guard** — safe: одинарные кавычки, heredoc `'EOF'`, `--body-file`/stdin. НЕ покрывает: `$(var)` где `$var` malicious, `eval`/`bash -c`/`sh -c`, Python/Node subprocess, SQL-инъекции (нужны prepared statements). Whitelist в `TRIVIAL_CMDS` — НЕ добавлять curl/ssh/docker/kubectl.
 - **test-muting-guard** — legit-skip: с `reason=…#issue`, `skipif` (OS/cond), или **удалить** тест устаревшей фичи. НЕ покрывает: закомментированный файл целиком, mute через CI-config / `.gitignore tests/`. Проект со skip как 1st-class → `CLAUDE_ALLOW_TEST_MUTING=1` + review-требование issue-link.
