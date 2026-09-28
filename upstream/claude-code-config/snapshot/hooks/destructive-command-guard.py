@@ -6,6 +6,7 @@ mkfs/dd on block devices. Bypass: CLAUDE_ALLOW_DESTRUCTIVE=1.
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -20,19 +21,27 @@ from safety_common import (  # noqa: E402
     read_event,
 )
 
+# Require both recursive and force options, regardless of whether they are
+# combined (`-rf`) or passed separately (`-r -f`, `--recursive --force`).
+RM_RECURSIVE_FORCE = (
+    r"\brm\b"
+    r"(?=[^;\n]*\s(?:-[a-z]*r[a-z]*|--recursive)(?=\s|$))"
+    r"(?=[^;\n]*\s(?:-[a-z]*f[a-z]*|--force)(?=\s|$))"
+)
+
 # Patterns are regexes. Case-insensitive match via safety_common.any_match.
 PATTERNS = [
     # Filesystem catastrophes - only truly dangerous paths
     # rm -rf on filesystem root or bare wildcards
-    r"\brm\s+-[a-z]*r[a-z]*f?\s+/\s*($|;|&|\|)",
-    r"\brm\s+-[a-z]*r[a-z]*f?\s+/\*",
-    r"\brm\s+-[a-z]*r[a-z]*f?\s+\*\s*($|;|&|\|)",
+    rf"{RM_RECURSIVE_FORCE}[^;\n]*\s+/(?:\s|$|[;&|#])",
+    rf"{RM_RECURSIVE_FORCE}[^;\n]*\s+/\*",
+    rf"{RM_RECURSIVE_FORCE}[^;\n]*\s+\*\s*(?:$|[;&|#])",
     # rm -rf on user home
-    r"\brm\s+-[a-z]*r[a-z]*f?\s+~\s*($|;|&|\|/)",
-    r"\brm\s+-[a-z]*r[a-z]*f?\s+\$HOME(\s|$|/)",
-    r"\brm\s+-[a-z]*r[a-z]*f?\s+~/\s*($|;|&|\|)",
+    rf"{RM_RECURSIVE_FORCE}[^;\n]*\s+~(?:\s|$|/|[;&|#])",
+    rf"{RM_RECURSIVE_FORCE}[^;\n]*\s+\$HOME(?:\s|$|/)",
+    rf"{RM_RECURSIVE_FORCE}[^;\n]*\s+~/(?:\s|$|[;&|#])",
     # rm -rf on critical system dirs
-    r"\brm\s+-[a-z]*r[a-z]*f?\s+/(etc|usr|var|boot|sys|proc|lib|lib64|sbin|bin|root|home)(/\s*)?($|;|&|\|)",
+    rf"{RM_RECURSIVE_FORCE}[^;\n]*\s+/(etc|usr|var|boot|sys|proc|lib|lib64|sbin|bin|root|home)(?:/)?(?:\s|$|[;&|#])",
     r"\bfind\s+/\s+.*-delete\b",
     r"\bmkfs\.[a-z0-9]+\s+/dev/",
     r"\bdd\s+if=\S+\s+of=/dev/[sh]d[a-z]",
@@ -66,12 +75,23 @@ def main() -> None:
     if not cmd:
         allow()
 
-    hit = any_match(cmd, PATTERNS)
+    hit = any_match(cmd, PATTERNS, command=True)
     if not hit:
         allow()
 
     if bypass("destructive", cmd):
         log("WARN", "block_destructive", "bypass", hit, cmd)
+        # Say it out loud. Measured 2026-08-16: CLAUDE_ALLOW_DESTRUCTIVE=1 was
+        # live in the inherited environment, so this guard was passing every
+        # catastrophic command in the session while looking armed - the log line
+        # above is the only trace, and nobody reads a log they do not know to
+        # open. A bypass that leaves no visible mark is indistinguishable from a
+        # guard that is not there.
+        source = ("environment CLAUDE_ALLOW_DESTRUCTIVE"
+                  if os.environ.get("CLAUDE_ALLOW_DESTRUCTIVE", "").strip().lower()
+                  in {"1", "true", "yes", "on"} else "an in-command bypass marker")
+        print(f"[destructive-command-guard] BYPASSED via {source}: /{hit}/ matched "
+              f"and was allowed through. Unset it to restore the gate.", file=sys.stderr)
         allow()
 
     log("BLOCK", "block_destructive", "deny", hit, cmd)
