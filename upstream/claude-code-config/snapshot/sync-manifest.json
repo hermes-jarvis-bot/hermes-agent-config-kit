@@ -104,6 +104,22 @@
       "add": [
         "scripts/extract_feedback_queue.py"
       ]
+    },
+    {
+      "from": "skills/owner-voice",
+      "to": "skills/writing/owner-voice",
+      "deny": [],
+      "add": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "from": "skills/caveman",
+      "to": "skills/writing/caveman",
+      "deny": [
+        "SKILL.md"
+      ],
+      "add": []
     }
   ],
   "privacy_markers": [
