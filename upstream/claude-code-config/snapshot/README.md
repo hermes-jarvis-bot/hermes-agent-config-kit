@@ -13,6 +13,9 @@ what is inference, and what the fix does not cover.
 
 | | |
 |---|---|
+| **New - [Output legibility](docs/output-legibility.md)** | Karpathy's readability ladder (STE-style text, diagram, HTML, video) plus `scripts/term_drift_check.py`: a glossary-driven check for terminology drift and overlong sentences that works in Russian too, with three-state exit codes. Also a dead-code sweep method for agents in the `refactoring-safely` skill. |
+| **New - [Bounded harness-improvement pilot](docs/harness-improvement-pilot.md)** | A read-only evaluator for one frozen baseline and one candidate harness change. It accepts only a strict metric improvement with unchanged-or-better task outcomes, full candidate safety checks, and held-out coverage; it never edits active skills, hooks, or permissions. |
+| **New - [Skills that hand the task to each other](docs/development-skill-routing.md)** | The development skills now route to each other: four "moment" skills (start, will it hold, while writing, already too big) each name the other three, a delivery chain carries a bug or change from frozen plan to verified candidate, and the route follows the task into every subagent. The audit behind it found three phrasings the skills promised and the router never delivered; all three are fixed with failing cases first. Ships as [`keyword-skill-router.py`](hooks/keyword-skill-router.py) + [`agent-skill-contract.py`](hooks/agent-skill-contract.py) + [`root-cause-delivery`](skills/development/root-cause-delivery/SKILL.md). |
 | **[Starting from what you remember](docs/starting-from-what-you-remember.md)** | Why a brand-new project arrives years out of date, why an invented package name is now a security problem rather than a 404, and where manifest and install-time checks have to sit to catch either. Ships as [`dependency-currency-guard.py`](hooks/dependency-currency-guard.py) + [`dependency-provenance-guard.py`](hooks/dependency-provenance-guard.py). |
 | **[Why an agent circles instead of acting](docs/why-agents-circle-instead-of-acting.md)** | Two agents, identical rules, different gate shapes. Describing a fix instead of applying it turned out to be the only move with no gate on it. |
 | **[Gates that cannot bootstrap themselves](principles/30-gates-that-cannot-bootstrap.md)** | A check that only arms once the thing it checks for already exists will never arm. The failure looks exactly like compliance. |
@@ -20,6 +23,9 @@ what is inference, and what the fix does not cover.
 | **[The form was available, so it was taken for the content](docs/form-mistaken-for-content.md)** | One failure shape in six materials — including three times inside the tool built to catch it. What formal verification, pytest, ESLint and mutation testing each already answer, and why "empty" has to be its own outcome. |
 | **[A launch is a promise to look at it](docs/a-launch-is-a-promise.md)** | A job that died in its first second looks exactly like one running quietly, and "is it running" is three independent questions of which liveness is only the first. 2,958 launches measured, 42 never checked at all. Ships as [`hooks/launch-watch-guard.py`](hooks/launch-watch-guard.py). |
 | **[The deferral moves to whichever form is not guarded](docs/finishing-what-you-started.md)** | Who has already built "keep going until it is done", what it cost when it looped, and why 27 of 51 open tickets here carry the same one of five legitimate reasons. Ships as the today's-tickets gate in [`hooks/handoff-closure-audit-guard.py`](hooks/handoff-closure-audit-guard.py). |
+| **[A passing test is not a release](docs/a-passing-test-is-not-a-release.md)** | An unavailable signer, VM, or account should block only its own stage, not erase proof of an unchanged parent. Introduces `VERIFIED / SEALED / BLOCKED / SUPERSEDED`, a minimal stage ledger, and the boundary where the ledger would just become bureaucracy. Ships as [`proof-verify`](skills/development/proof-verify/SKILL.md) + [`hooks/plan-gate.py`](hooks/plan-gate.py). |
+| **[A save log is not a retention guarantee](docs/a-save-log-is-not-a-retention-guarantee.md)** | Why a handler return or message journal cannot prove photo/document preservation; defines the live read-after-write, cleanup, and restart receipt that must exist before destructive cleanup. |
+| **[Runtime wiring and hook lifecycle](docs/runtime-wiring.md)** | Where request intake, safety guards, verification, compaction, and close-out belong; how continuity stays durable without putting archive/index work on every prompt. |
 
 ---
 
@@ -30,7 +36,7 @@ Three paths depending on what you need:
 ### Option 1: Claude Code plugin (fastest)
 
 ```bash
-claude plugin install https://github.com/AnastasiyaW/claude-code-config
+claude plugin install https://github.com/AnastasiyaW/codex-claude-code-config
 ```
 
 Then in your Claude Code chat:
@@ -42,7 +48,7 @@ Read AGENTS.md and pick the principles, hooks, and skills that match my project.
 ### Option 2: Global install (hooks + skills available in every project)
 
 ```bash
-git clone https://github.com/AnastasiyaW/claude-code-config ~/claude-code-config
+git clone https://github.com/AnastasiyaW/codex-claude-code-config ~/claude-code-config
 
 # Copy the always-on safety hooks to your global config
 python ~/claude-code-config/scripts/install_hooks.py --global
@@ -51,17 +57,21 @@ python ~/claude-code-config/scripts/install_hooks.py --global
 mkdir -p ~/.claude/skills
 cp -r ~/claude-code-config/skills/ai-ml/ml-research-lab ~/.claude/skills/
 
-# Codex desktop: sync all public skills with backups for changed local copies
-python ~/claude-code-config/scripts/sync_skills_to_codex.py --apply
+# Codex desktop, its shared ~/.agents root, and Claude Code: sync public skills
+# with independent backups for changed local copies. Target-only skills remain intact.
+python ~/claude-code-config/scripts/sync_skills_to_codex.py --apply --also-claude --also-agents
 ```
 
-`~/.claude/hooks/` stores the hook scripts; `~/.claude/settings.json` is where they are registered. The install script merges safe defaults into your existing settings.
+The canonical tracked checkout's `hooks/` directory stores the global hook scripts;
+`~/.claude/settings.json` and `~/.codex/hooks.json` register that exact source.
+The installer must not create a second active `~/.claude/hooks/` tree; it merges
+safe defaults into the existing manifests and keeps backups before changes.
 
 ### Option 3: Project-local (hooks/skills only in this project)
 
 ```bash
 cd /your/project
-git clone https://github.com/AnastasiyaW/claude-code-config .claude-config
+git clone https://github.com/AnastasiyaW/codex-claude-code-config .claude-config
 python .claude-config/scripts/install_hooks.py --local
 cp -r .claude-config/skills .claude/skills
 ```
@@ -98,6 +108,8 @@ offered? Nothing raises an error when that happens — see
 - **Agent claims "done" but it's broken?** Require durable proof artifacts ([Proof Loop](principles/02-proof-loop.md))
 - **Tests feel repetitive or a specialized gate blocks smoke?** Use the universal candidate-state sequence: focused slice, risk-based review, one full matrix, then only the relevant immutable-candidate compatibility proof ([testing strategy](docs/research/2026-08-testing-and-agent-evals.md))
 - **Need to improve a prompt/skill/config?** Automated Read-Change-Test loop ([Autoresearch](principles/03-autoresearch.md))
+- **Need proof before adopting one harness change?** Compare a frozen baseline and candidate without live mutation ([bounded pilot](docs/harness-improvement-pilot.md))
+- **Agent output too long to read, terms keep changing?** Glossary-driven drift check and the readability ladder ([output legibility](docs/output-legibility.md))
 - **LLM skips steps in complex workflows?** Shell scripts for mechanical tasks, one step at a time ([Deterministic Orchestration](principles/04-deterministic-orchestration.md))
 - **Wrong debugging conclusions?** Structured Premises-Trace-Conclusions format ([Structured Reasoning](principles/05-structured-reasoning.md))
 - **Task too big for one agent?** Coordinator + specialized sub-agents ([Multi-Agent Decomposition](principles/06-multi-agent-decomposition.md))
@@ -145,13 +157,13 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [keyword-skill-router](hooks/keyword-skill-router.py) | `UserPromptSubmit` | Detects natural-language keywords and suggests matching skills (bilingual RU/EN) |
 | [api-key-leak-detector](hooks/api-key-leak-detector.py) | `PostToolUse` | Scans tool output for exposed API keys, tokens, secrets |
 | [command-injection-guard](hooks/command-injection-guard.py) | `PreToolUse` | Blocks shell substitution with non-trivial commands |
-| [git-destructive-guard](hooks/git-destructive-guard.py) | `PreToolUse` | Blocks `git reset --hard`, `push --force`, `branch -D` |
+| [git-destructive-guard](hooks/git-destructive-guard.py) | `PreToolUse` | Blocks `git reset --hard`, `push --force`, force branch deletion (`-D`, `-fD`, `-Df`, long flags); allows merged-only `branch -d` |
 | [git-auto-backup](hooks/git-auto-backup.py) | `PreToolUse` | Creates backup branch before destructive git operations |
 | [self-harm-guard](hooks/self-harm-guard.py) | `PreToolUse` | Prevents agent from killing its own process, locking SSH, bare reboot |
 | [test-muting-guard](hooks/test-muting-guard.py) | `PreToolUse` | Blocks adding `@skip`, `.only()`, `@Ignore` to existing tests |
 | [backup-retention-cleanup](hooks/backup-retention-cleanup.py) | `Stop` | Cleans up old backup branches (14-day retention) |
 | [file-cohesion-guard](hooks/file-cohesion-guard.py) | `PreToolUse` | Advisory: warns when a durable file is written to a scratch location (home root, Desktop, Downloads, /tmp) instead of the project structure |
-| [human-confirmation-guard](hooks/human-confirmation-guard.py) | `PreToolUse` | Requires explicit user confirmation before any deletion-intent command |
+| [human-confirmation-guard](hooks/human-confirmation-guard.py) | `PreToolUse` | Blocks destructive actions until a host-verifiable approval record can be checked |
 | [ask-question-guard](hooks/ask-question-guard.py) | `PreToolUse` | Blocks deferral/menu `AskUserQuestion` ("what next?", "which of these?") on reversible work — decide and proceed instead |
 | [over-engineering-advisor](hooks/over-engineering-advisor.py) | `PostToolUse` | Advisory nudge when an edit adds a large code block or a new dependency — "is this the minimal solution?" (never blocks) |
 | [module-shape-advisor](hooks/module-shape-advisor.py) | `PostToolUse` | The mirror of the row above: advisory nudge when the whole FILE has outgrown its shape — "where is the seam?" Fires on cumulative size, not on your edit, because that is how a file gets there (never blocks) |
@@ -161,11 +173,14 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [pre-push-public-repo-scan](hooks/pre-push-public-repo-scan.py) | git `pre-push` | Two independent scans — regex and semantic — of a push to a PUBLIC repo; either one alarming blocks it. Private repos skip. Host and script names load from a local list, never from this file |
 | [shape_common](hooks/shape_common.py) | *(library)* | Not a hook: the one definition of "what shape is this file in", shared by `module-shape-advisor` and `scripts/architecture_audit.py` so the two cannot answer differently |
 | [harness-load-advisor](hooks/harness-load-advisor.py) | `Stop` | Notices when a closing message reports a high-cost or specialized gate (signing, VM/GPU/OS/browser/performance) blocking lower-risk work, and says so. A feedback guard, not a bypass — it never lifts the gate |
+| [outward-claim-evidence-guard](hooks/outward-claim-evidence-guard.py) | `Stop` | Blocks a narrow set of externally measurable claims (hash, filename-derived hash, size, version, deploy) when the final report lacks a probe/result line. It enforces reporting discipline, not truth by itself. |
 | [repeated-attempt-guard](hooks/repeated-attempt-guard.py) | `PreToolUse` + `PostToolUse` | Stops the guess-and-retry loop: advisory on the third failed attempt at the same target, blocking on the fourth, unless something has been read since the last failure. One `Read` clears it — the block is lifted by the action that would have solved it three attempts earlier. Needs **both** events: `PostToolUse` records outcomes, `PreToolUse` decides |
 | [launch-watch-guard](hooks/launch-watch-guard.py) | `PostToolUse` + `Stop` | Starting a job is a promise to look at it. Records every launch (`nohup`, detached `docker run`, `sbatch`, `schtasks`, `run_in_background`) and refuses to end the session while one has never been probed — a job that died in its first second looks exactly like one running quietly. One `nvidia-smi`, `docker ps` or `tail` of its log clears it. Measured: 2,958 launches over 30 days, 42 never probed at all, across 28 of 175 sessions |
 | [open-items-are-work-orders](hooks/open-items-are-work-orders.py) | `UserPromptSubmit` | "What is still open?" is a work order, not a status request. Answers the question with the actual open `PROBLEMS.md` entries — oldest first, ages attached, dominant label called out — and states that they get closed in this turn rather than restated. Fires on 0.06% of real messages (context only, never blocks) |
+| [user-task-completion-guard](hooks/user-task-completion-guard.py) | `UserPromptSubmit` + `SessionStart` + `Stop` | Records actionable user work under `.agent/user-tasks`, binds Claude session and Codex thread/conversation aliases to the same durable task, resurfaces its exact next action after interruption, and refuses terminal parent state while any declared item remains `PENDING`/`RUNNING` |
 | [unbuffered-progress-advisor](hooks/unbuffered-progress-advisor.py) | `PreToolUse` | A backgrounded Python run with no `-u` block-buffers its stdout, so a stall looks exactly like slowness — twice worth half an hour. Advisory, gated on the harness's own `run_in_background` rather than on parsing the command text: the text-matching version fired 459 times on real history, all false (never blocks) |
 | [live-tree-guard](hooks/live-tree-guard.py) | `PreToolUse` | The primary checkout receives finished work; it is not where work is done. Blocks editing a **tracked** file in the primary tree of a repo that opted in with `.claude/live-tree` — a lock says "please do not", a separate worktree means there is nothing to overwrite. Exempt: linked worktrees, append-only per-session artifacts, untracked new files. See [live-tree-is-receive-only](rules/live-tree-is-receive-only.md) |
+| [shared-branch-guard](hooks/shared-branch-guard.py) | `PreToolUse` | In a repo opted in with `.claude/shared-branch`, blocks any `git reset` and pathless `git commit`; these commands can rewrite or publish another worker's staged state. |
 | [pre-push-personal-email-guard](hooks/pre-push-personal-email-guard.py) | *(git pre-push)* | Refuses to publish commits authored with a personal email address — commit metadata in a public repo is readable through the API without cloning, and an address plus proven activity is a ready-made phishing target |
 | [activity-journal-guard](hooks/activity-journal-guard.py) | `PreToolUse` | Enforces the shared activity journal — blocks a mutating command on a tracked shared resource that does not log to its journal |
 | [coord-claim-guard](hooks/coord-claim-guard.py) | `PreToolUse` | Claim-before-edit gate for multi-session / coord-enabled repos (blocks editing a file without an active claim) |
@@ -184,7 +199,7 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [test-gate-stop-hook](hooks/test-gate-stop-hook.py) | `Stop` | Selects fast/integration evidence by Git-visible risk and blocks closing while selected tests are red or unproven |
 | [problems-md-validator](hooks/problems-md-validator.py) | `Stop` | Blocks closing with OPEN problems lacking a valid deferral reason |
 | [task-inbox-show](hooks/task-inbox-show.py) | `SessionStart` | Surfaces pending tasks from `.claude/task-inbox/` |
-| [plan-gate](hooks/plan-gate.py) | `UserPromptSubmit` | Non-blocking nudge: substantive build/refactor ask + no plan artifact in the project -> one-line "freeze acceptance criteria first" reminder (max once/day) |
+| [plan-gate](hooks/plan-gate.py) | `UserPromptSubmit` | Non-blocking nudge: substantive build/refactor with no concrete plan -> freeze acceptance criteria; multi-stage/release work without `.proof/stage-ledger.json` also gets a separate once/day reminder to seal accepted inputs and record external blockers |
 
 **Supporting hooks and shared utilities** (wire these when the project needs the corresponding workflow):
 
@@ -199,6 +214,25 @@ See [docs/rtk-integration.md](docs/rtk-integration.md) and
 | [kb-validate-gate](hooks/kb-validate-gate.py) | `Stop` | Runs the project knowledge-base validator when opted in |
 | [session-feedback-capture](hooks/session-feedback-capture.py) | `Stop` | Queues durable correction notes without blocking session closure |
 | [safety_common.py](hooks/safety_common.py) | shared | Shared event parsing and decision helpers for opt-in hooks |
+| [agent-skill-contract](hooks/agent-skill-contract.py) | `PreToolUse` + `PostToolUse` | Binds a skill/evidence contract to each delegated child (`Task`, Codex `spawn_agent`), reusing the keyword router on the child's own prompt — see [development skill routing](docs/development-skill-routing.md) |
+| [subagent-skill-context](hooks/subagent-skill-context.py) | Codex `SubagentStart` | Adds skill-routing and evidence discipline to every Codex child; the event carries no parent prompt, so it cannot pick a skill itself |
+| [subagent-evidence-receipt](hooks/subagent-evidence-receipt.py) | Codex `SubagentStop` | Requires one structured decision-source receipt (basis + evidence) from a child before its result is accepted |
+| [skill_contract_state.py](hooks/skill_contract_state.py) | shared | Fail-closed state bridge between the Codex pre- and post-hooks of a skill contract |
+| [root-cause-delivery-guard](hooks/root-cause-delivery-guard.py) | `UserPromptSubmit` + `PreToolUse` + `Stop` | Records a bug/change intent, keeps source edits behind a frozen plan, and closes only on red-to-green proof; companion of the [root-cause-delivery](skills/development/root-cause-delivery/SKILL.md) skill |
+| [task-cycle-controller](hooks/task-cycle-controller.py) | On demand | Turns verified findings into durable work orders: finding -> work order -> focused proof -> fresh review -> accepted |
+| [agent_policy_gates.py](hooks/agent_policy_gates.py) | shared | Claude-side half of a repo's `.github/agent-policy.json`: rules that can be checks become checks |
+| [codex_hook_dispatch](hooks/codex_hook_dispatch.py) | Codex, all events | One Codex hook entry per event that starts every configured handler itself, in parallel; Codex launching each handler through its own `pwsh` was measured at 8-25 s per start under load |
+| [powershell-dynamic-execution-guard](hooks/powershell-dynamic-execution-guard.py) | `PreToolUse` | Rejects dynamic text execution in PowerShell (`Invoke-Expression` and friends); static commands and script blocks pass |
+| [git-lock-homework-guard](hooks/git-lock-homework-guard.py) | `Stop` | Refuses to end a turn that hands a stale `.git/index.lock` to the user; the agent clears it with the proof tool instead |
+| [hook-tree-drift-check](hooks/hook-tree-drift-check.py) | `SessionStart` | Names a hook file that exists in two trees, so an edit does not land in the copy that never runs |
+| [disk-pressure-advisor](hooks/disk-pressure-advisor.py) | `SessionStart` | When a disk is tight, reports reclaimable development artifacts and expired temp-registry entries; never deletes |
+| [benjamin-plus-inject](hooks/benjamin-plus-inject.py) | `SessionStart` | Injects the vendored [benjamin-plus](https://github.com/JetBrains/benjamin-plus-skill) token-efficiency payload (MIT) with a local-precedence clause |
+| [telegram-mass-send-guard](hooks/telegram-mass-send-guard.py) | `PreToolUse` | Blocks a Telegram mass-send script that records no message ids — a mailing nobody could recall |
+| [widget-test-guard](hooks/widget-test-guard.py) | `PreToolUse` | Workspace example: Tk widget tests run only on a hidden desktop with a sandboxed `LOCALAPPDATA` |
+| [article-voice-gate](hooks/article-voice-gate.py) | `PreToolUse` | Workspace example: a machine-written knowledge-base article reaches the public repo only with an editor and fact-check pass behind it |
+| [handoff-to-todo](hooks/handoff-to-todo.py) | `PostToolUse` | Workspace example: attaches a handoff to its project task in a Vikunja-backed to-do |
+| [todo-inbox](hooks/todo-inbox.py) | `UserPromptSubmit` + `PreToolUse` | Workspace example: the owner's new notes on a project reach the session working on it |
+
 **Starter templates** for common project types: [web-app](templates/CLAUDE-web-app.md), [ML project](templates/CLAUDE-ml-project.md), [library](templates/CLAUDE-library.md), [code review](templates/REVIEW.md), [project chronicle](templates/chronicle.md), [memory files](templates/memory-project.md), [memory reference](templates/memory-reference.md), [proof plan](templates/proof-plan.md), [bug-fix prompt](templates/bug-fix-prompt.md) (anti-"pre-existing" constraints baked in), [long-run project harness pack](templates/long-run-project/) (drop-in `feature_list.schema.json` + `feature_list.template.json` + `init.sh.template` for any project crossing 5+ features and 5+ sessions).
 
 **Dynamic workflow commands** ([workflows/](workflows/)) - ready-to-drop `.js` orchestration scripts for Claude Code dynamic workflows (`/deep-review-flow`, `/research-cn-ru`) plus [EFFECTIVE-AGENTS.md](workflows/EFFECTIVE-AGENTS.md) - measured cost lessons (one `agent()` ≈ 95-150k tokens; resume as the main economy lever).
@@ -409,8 +443,9 @@ Freshness is mechanical, not aspirational: [scripts/sync_public_config.py](scrip
 - `templates/` - 适用于不同项目类型的 CLAUDE.md 起始模板 + 验证计划、记忆、项目编年史和长期项目脚手架（feature_list.json + init.sh）
 - `skills/` - 领域技能（AI/ML、视频制作、前端、iOS、写作、代码审查、验证、运维工具，包括 `harness-audit` 五子系统评估、`workflow-orchestration` 和 `gemini-delegate` 跨 CLI 委派）
 - 跨 harness 支持：每个项目一个 `AGENTS.md`，同时供 Claude Code、Gemini CLI、Codex 读取（无需符号链接），见 `rules/cross-harness-agents-md.md`
+- **新增：开发技能交叉路由。** 代码相关技能会互相移交任务：四个按“时刻”划分的技能（开始、能否承载、编写单元、已经过大）在描述中互相指向，交付链把缺陷或变更从冻结计划带到经过验证的候选版本，路由还会通过技能契约传递给每个子代理，见 `docs/development-skill-routing.md`
 
-**安装:** `claude plugin install https://github.com/AnastasiyaW/claude-code-config` 或直接复制所需文件。
+**安装:** `claude plugin install https://github.com/AnastasiyaW/codex-claude-code-config` 或直接复制所需文件。
 
 **灵感来源:** 部分设计理念受到中国工程社区的启发，包括红线(红线)模式、规范驱动开发(OpenSpec)、经验库模式。
 
@@ -429,8 +464,9 @@ Freshness is mechanical, not aspirational: [scripts/sync_public_config.py](scrip
 - `templates/` - стартовые CLAUDE.md + план верификации + шаблоны memory и хроник + **long-run harness pack** (drop-in `feature_list.json` + `init.sh` для проектов с 5+ фичами)
 - `skills/` - доменные навыки (AI/ML, видео, фронтенд, iOS, письмо, код-ревью, верификация, операционные инструменты, включая `harness-audit`, `workflow-orchestration` и `gemini-delegate` — делегирование в Gemini CLI с мульти-аккаунтом)
 - Кросс-harness: один `AGENTS.md` на проект читают Claude Code, Gemini CLI и Codex (без симлинков) — `rules/cross-harness-agents-md.md`
+- **Новое: кросс-маршрутизация навыков разработки.** Навыки для кода передают задачу друг другу: четыре навыка «по моменту» (начинаем, выдержит ли, пишем юнит, уже слишком большое) в своих описаниях называют друг друга, цепочка доставки ведёт баг или изменение от замороженного плана к проверенному кандидату, а маршрут доходит до каждого сабагента через контракт навыка — `docs/development-skill-routing.md`
 
-**Установка:** `claude plugin install https://github.com/AnastasiyaW/claude-code-config` или копирование нужных файлов.
+**Установка:** `claude plugin install https://github.com/AnastasiyaW/codex-claude-code-config` или копирование нужных файлов.
 
 ---
 

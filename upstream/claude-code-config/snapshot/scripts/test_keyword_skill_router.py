@@ -10,7 +10,9 @@ import sys
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
-HOOK = Path.home() / ".claude" / "claude-code-config" / "hooks" / "keyword-skill-router.py"
+# Test the checkout that owns this test.  Pointing through Path.home() silently
+# tests an older live source while a branch is under review.
+HOOK = Path(__file__).resolve().parent.parent / "hooks" / "keyword-skill-router.py"
 
 CASES = [
     # starting / laying out
@@ -28,6 +30,11 @@ CASES = [
     ("which database should we choose", "system-and-data-design"),
     ("нужно ли шардирование", "system-and-data-design"),
     ("запрос медленный под нагрузкой", "system-and-data-design"),
+    # The skill's own description promises these two phrasings.
+    ("will this hold at 10k requests per second", "system-and-data-design"),
+    ("do we need a queue here", "system-and-data-design"),
+    ("нужен ли тут кеш", "system-and-data-design"),
+    ("how many machines do we need", "system-and-data-design"),
     # unit quality
     ("отревьюй этот код", "code-complexity"),
     ("этот модуль тяжело читать", "code-complexity"),
@@ -36,8 +43,21 @@ CASES = [
     ("разбей main.py, он слишком большой", "refactoring-safely"),
     ("this module is too big, split it", "refactoring-safely"),
     ("вынеси это в отдельный модуль", "refactoring-safely"),
+    ("split server.py, it is 4000 lines", "refactoring-safely"),
+    ("app.ts уже 3000 строк", "refactoring-safely"),
+    ("server.py is now 4000 lines", "refactoring-safely"),
+    ("server.py (4000 lines) needs work", "refactoring-safely"),
+    ("main.py has grown to 3,000 lines", "refactoring-safely"),
+    ("the 4000-line server.py", "refactoring-safely"),
+    ("we need to split the database module", "refactoring-safely"),
+    ("the log in app.py printed 500 lines of errors", None),
+    ("read config.py lines 1 to 200", None),
     # unchanged neighbours
     ("упрости этот код", "lean-code"),
+    ("be lazy, simplest solution please", "lean-code"),
+    ("yagni, don't over-engineer this", "lean-code"),
+    ("не переусложняй", "lean-code"),
+    ("I need a quick answer", None),
     ("почему падает тест, что не так, разберись", "investigate"),
     # testing strategy
     ("составь план тестирования для этой фичи", "testing-strategy"),
@@ -45,7 +65,62 @@ CASES = [
     ("how should we evaluate the coding agent trajectory", "testing-strategy"),
     ("the VM-harness is overloaded and blocks staging smoke", "harness-feedback"),
     ("слишком жесткий gate блокирует staging smoke", "harness-feedback"),
+    ("сделай дашборд заказов: поправь дизайн и адаптивную вёрстку", "ui-design"),
+    ("Redesign this React settings form with accessible focus and responsive layout", "ui-design"),
+    ("native Qt toolbar accessibility correction", "ui-design"),
+    ("Поправь доступность панели инструментов QML", "ui-design"),
+    ("editable PowerPoint from hero", "ui-design"),
+    ("Экспортируй баннер в редактируемый PPTX", "ui-design"),
+    ("Design a standalone poster", None),
+    ("Create a standalone PowerPoint slide deck", None),
+    ("Qt database connection timeout", None),
+    ("не соглашайся со мной без доказательств, проверь гипотезу", "epistemic-challenge"),
+    ("challenge my assumption with evidence, not a devil's-advocate performance", "epistemic-challenge"),
+    ("Translate this literal string to Russian: 'Challenge my assumption with evidence.'", None),
     ("привет, как дела", None),
+    # Авторский текст от её лица. «Напиши» само по себе ничего не решает:
+    # маршрут обязан различать письмо от неё и просьбу написать код.
+    ("напиши письмо подрядчику от моего лица", "owner-voice"),
+    ("составь пост за меня про датасеты", "owner-voice"),
+    ("отредактируй это, чтобы звучало как я", "owner-voice"),
+    ("перепиши в моём стиле", "owner-voice"),
+    ("write this email as me", "owner-voice"),
+    ("draft a post in my voice", "owner-voice"),
+    ("напиши тест на этот шлюз", None),
+    ("write a regex for this", None),
+]
+
+# Phrasings that may route elsewhere but must NOT reach the named skill.
+NOT_CASES = [
+    ("will that hold up in court", "system-and-data-design"),
+    ("how many machines are in the inventory list", "system-and-data-design"),
+    ("I need a database password reset", "system-and-data-design"),
+    ("we need a cache invalidation bug fixed", "system-and-data-design"),
+    ("we need to split the database module", "system-and-data-design"),
+    ("what's the simplest way to install node on windows", "lean-code"),
+    ("simplest fix for this typo", "lean-code"),
+    ("utils.py has 120 lines", "refactoring-safely"),
+    ("print main.py 200 lines", "refactoring-safely"),
+    ("main.py: 1,000 lines changed in this PR", "refactoring-safely"),
+]
+
+PROFILE_CASES = [
+    ("shared", "Optimize retouch plugin native C++ tensor memory", "REQUIRED: Use skill native-cpp-memory", "SKILL_GAP"),
+    ("codex", "why error investigate this", "SKILL_GAP: investigate", "BLOCKED_SKILL_UNAVAILABLE"),
+    ("claude", "why error investigate this", "/investigate", "SKILL_GAP"),
+    ("codex", "Optimize retouch plugin native C++ tensor memory", "REQUIRED: Use skill native-cpp-memory", "SKILL_GAP"),
+    ("claude", "Optimize retouch plugin native C++ tensor memory", "REQUIRED: Use skill native-cpp-memory", "SKILL_GAP"),
+    ("codex", "Security audit the retouch Photoshop plugin before release", "REQUIRED: Use skill retouch-security-audit", "SKILL_GAP"),
+    ("claude", "Security audit the retouch Photoshop plugin before release", "REQUIRED: Use skill retouch-security-audit", "SKILL_GAP"),
+    ("codex", "Security audit a generic web application before release", "/deep-review", "retouch-security-audit"),
+    ("codex", "проверь SEO сайта и sitemap", "SKILL_GAP: claude-seo:seo", "BLOCKED_SKILL_UNAVAILABLE"),
+    ("claude", "проверь SEO сайта и sitemap", "/claude-seo:seo", "SKILL_GAP"),
+    # «Напиши» о коде обязано дойти до правила качества и НЕ дойти до голоса
+    # владелицы. Проверять «нет вывода вообще» тут нельзя: advisory-маршрут
+    # про качество кода срабатывает законно.
+    ("claude", "напиши скрипт для выгрузки", "quality-code", "owner-voice"),
+    ("claude", "напиши функцию которая режет тайлы", "quality-code", "owner-voice"),
+    ("claude", "напиши коммит месседж", "", "owner-voice"),
 ]
 
 ok = True
@@ -64,6 +139,29 @@ for prompt, expect in CASES:
     print(f"  [{'ok ' if good else 'FAIL'}] {prompt!r:<44} -> {expect or '(no route)'}")
     if not good:
         print("        got:", out.strip().replace("\n", " ")[:170])
+
+for prompt, forbidden in NOT_CASES:
+    ev = json.dumps({"prompt": prompt, "hook_event_name": "UserPromptSubmit"},
+                    ensure_ascii=False)
+    r = subprocess.run([sys.executable, str(HOOK)], input=ev, capture_output=True,
+                       text=True, encoding="utf-8", errors="replace")
+    out = (r.stdout or "") + (r.stderr or "")
+    good = f"/{forbidden} " not in out and f"skill {forbidden}" not in out
+    if not good:
+        ok = False
+    print(f"  [{'ok ' if good else 'FAIL'}] {prompt!r:<44} -> not {forbidden}")
+
+for profile, prompt, want, forbidden in PROFILE_CASES:
+    ev = json.dumps({"prompt": prompt}, ensure_ascii=False)
+    r = subprocess.run([sys.executable, str(HOOK), "--profile", profile], input=ev, capture_output=True,
+                       text=True, encoding="utf-8", errors="replace")
+    out = (r.stdout or "") + (r.stderr or "")
+    good = want in out and forbidden not in out
+    if not good:
+        ok = False
+    print(f"  [{'ok ' if good else 'FAIL'}] {profile:6s} {prompt!r:<42} -> {want}")
+    if not good:
+        print("        got:", out.strip().replace("\n", " ")[:220])
 
 print("\nROUTER:", "PASS" if ok else "FAIL")
 sys.exit(0 if ok else 1)

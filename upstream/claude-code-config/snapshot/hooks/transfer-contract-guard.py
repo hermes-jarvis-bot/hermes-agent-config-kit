@@ -27,6 +27,21 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from safety_common import allow, block, log, read_event  # noqa: E402
 
+# One definition of "what in this command can actually run", shared with the
+# destructive guards. This copy is the one settings.json registers - a second,
+# divergent copy under ~/.claude/hooks/ received an earlier repair and never
+# ran, which an independent review caught by reading the manifest rather than
+# the file. A swallowed ImportError here would repeat exactly that, so it is
+# announced instead: a guard that quietly loses a security helper is a guard
+# that is not there.
+try:
+    from safety_common import executable_text as _executable_text  # noqa: E402
+except ImportError as error:  # pragma: no cover - deployment fault, not logic
+    print(f"[transfer-contract-guard] safety_common.executable_text is missing "
+          f"({error}); scanning the RAW command text, which over-blocks on "
+          f"quoted and commented mentions.", file=sys.stderr)
+    _executable_text = None
+
 
 # Transfer records live in one shared directory, but a Stop gate belongs to one
 # session. Without an owner, session A is blocked by session B's in-flight
@@ -41,6 +56,25 @@ SESSION_ROOT = Path(
 # A live session's transcript is appended to continuously. Half an hour of
 # silence means the owner is not going to close this record on its own.
 FOREIGN_LIVE_SECONDS = int(os.environ.get("CLAUDE_TRANSFER_OWNER_TTL", "1800"))
+
+# Ownership helpers now live in safety_common so both Stop gates share one
+# definition; a second copy would drift and only one would get the next fix.
+try:
+    from safety_common import (  # noqa: E402
+        same_session as _same_session,
+        session_alive as _session_alive,
+        transcripts_for as _transcripts_for,
+    )
+except ImportError:  # fail CLOSED: unknown liveness must never downgrade a block
+    def _transcripts_for(session_id: str) -> list:
+        return []
+
+    def _same_session(a: str, b: str) -> bool:
+        return True
+
+    def _session_alive(session_id: str, now: float | None = None) -> bool:
+        return False
+
 
 
 TRANSFER_MARKER = re.compile(
@@ -76,36 +110,27 @@ def _event_session(event: dict[str, Any]) -> str:
         stem = Path(transcript).stem
         if stem and stem not in {".", ".."}:
             return stem
-    return ""
+    # Last resort, and the only one that survives a payload that did not parse:
+    # measured 2026-08-10, the harness exports CLAUDE_CODE_SESSION_ID into every
+    # hook process. Ownership therefore does not depend on the event at all.
+    return _text(os.environ.get("CLAUDE_CODE_SESSION_ID"))
 
 
-def _session_alive(session_id: str, now: float | None = None) -> bool:
-    """True while the owning session's transcript is still being written.
 
-    The transcript is `<project-slug>/<session-id>.jsonl` and a worktree session
-    lives under its own slug, so the lookup globs every project.
+
+
+def _foreign_owner(contract: dict[str, Any], current_session: str) -> str:
+    """Owner id when this record belongs to a different session.
+
+    `opened_by` counts too. The stamp writes `session_id`, but a record opened by
+    hand names its opener in `opened_by` - and reading only one key made those
+    records look ownerless, so a peer's finished-but-old-shaped contract blocked
+    every other session instead of only its own.
     """
-    if not session_id or "/" in session_id or "\\" in session_id:
-        return False
-    moment = time.time() if now is None else now
-    try:
-        for transcript in SESSION_ROOT.glob(f"*/{session_id}.jsonl"):
-            try:
-                if moment - transcript.stat().st_mtime <= FOREIGN_LIVE_SECONDS:
-                    return True
-            except OSError:
-                continue
-    except OSError:
-        return False
-    return False
-
-
-def _foreign_and_live(contract: dict[str, Any], current_session: str) -> str:
-    """Owner id when this record belongs to a different, still-live session."""
-    owner = _text(contract.get("session_id"))
-    if not owner or owner == current_session:
+    owner = _text(contract.get("session_id")) or _text(contract.get("opened_by"))
+    if not owner or _same_session(owner, current_session):
         return ""
-    return owner if _session_alive(owner) else ""
+    return owner
 
 
 def _stamp_owner(path: Path, contract: dict[str, Any], session_id: str) -> None:
@@ -168,6 +193,12 @@ def _marker_path(command: str, cwd: Path) -> Path | None:
 
 
 def _transfer_kind(command: str) -> tuple[str, str] | None:
+    # Read what executes, not what is written: a `grep` for the word rsync, a
+    # comment mentioning scp, and a here-doc documenting an rsync flag are not
+    # transfers. A here-doc piped into `bash -s` over ssh is one, and stays in
+    # scope. See safety_common.executable_text for the rule and its limits.
+    if _executable_text is not None:
+        command = _executable_text(command)
     checks = (
         (r"\bgit\s+clone\b", "clone", "git"),
         (r"\bgh\s+repo\s+clone\b", "clone", "gh"),
@@ -277,7 +308,7 @@ def _contract_errors(contract: Any, *, pre_transfer: bool = False) -> list[str]:
 
 def _load(path: Path) -> tuple[dict[str, Any] | None, str | None]:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        value = json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, json.JSONDecodeError) as exc:
         return None, f"cannot read {path}: {exc}"
     errors = _contract_errors(value)
@@ -327,7 +358,34 @@ def _pre(event: dict[str, Any]) -> None:
     allow()
 
 
+def _stamp_written_contract(event: dict[str, Any]) -> bool:
+    """Give a freshly written contract its owner, before any transfer runs.
+
+    Stamping only at PreToolUse left a gap: a session that writes the record and
+    then works for a while owns nothing on paper, so its in-flight record blocks
+    every sibling session's Stop gate. Hit twice on 2026-08-09/10. The record is
+    created by Write/Edit, so that is where ownership should be established.
+    """
+    if _text(event.get("tool_name")) not in {"Write", "Edit", "MultiEdit"}:
+        return False
+    raw = _text(_tool_input(event).get("file_path"))
+    if not raw:
+        return False
+    path = _contract_path(raw, _event_cwd(event))
+    if path is None or not path.is_file():
+        return False
+    try:
+        contract = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    if not isinstance(contract, dict):
+        return False
+    _stamp_owner(path, contract, _event_session(event))
+    return True
+
+
 def _post(event: dict[str, Any]) -> None:
+    _stamp_written_contract(event)
     tool = _text(event.get("tool_name"))
     if tool not in {"Bash", "PowerShell"}:
         allow()
@@ -348,8 +406,25 @@ def _post(event: dict[str, Any]) -> None:
 
 
 def _local_path(value: Any, root: Path) -> Path | None:
+    """Return the local path a field names, or None when the path is remote.
+
+    Remote forms: a URL scheme, `user@host:`, and the bare scp/ssh alias
+    `host:/path` that an ssh_config entry gives when there is no user part.
+    That last form used to fall through as a RELATIVE local path, so
+    `box:/srv/app/releases/...` resolved under the repo root, existed nowhere,
+    and every verified contract with such a destination read as "destination is
+    absent" and blocked every later session's Stop. A Windows drive letter is a
+    single character, so requiring two or more before the colon keeps a drive
+    path such as `C:/work` and `D:\tmp` local.
+
+    `user@host` followed by a space or the end is remote too: records written as
+    prose ("root@192.0.2.10 Docker image store only") were resolved under the
+    repo root and blocked every session's Stop the same way. A local path never has
+    `@` before its first separator.
+    """
     raw = _text(value)
-    if not raw or re.match(r"^(?:[a-z]+://|[^\\/\s]+@[^\\/\s:]+:)", raw, re.I):
+    remote = r"^(?:[a-z]+://|[^\\/\s]+@[^\\/\s:]+(?::|\s|$)|[a-z0-9][a-z0-9._-]+:[/\\])"
+    if not raw or re.match(remote, raw, re.I):
         return None
     try:
         candidate = Path(raw).expanduser()
@@ -358,13 +433,41 @@ def _local_path(value: Any, root: Path) -> Path | None:
         return None
 
 
+def _local_paths(value: Any, root: Path) -> list[Path]:
+    """One contract field may name several local destinations separated by ';'.
+
+    A multi-root skill install ("a; b; c") used to be resolved as ONE path, which
+    exists nowhere, so every such verified contract read as "destination is absent"
+    and blocked every later session's Stop. Each part is checked on its own.
+    """
+    raw = _text(value)
+    parts = [part.strip() for part in raw.split(";")] if raw else []
+    paths: list[Path] = []
+    for part in parts:
+        resolved = _local_path(part, root)
+        if resolved is not None:
+            paths.append(resolved)
+    return paths
+
+
 def _verified_path_errors(contract: dict[str, Any], root: Path) -> list[str]:
     if _text(contract.get("status")) != "verified":
         return []
     errors: list[str] = []
-    destination = _local_path(contract.get("destination"), root)
-    if destination is not None and not destination.exists():
-        errors.append(f"destination is absent: {destination}")
+    destinations = _local_paths(contract.get("destination"), root)
+    # A destination cleanup inverts what "verified" should see, exactly as a source
+    # cleanup already does below. Without this a transfer whose product was scratch -
+    # a mutation copy, a throwaway checkout - could never be closed honestly: the
+    # choice was a false record or an undeleted directory, and the guard was quietly
+    # arguing for the litter.
+    dest_cleanup = contract.get("destination_cleanup") or {}
+    dest_disposed = bool(dest_cleanup.get("planned") and dest_cleanup.get("performed"))
+    for destination in destinations:
+        if dest_disposed:
+            if destination.exists():
+                errors.append(f"destination still exists after claimed cleanup: {destination}")
+        elif not destination.exists():
+            errors.append(f"destination is absent: {destination}")
     cleanup = contract.get("source_cleanup") or {}
     source = _local_path(contract.get("source"), root)
     if cleanup.get("planned") and cleanup.get("performed") and source is not None and source.exists():
@@ -381,23 +484,66 @@ def _transfer_files(root: Path) -> list[Path]:
     return paths
 
 
+def _is_receipt_mapping(path: Path, contract: dict[str, Any], root: Path) -> bool:
+    """Only an explicit non-contract mapping may opt out of the Stop gate.
+
+    `.agent/transfers` also holds reconciliation mappings.  Treating every JSON
+    in that directory as a transfer contract made a mapping with a colliding
+    filename block unrelated sessions.  A malformed or unmarked contract still
+    fails closed; this exemption requires both its location and its explicit
+    non-contract kind.
+    """
+    try:
+        relative = path.resolve().relative_to(root.resolve())
+    except OSError:
+        return False
+    return (
+        relative.parts[:2] == (".agent", "transfers")
+        and _text(contract.get("record_kind")) == "receipt_mapping"
+    )
+
+
 def _stop_issues(root: Path, current_session: str) -> tuple[list[str], list[str]]:
     """Return (blocking issues for this session, notes about other sessions')."""
     issues: list[str] = []
     deferred: list[str] = []
     for path in _transfer_files(root):
-        contract, error = _load(path)
-        if error or contract is None:
-            # A record too broken to parse has no readable owner, so it is
+        # Parse and validate separately. _load folds the two together and returns
+        # None for either, which meant a perfectly readable record naming a live
+        # peer never reached the ownership check below and blocked every other
+        # session -- the exact collateral the comment at the top of this file says
+        # ownership exists to prevent. Measured 2026-08-28: a peer's contract was
+        # mid-edit, missing one field, and wedged an unrelated session's Stop.
+        try:
+            contract = json.loads(path.read_text(encoding="utf-8-sig"))
+        except (OSError, json.JSONDecodeError) as exc:
+            # Genuinely unreadable: no owner can be read out of it, so it stays
             # everyone's problem until someone repairs it.
-            issues.append(f"{path.name}: {error}")
+            issues.append(f"{path.name}: cannot read {path}: {exc}")
             continue
-        owner = _foreign_and_live(contract, current_session)
-        status = _text(contract.get("status"))
+        if not isinstance(contract, dict):
+            issues.append(f"{path.name}: contract must be a JSON object")
+            continue
+        if _is_receipt_mapping(path, contract, root):
+            continue
+        schema_errors = _contract_errors(contract)
+        owner = _foreign_owner(contract, current_session)
         if owner:
-            if status in OPEN_STATUSES or _contract_errors(contract) or _verified_path_errors(contract, root):
-                deferred.append(f"{path.name} (status={status}, owner session {owner} still live)")
+            # A different session owns the record. Note it, never block on it:
+            # an owner can finish and its transcript can age out while its
+            # contract remains the owner's durable work. Liveness is useful
+            # telemetry, not authority to transfer Stop ownership.
+            status = _text(contract.get("status"))
+            if status in OPEN_STATUSES or schema_errors or _verified_path_errors(contract, root):
+                liveness = "live" if _session_alive(owner) else "stale"
+                deferred.append(
+                    f"{path.name} (status={status or 'unset'}, owner session {owner} {liveness})"
+                )
             continue
+        if schema_errors:
+            issues.extend(f"{path.name}: {item}" for item in schema_errors)
+            continue
+        status = _text(contract.get("status"))
         if status in OPEN_STATUSES:
             issues.append(
                 f"{path.name}: status={status}; next_action={_text(contract.get('next_action')) or 'missing'}"
@@ -433,6 +579,26 @@ def _self_test() -> int:
 
     global SESSION_ROOT
     fails: list[str] = []
+
+    # Local/remote split, with the negative control the previous version lacked:
+    # a bare ssh alias must read REMOTE (None) while a Windows drive letter and a
+    # relative path must still read LOCAL. Under the old regex the first case
+    # returned a path under the repo root, which then failed its existence check.
+    _root = Path("C:/repo") if os.name == "nt" else Path("/repo")
+    for value, want_remote in (
+        ("box:/srv/app/releases/abc/", True),
+        ("myhost:/var/data", True),
+        ("deploy@box:/srv/app", True),
+        ("rclone://remote:dst", True),
+        ("ssh://host/src", True),
+        ("C:/work/project/x", False),
+        ("D:\\tmp\\x", False),
+        ("reports/letters/x.json", False),
+    ):
+        got_remote = _local_path(value, _root) is None
+        if got_remote != want_remote:
+            fails.append(f"_local_path({value!r}): expected remote={want_remote}, got {got_remote}")
+
     base_contract = {
         "schema_version": 1,
         "transfer_id": "t",
@@ -448,11 +614,59 @@ def _self_test() -> int:
         "source_cleanup": {"planned": False, "performed": False, "verified": False, "reason": "r"},
     }
 
+    def _dest_cleanup_cases() -> list[str]:
+        """Both directions of the destination-cleanup rule, on real paths.
+
+        Each case is red under the opposite behaviour: without the rule the disposed
+        copy is reported absent, and with the rule applied unconditionally a copy that
+        was never disposed of stops being checked at all.
+        """
+        problems: list[str] = []
+        with tempfile.TemporaryDirectory() as raw2:
+            root2 = Path(raw2)
+            gone = root2 / "scratch-copy"          # deliberately never created
+            kept = root2 / "kept-copy"
+            kept.mkdir()
+
+            disposed = dict(base_contract, status="verified", destination=str(gone),
+                            destination_cleanup={"planned": True, "performed": True})
+            if _verified_path_errors(disposed, root2):
+                problems.append("a disposed scratch destination is still reported as a problem")
+
+            lying = dict(base_contract, status="verified", destination=str(kept),
+                         destination_cleanup={"planned": True, "performed": True})
+            if not _verified_path_errors(lying, root2):
+                problems.append("a destination claimed cleaned but still on disk passes")
+
+            plain = dict(base_contract, status="verified", destination=str(gone))
+            if not _verified_path_errors(plain, root2):
+                problems.append("a missing destination with no cleanup claim passes")
+
+            present = dict(base_contract, status="verified", destination=str(kept))
+            if _verified_path_errors(present, root2):
+                problems.append("an ordinary present destination is reported as a problem")
+
+            # ';'-separated multi-destination (real shape of the skill-install contracts)
+            kept2 = root2 / "kept-copy-2"
+            kept2.mkdir()
+            multi_ok = dict(base_contract, status="verified", destination=f"{kept}; {kept2}")
+            if _verified_path_errors(multi_ok, root2):
+                problems.append("a multi-destination whose parts all exist is reported absent")
+            multi_bad = dict(base_contract, status="verified", destination=f"{kept}; {gone}")
+            if not _verified_path_errors(multi_bad, root2):
+                problems.append("a multi-destination with one missing part passes")
+        return problems
+
+    fails.extend(_dest_cleanup_cases())
+
     with tempfile.TemporaryDirectory() as raw:
         tmp = Path(raw)
         sessions = tmp / "projects"
         (sessions / "slug").mkdir(parents=True)
         SESSION_ROOT = sessions
+        # the shared helper resolves the root per call from the env,
+        # so the seam this test relies on has to be set there too
+        os.environ["CLAUDE_SESSION_ROOT"] = str(sessions)
         live, stale, mine = "live-owner", "stale-owner", "my-session"
         (sessions / "slug" / f"{live}.jsonl").write_text("{}", encoding="utf-8")
         old = sessions / "slug" / f"{stale}.jsonl"
@@ -474,10 +688,16 @@ def _self_test() -> int:
         cases = [
             ("open record owned by me", {"session_id": mine}, True),
             ("open record, owner still live", {"session_id": live}, False),
-            ("open record, owner gone stale", {"session_id": stale}, True),
+            ("open record, owner gone stale", {"session_id": stale}, False),
             ("open record with no owner at all", {}, True),
             ("closed record, owner live", {"session_id": live, "status": "cancelled",
                                            "closure_reason": "c"}, False),
+            # A record opened by hand names its opener in `opened_by`. Reading
+            # only `session_id` made it look ownerless, so one peer's record
+            # blocked every other session's Stop instead of only its owner's.
+            ("open record, opened_by a live session", {"opened_by": live}, False),
+            ("open record, opened_by a stale session", {"opened_by": stale}, False),
+            ("open record, opened_by me", {"opened_by": mine}, True),
         ]
         for label, over, should_block in cases:
             for leftover in transfers.glob("*.json"):
@@ -501,17 +721,65 @@ def _self_test() -> int:
         if not _stop_issues(repo, mine)[0]:
             fails.append("verified record without evidence did not block its owner")
 
+        # ...but a readable broken record belonging to either a live OR stale
+        # peer must only be noted. Ownership, not transcript freshness, scopes
+        # a Stop gate; the peer's durable record still reaches its owner/audit.
+        for leftover in transfers.glob("*.json"):
+            leftover.unlink()
+        put("peer-broken", session_id=live, status="verified")
+        peer_issues, peer_deferred = _stop_issues(repo, mine)
+        if peer_issues:
+            fails.append(f"live peer's broken record blocked us: {peer_issues}")
+        if not peer_deferred:
+            fails.append("live peer's broken record was neither blocked nor noted")
+
+        for leftover in transfers.glob("*.json"):
+            leftover.unlink()
+        put("stale-broken", session_id=stale, status="verified")
+        stale_issues, stale_deferred = _stop_issues(repo, mine)
+        if stale_issues or not stale_deferred:
+            fails.append("stale peer's broken record blocked or was not deferred")
+
+        for leftover in transfers.glob("*.json"):
+            leftover.unlink()
+        put("ownerless-broken", status="verified")
+        if not _stop_issues(repo, mine)[0]:
+            fails.append("ownerless broken record did not block")
+
         # Stamping: writes once, never overwrites an existing owner.
         for leftover in transfers.glob("*.json"):
             leftover.unlink()
         path = put("stamp")
-        record = json.loads(path.read_text(encoding="utf-8"))
+        record = json.loads(path.read_text(encoding="utf-8-sig"))
         _stamp_owner(path, record, mine)
-        if json.loads(path.read_text(encoding="utf-8")).get("session_id") != mine:
+        if json.loads(path.read_text(encoding="utf-8-sig")).get("session_id") != mine:
             fails.append("owner was not stamped onto an unowned record")
-        _stamp_owner(path, json.loads(path.read_text(encoding="utf-8")), "someone-else")
-        if json.loads(path.read_text(encoding="utf-8")).get("session_id") != mine:
+        _stamp_owner(path, json.loads(path.read_text(encoding="utf-8-sig")), "someone-else")
+        if json.loads(path.read_text(encoding="utf-8-sig")).get("session_id") != mine:
             fails.append("existing owner was overwritten")
+
+        # Writing a contract must establish ownership, whether or not a transfer
+        # command ever runs -- that gap is what wedged sibling sessions twice.
+        for leftover in transfers.glob("*.json"):
+            leftover.unlink()
+        written = put("written")
+        event = {"tool_name": "Write", "session_id": mine, "cwd": str(repo),
+                 "tool_input": {"file_path": str(written)}}
+        if not _stamp_written_contract(event):
+            fails.append("writing a contract was not recognised as a stamping opportunity")
+        if json.loads(written.read_text(encoding="utf-8")).get("session_id") != mine:
+            fails.append("a contract written by Write was left without an owner")
+        for label, bad_event in (
+            ("a file outside transfers/", {"tool_name": "Write", "session_id": mine,
+                                           "cwd": str(repo),
+                                           "tool_input": {"file_path": str(repo / "notes.json")}}),
+            ("a non-write tool", {"tool_name": "Read", "session_id": mine, "cwd": str(repo),
+                                  "tool_input": {"file_path": str(written)}}),
+            ("no path at all", {"tool_name": "Write", "session_id": mine, "cwd": str(repo),
+                                "tool_input": {}}),
+        ):
+            if _stamp_written_contract(bad_event):
+                fails.append(f"{label} was treated as a contract write")
 
         if _session_alive("no-such-session"):
             fails.append("an unknown session was reported alive")
@@ -520,15 +788,28 @@ def _self_test() -> int:
 
         # The id must survive whichever key this harness uses, including the
         # transcript-filename fallback that Stop events always carry.
-        for label, event, expected in (
-            ("snake_case", {"session_id": mine}, mine),
-            ("camelCase", {"sessionId": mine}, mine),
-            ("transcript fallback", {"transcript_path": f"/x/y/{mine}.jsonl"}, mine),
-            ("nothing usable", {"transcript_path": ""}, ""),
-        ):
-            got = _event_session(event)
-            if got != expected:
-                fails.append(f"session id from {label}: expected {expected!r}, got {got!r}")
+        saved_env = os.environ.pop("CLAUDE_CODE_SESSION_ID", None)
+        try:
+            for label, event, expected in (
+                ("snake_case", {"session_id": mine}, mine),
+                ("camelCase", {"sessionId": mine}, mine),
+                ("transcript fallback", {"transcript_path": f"/x/y/{mine}.jsonl"}, mine),
+                ("nothing usable, no env", {"transcript_path": ""}, ""),
+            ):
+                got = _event_session(event)
+                if got != expected:
+                    fails.append(f"session id from {label}: expected {expected!r}, got {got!r}")
+            # The env var is what survives a payload that did not parse, but it
+            # must never outrank an id the event actually carried.
+            os.environ["CLAUDE_CODE_SESSION_ID"] = "env-owner"
+            if _event_session({}) != "env-owner":
+                fails.append("env fallback did not supply the session id for an empty event")
+            if _event_session({"session_id": mine}) != mine:
+                fails.append("env fallback overrode an id present in the event")
+        finally:
+            os.environ.pop("CLAUDE_CODE_SESSION_ID", None)
+            if saved_env is not None:
+                os.environ["CLAUDE_CODE_SESSION_ID"] = saved_env
 
     for line in fails:
         print("FAIL:", line)

@@ -29,6 +29,25 @@ INTERNAL_PREFIXES = (
     ".agent/continuity/",
 )
 
+# Записи, которые ведёт сам harness. skills/cross-harness-continuation/SKILL.md прямо
+# говорит, что их «never need listing» в scope.files: это не работа, которую объём
+# ограничивает, а то, чем работу передают. Незакрываемая транспортная запись держит
+# Stop-гейт закрытым для ВСЕХ сессий, и закрыть её можно было либо правкой контракта
+# руками, либо обходом хука другим инструментом. Замечено 20.09.2026: сессия по
+# интерфейсу расширяла объём релизного контракта только ради того, чтобы пометить
+# заблокированной транспортную запись месячной давности.
+#
+# НАМЕРЕННО отдельно от INTERNAL_PREFIXES: тот кортеж решает ещё и кто вправе чинить
+# сломанный контракт и что выпадает из git-базиса. Транспортной записи нельзя ни то,
+# ни другое.
+HARNESS_RECORD_PREFIXES = (
+    ".claude/transfers/",
+    ".agent/transfers/",
+    ".codex/transfers/",
+    ".agent/delivery-cases/",
+    ".agent/user-tasks/",
+)
+
 
 def read_event() -> dict[str, Any]:
     try:
@@ -60,6 +79,10 @@ def has_continuation_state(root: Path) -> bool:
 def is_internal_continuity_path(root: Path, raw_path: str) -> bool:
     rel = relative_path(root, raw_path)
     return rel is not None and any(rel.startswith(prefix) for prefix in INTERNAL_PREFIXES)
+
+
+def is_harness_record_path(rel: str) -> bool:
+    return any(rel.startswith(prefix) for prefix in HARNESS_RECORD_PREFIXES)
 
 
 def repo_root_for(path: Path) -> Path | None:
@@ -299,7 +322,16 @@ def decision_for_event(
 
     if should_enforce_scope(contract):
         allowed = scope_files(contract)
-        outside = [rel for rel in normalized_paths if rel not in allowed]
+        # Сам контракт под охрану не попадает. Без этого он запрещает дополнять себя:
+        # объём проверяется по СТАРОЙ редакции, значит добавить в неё собственный путь
+        # уже нельзя, и единственным выходом остаётся обойти хук. Помощник
+        # `is_internal_continuity_path` для этого и заведён — выше он применяется в ветке
+        # «контракта нет», здесь его не хватало. Замечено 25.08.2026 на попытке расширить
+        # объём после согласованной передачи файлов.
+        outside = [rel for rel in normalized_paths
+                   if rel not in allowed
+                   and not any(rel.startswith(prefix) for prefix in INTERNAL_PREFIXES)
+                   and not is_harness_record_path(rel)]
         if outside:
             return "block", (
                 "Continuation scope violation: these paths are outside the declared scope: "

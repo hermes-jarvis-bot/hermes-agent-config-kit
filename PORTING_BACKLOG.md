@@ -40,22 +40,22 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 
 | Area | Files in snapshot | Ported | Rejected | Left out |
 | --- | ---: | ---: | ---: | ---: |
-| Root docs/config | 10 | 0 | 0 | 10 |
+| Root docs/config | 12 | 0 | 0 | 12 |
 | `.claude-plugin/` | 1 | 0 | 0 | 1 |
 | `.github/` | 1 | 0 | 0 | 1 |
 | `agents/` | 8 | 0 | 0 | 8 |
 | `alternatives/` | 19 | 0 | 0 | 19 |
-| `docs/` | 22 | 0 | 0 | 22 |
-| `evals/` | 2 | 0 | 0 | 2 |
-| `hooks/` | 59 | 24 | 13 | 22 |
+| `docs/` | 31 | 0 | 0 | 31 |
+| `evals/` | 29 | 0 | 0 | 29 |
+| `hooks/` | 111 | 24 | 13 | 74 |
 | `principles/` | 31 | 30 | 0 | 1 |
-| `references/` | 1 | 0 | 0 | 1 |
-| `rules/` | 35 | 29 | 0 | 6 |
-| `scripts/` | 68 | 0 | 1 | 67 |
-| `skills/` | 240 | 155 | 0 | 85 |
-| `templates/` | 49 | 34 | 0 | 15 |
+| `references/` | 6 | 0 | 0 | 6 |
+| `rules/` | 36 | 29 | 0 | 7 |
+| `scripts/` | 99 | 0 | 1 | 98 |
+| `skills/` | 379 | 155 | 0 | 224 |
+| `templates/` | 50 | 34 | 0 | 16 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **551** | **272** | **14** | **265** |
+| **Total** | **818** | **272** | **14** | **532** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
@@ -64,7 +64,7 @@ Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only 
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
 
-_Last recomputed against upstream commit `ec5a6cd67f3039b907555a74c2fbf0f40d8e423d` (`upstream.lock.json`'s `last_synced_sha`)._
+_Last recomputed against upstream commit `9a56783f7000a3302e946de51eacd014ffd16ee7` (`upstream.lock.json`'s `last_synced_sha`)._
 
 <!-- END SNAPSHOT_BASELINE_TABLE -->
 
@@ -2613,7 +2613,7 @@ review input until independently verified against current code.
 ## Upstream lockfile integrity note (`skills-lock.json`, not this repo's file)
 
 Checked 2026-07-11 against the live installed upstream plugin checkout at
-`/root/claude-code-config` (commit `71863de`, the same SHA pinned in this repo's
+`/root/projects/claude-code-config` (commit `71863de`, the same SHA pinned in this repo's
 `upstream.lock.json`). This is a note about *upstream's own* lockfile, not a defect
 in this adapter — recorded here only because it affects how much trust to place in
 upstream provenance signals when reviewing future sync candidates.

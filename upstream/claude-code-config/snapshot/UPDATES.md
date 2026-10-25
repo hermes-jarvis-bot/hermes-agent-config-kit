@@ -4,6 +4,116 @@ Changelog for claude-code-skills. Newest first.
 
 ---
 
+## 2026-10-24 (output legibility, dead-code sweep)
+
+- Added `scripts/term_drift_check.py` with focused tests: a glossary-driven check
+  for terminology drift (`stem*` matches inflections, so it works in Russian) and
+  overlong sentences. Fenced code, inline code, URLs and HTML comments are
+  skipped. Exit 0 clean, 1 findings, 2 not checked (bad or no-op glossary,
+  non-UTF-8 or empty input, unclosed fence, nothing left to check). The
+  self-test's must-fail controls catch six mutations of the detection logic.
+- `term_drift_check.py` skips YAML frontmatter at the top of a file (it was
+  flagged as a long sentence); an unclosed frontmatter block is still read as text.
+- Added [the output-legibility guide](docs/output-legibility.md): Karpathy's
+  readability ladder and the two ASD-STE100 rules that need no licensed dictionary.
+- Added `references/dead-code-sweep.md` to the `refactoring-safely` skill: OpenAI's
+  agent-driven cleanup process as rules (read-only audit, production evidence,
+  one draft PR per removal, killswitches untouched).
+- CLAUDE.md: a Harness² section explaining why the bounded pilot, not the
+  auto-patcher, is the adoption path, and an Output Legibility section.
+- `rules/quality-code.md`, comments section: edit the code, edit or delete the
+  comment next to it in the same commit, and the research behind the rule.
+  Stale or wrong comments hurt models more than missing ones, and models tend to
+  trust a comment over the code it contradicts.
+
+---
+
+## 2026-10-24 (bounded harness-improvement pilot)
+
+- Added `scripts/harness_improvement_pilot.py`: a read-only comparator for one
+  frozen baseline and candidate receipt. It fails closed on mismatched input,
+  accepts only strict objective improvement, and rejects safety, outcome, or
+  held-out regressions.
+- Added [the public adoption guide](docs/harness-improvement-pilot.md). It
+  documents the receipt contract, supported metrics, and the explicit boundary:
+  the runner neither executes agents nor changes live hooks, skills, or
+  permissions.
+- This is a selective adoption of Harness²-style evaluation, not a dependency
+  on or wholesale import of Harness². Active configuration changes still need
+  the existing proof, independent-review, and install/parity gates.
+
+## 2026-10-19 (development skill cross-routing)
+
+- New note [Skills that hand the task to each other](docs/development-skill-routing.md):
+  the development skills route to each other through their own descriptions, the
+  curated keyword router, and the subagent skill contract.
+- Published `skills/development/root-cause-delivery` (its guard hook already shipped
+  without it); refreshed `cross-harness-continuation` from the active copy.
+- Router: `system-and-data-design` now reaches "will this hold", "do we need a queue",
+  "how many machines"; `lean-code` reaches "be lazy", "yagni", "simplest solution",
+  "don't over-engineer"; a named source file with its line count reaches
+  `refactoring-safely` (four-digit sizes only, never a diff count). An independent
+  review's ten false positives became must-not-reach controls in a new `NOT_CASES`
+  list; the suite goes from 60 to 87 real hook invocations.
+- `scripts/test_safety_common_block.py`: covers `block()` letting a re-entered Stop
+  through (`stop_hook_active`), with a mutation check that it goes red without it.
+- `rules/agent-docs-freshness.md` no longer claims the long-run adoption tier blocks
+  Stop (the gate stopped doing that); `rules/README.md` explains the on-demand
+  `paths:` sentinel so copied rules are not silently dead.
+- README: 18 hooks that were missing from the hook tables, and install commands
+  pointing at the current repository name.
+- Carried over rules and hook updates that had been synced but never committed.
+
+---
+
+## 2026-09-05 (research-built skill lifecycle gate)
+
+- Replaced the shallow `CREATE_LOCAL` skill-gap escape hatch with
+  `BUILD_RESEARCHED`. A locally created skill now needs real-task and current
+  primary-source research, accepted/rejected decisions, structural validation,
+  a with-skill baseline comparison, trigger and held-out evals, independent
+  review, live discovery proof, and a versioned maintenance/rollback contract.
+- Extended the existing `SubagentStop` receipt validator instead of creating a
+  second controller. Codex `PreToolUse(Agent)` now inserts the exact task-bound
+  contract and `PostToolUse(Agent)` binds it to the returned `agent_id`, so a
+  client-profile mismatch cannot claim a Claude-only skill was loaded. Contract
+  v4 records usable and missing skills separately. Research/eval/review records
+  use typed schemas: source authority is per-source, metrics are recomputed from
+  case observations, and original-task evidence cannot reuse skill-build traces.
+  A routed gap cannot close as `NO_MATCH`. The validator checks readable local skill,
+  research, eval, maintenance, and review records before accepting a
+  research-built skill.
+- Replaced prose-only eval/review PASS fields with machine-readable metrics,
+  assertion-to-trace links, verified trace SHA-256 values, distinct builder and
+  reviewer identities, and a digest-bound terminal receipt proving that the
+  original task resumed after the skill gap was resolved.
+- Kept progressive disclosure and the smallest sufficient architecture: the
+  gate rewards demonstrated task behavior and maintainability, not a large
+  `SKILL.md` or unnecessary scripts.
+- Made parity proof itself executable for the dual-client boundary: complex
+  hooks declare their accepted tool names instead of being guessed from the
+  first branch. Also brought the already-live disk-pressure advisory under Git
+  and shared `SessionStart` registration for Claude and Codex; its self-test now
+  proves the canonical sweeper path rather than silently exercising fallback.
+
+## 2026-09-05 (GPT-6 Astra instruction/skill precedence audit)
+
+- Audited the harness against OpenAI's current GPT-6 Astra prompting guidance:
+  https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra
+- Kept the existing completion, autonomy, minimal causal-test, and bounded
+  delegation rules: they already cover the documented follow-through, testing,
+  and delegation behavior without another controller or a broader test suite.
+- Added the one uncovered boundary to the existing work-discipline rule and
+  subagent contracts: explicit task instructions outrank skill methodology, and
+  any skill-caused pause or divergence must name the exact skill instruction.
+  A missing routed skill now starts a bounded, checklist-backed search across
+  local and upstream candidates. If none passes, the agent researches primary
+  sources, builds and validates a research-backed maintainable local skill, and
+  resumes the original task instead of manufacturing a blocked terminal state. Codex
+  `SubagentStop` requires the resulting skill-disposition receipt.
+- Did not copy API-only migration settings, prompt-cache changes, or generic
+  style boilerplate into the local coding-agent harness.
+
 ## 2026-08-05 (Cursor Team Kit: selective adoption)
 
 - Added claim-level `verify-this` with matched baseline/treatment evidence and

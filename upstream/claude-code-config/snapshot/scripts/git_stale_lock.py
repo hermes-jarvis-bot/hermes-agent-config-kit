@@ -1,0 +1,499 @@
+#!/usr/bin/env python3
+"""Remove a git lock file only when it is PROVEN to have no live owner.
+
+Why this exists
+---------------
+A git command killed mid-operation (session cut, hook timeout, app closing its
+background git) leaves `.git/index.lock` behind, and every later git write fails
+with "Unable to create index.lock: File exists". Agents could not clear it:
+`rm .git/index.lock` is correctly blocked by human-confirmation-guard, because
+from the command text alone a stale lock and a lock held right now by a live git
+look the same - deleting the second corrupts the index.
+
+This tool supplies the missing proof instead of a whitelist entry. A lock is
+removed only if ALL hold:
+
+1. the git dir is on a local disk (UNC / \\\\wsl$ / mapped network drive -> refuse:
+   owners there are invisible to this machine's process table);
+2. mtime is not in the future (clock skew makes the age meaningless);
+3. age >= --min-age (default 600 s). git holds most locks for one operation;
+   `git commit` holds index.lock while its editor is open, hence the owner test;
+4. no possible owner is running: a process whose name suggests a git client
+   (OWNER_NAME_HINTS) or whose name / start time cannot be read, started before
+   the lock's mtime. A process that started after the lock existed could not
+   have created it; mtime >= creation, so "started <= mtime" is conservative.
+
+A repo on a disk exposed by a Windows share (e.g. D:\\ shared to a VM) is not
+refused for that alone (owner 2026-10-15): its processes are invisible here, so
+the age margin rises to SHARE_MIN_AGE (30 min), and the rename below fails while
+a remote client holds the lock open. A running WSL distribution is still a refusal.
+
+Removal is identity-checked against the classified file (mtime_ns, size, inode):
+the lock is renamed to a tombstone, the tombstone is re-checked, and only then
+deleted; a lock that appeared in between is put back. Afterwards the tool checks
+the file is gone and `git status` exits 0. It never repairs a damaged index.
+
+Exit codes (see rules/absence-of-signal.md):
+  0  nothing stale, or every stale lock removed and verified
+  1  a lock exists but removal is refused, or the post-check failed
+  2  UNKNOWN: not a git repo, or processes could not be enumerated
+  3  dry run found stale locks (nothing removed; re-run with --remove)
+
+Usage:
+  python git_stale_lock.py [REPO] [--remove] [--min-age SECONDS]
+  python git_stale_lock.py --self-test
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+# 10 min: git holds a lock for one operation (seconds); 600 s leaves two orders of
+# magnitude of margin. Long holders (commit editor) are caught by the owner test.
+DEFAULT_MIN_AGE = 600
+# Under a disk share the remote side's processes are invisible, so the age is the only proof
+# of "no live operation" besides the rename test: 30 min, three times the local margin.
+SHARE_MIN_AGE = 1800
+# Filesystem mtime vs process create_time come from different clocks; allow skew.
+CLOCK_SKEW = 2.0
+# Name fragments of programs that may hold a git lock: the git CLI and git GUIs /
+# libgit2 hosts (TortoiseGitProc, GitHub Desktop, GitKraken, SmartGit, lazygit ...
+# all contain "git"), plus clients without "git" in the name.
+# Docker hosts are included because a git inside a container is invisible here;
+# while they run, removal is refused (conservative). WSL is judged by state, not by
+# the name `vmmem`: that process is also every Hyper-V VM's memory host, and on a
+# machine without WSL it named a false owner forever (measured 2026-09-26).
+OWNER_NAME_HINTS = ("git", "sourcetree", "devenv", "fork", "docker")
+
+
+def _git(repo: Path, *args: str) -> str | None:
+    try:
+        r = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+    except OSError:
+        return None
+    return r.stdout.strip() if r.returncode == 0 and r.stdout.strip() else None
+
+
+def git_dir(repo: Path) -> Path | None:
+    out = _git(repo, "rev-parse", "--absolute-git-dir")
+    return Path(out) if out else None
+
+
+def git_dirs(repo: Path) -> list[Path]:
+    """The repo's git dir plus, for a linked worktree, the shared common dir."""
+    gdir = git_dir(repo)
+    if gdir is None:
+        return []
+    dirs = [gdir]
+    common = _git(repo, "rev-parse", "--git-common-dir")
+    if common:
+        cpath = Path(common) if Path(common).is_absolute() else (repo / common)
+        cpath = cpath.resolve()
+        if cpath != gdir.resolve():
+            dirs.append(cpath)
+    return dirs
+
+
+def find_locks(gdir: Path) -> list[Path]:
+    # index.lock, HEAD.lock, config.lock, packed-refs.lock, ... plus ref locks
+    locks = [p for p in gdir.glob("*.lock") if p.is_file()]
+    refs = gdir / "refs"
+    if refs.is_dir():
+        locks += [p for p in refs.rglob("*.lock") if p.is_file()]
+    return sorted(locks)
+
+
+def on_remote_fs(path: Path) -> bool:
+    s = str(path)
+    if s.startswith("\\\\") or s.startswith("//"):
+        return True  # UNC, including \\wsl$ and \\wsl.localhost
+    if os.name == "nt":
+        import ctypes
+        drive = os.path.splitdrive(s)[0]
+        # 4 = DRIVE_REMOTE (mapped network share)
+        return bool(drive) and ctypes.windll.kernel32.GetDriveTypeW(drive + "\\") == 4
+    # simplification: POSIX network mounts are not detected; add a statfs check if
+    # this ever runs on NFS/SMB-mounted repos on Linux/macOS
+    return False
+
+
+class Unverifiable(RuntimeError):
+    """A place an owner could hide could not be enumerated: not green (review 2026-09-26)."""
+
+
+def _run(argv: list[str]) -> tuple[int, str]:
+    try:
+        r = subprocess.run(argv, capture_output=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise Unverifiable(f"{argv[0]} did not run: {exc!r}") from exc
+    # wsl.exe prints UTF-16; strip NULs so plain text survives either encoding
+    return r.returncode, (r.stdout + r.stderr).decode("utf-8", "replace").replace("\0", "")
+
+
+def _wsl_running() -> list[str]:
+    """Running WSL distributions. Only an explicit "not installed" counts as none."""
+    code, text = _run(["wsl.exe", "--list", "--running", "--quiet"])
+    if "not installed" in text.lower():
+        return []
+    if code == 0:
+        return text.split()
+    if "no running distributions" in text.lower():
+        return []
+    raise Unverifiable(f"wsl.exe --list --running exited {code}: {text.strip()[:120]}")
+
+
+LANMAN = r"SYSTEM\CurrentControlSet\Services\LanmanServer"
+
+
+def _disk_shares() -> list[tuple[str, str]]:
+    """(name, path) of every disk share: user shares from the registry, plus the
+    automatic admin shares X$ for each fixed drive unless AutoShareWks=0.
+
+    Registry, not `net share` (text wraps and localises) and not PowerShell
+    (measured 2026-09-26: no answer within 60 s on this machine).
+    """
+    import ctypes
+    import string
+    import winreg
+    shares: list[tuple[str, str]] = []
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, LANMAN + r"\Shares") as key:
+            i = 0
+            while True:
+                try:
+                    name, value, _kind = winreg.EnumValue(key, i)
+                except OSError:
+                    break
+                i += 1
+                fields = dict(f.split("=", 1) for f in value if "=" in f) if isinstance(value, list) else {}
+                if fields.get("Path") and fields.get("Type", "0") == "0":  # 0 = disk share
+                    shares.append((name, fields["Path"]))
+    except FileNotFoundError:
+        pass  # no user shares defined
+    except OSError as exc:
+        raise Unverifiable(f"cannot read {LANMAN}\\Shares: {exc!r}") from exc
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, LANMAN + r"\Parameters") as key:
+            auto = winreg.QueryValueEx(key, "AutoShareWks")[0]
+    except FileNotFoundError:
+        auto = 1  # absent = default = admin shares on
+    except OSError as exc:
+        raise Unverifiable(f"cannot read AutoShareWks: {exc!r}") from exc
+    if auto:
+        mask = ctypes.windll.kernel32.GetLogicalDrives()
+        for i, letter in enumerate(string.ascii_uppercase):
+            root = f"{letter}:\\"
+            if mask >> i & 1 and ctypes.windll.kernel32.GetDriveTypeW(root) == 3:  # DRIVE_FIXED
+                shares.append((f"{letter}$", root))
+    return shares
+
+
+def _covers(share_path: str, target: str) -> bool:
+    root = share_path.replace("/", "\\").lower().rstrip("\\") + "\\"
+    return (target.replace("/", "\\").lower().rstrip("\\") + "\\").startswith(root)
+
+
+def invisible_owner_hosts(path: Path, *, trust_admin_shares: bool = False) -> list[str]:
+    """Places a lock owner could live that this process table cannot see.
+
+    Raises Unverifiable when a place could not be enumerated. Admin shares (C$ ...)
+    count too: a VM or remote host with admin credentials holds files through
+    them as System, which no name hint catches. `trust_admin_shares` is the
+    owner's declared fact that no VM/remote uses them for repos (settings file,
+    see load_trust()).
+    """
+    hosts = []
+    if os.name != "nt":
+        return hosts
+    running = _wsl_running()
+    if running:
+        hosts.append(f"WSL distributions running: {running}")
+    target = str(path.resolve())
+    for name, share_path in _disk_shares():
+        if name.endswith("$") and trust_admin_shares:
+            continue
+        if _covers(share_path, target):
+            hosts.append(f"share {name} -> {share_path}")
+    return hosts
+
+
+TRUST_FILE = Path.home() / ".claude" / "state" / "git-lock-trust.json"
+
+
+def load_trust() -> bool:
+    """Owner-declared: no VM/remote host reaches repos through admin shares."""
+    import json as _json
+    try:
+        return bool(_json.loads(TRUST_FILE.read_text(encoding="utf-8")).get("trust_admin_shares"))
+    except (OSError, ValueError):
+        return False
+
+
+def live_git_processes() -> list[tuple[int, str, float]]:
+    """(pid, name, create_time) of every process that could own a git lock.
+
+    psutil puts None for a field it may not read (AccessDenied) instead of
+    raising. Unreadable must not look like absent: such a process counts as a
+    possible owner, with start time 0.0 = older than any lock.
+    """
+    import psutil
+    out = []
+    for p in psutil.process_iter(["pid", "name", "create_time"]):
+        name = p.info.get("name")
+        ct = p.info.get("create_time")
+        if name is None or any(h in name.lower() for h in OWNER_NAME_HINTS):
+            out.append((p.info["pid"], (name or "<unreadable>").lower(), float(ct) if ct else 0.0))
+    return out
+
+
+def _identity(st: os.stat_result) -> tuple[int, int, int]:
+    return (st.st_mtime_ns, st.st_size, getattr(st, "st_ino", 0))
+
+
+def classify_lock(lock: Path, procs, now: float, min_age: float) -> tuple[str, str]:
+    """('STALE'|'YOUNG'|'OWNED'|'SKEWED'|'GONE', detail). Shared with the Stop hook."""
+    try:
+        mtime = lock.stat().st_mtime
+    except FileNotFoundError:
+        return "GONE", "lock no longer exists"
+    age = now - mtime
+    if age < -CLOCK_SKEW:
+        return "SKEWED", f"mtime is {-age:.0f}s in the future (clock skew; age meaningless)"
+    if age < min_age:
+        return "YOUNG", f"age {age:.0f}s < {min_age:.0f}s (may be in use)"
+    owners = [(pid, n) for pid, n, ct in procs if ct <= mtime + CLOCK_SKEW]
+    if owners:
+        return "OWNED", f"age {age:.0f}s but possible owners alive: {owners[:5]}"
+    return "STALE", f"age {age:.0f}s, no possible owner older than it"
+
+
+def remove_checked(lock: Path, snap: tuple[int, int, int]) -> str | None:
+    """Delete `lock` only if it is still the file that was classified. Error text or None."""
+    try:
+        if _identity(lock.stat()) != snap:
+            return "lock changed since it was checked"
+    except FileNotFoundError:
+        return "lock vanished before removal"
+    tomb = lock.with_name(f"{lock.name}.stale-{os.getpid()}-{time.time_ns()}")
+    try:
+        os.rename(lock, tomb)  # atomic; the tombstone name no longer ends in .lock
+    except OSError as exc:  # e.g. WinError 32: an invisible owner holds it open
+        return f"lock held open, not removed ({exc!r})"
+    if _identity(tomb.stat()) != snap:
+        # a new lock was created between the check and the rename: give it back.
+        # link+unlink, not rename: rename on POSIX would overwrite a lock created
+        # in that instant; link fails instead.
+        try:
+            os.link(tomb, lock)
+            tomb.unlink()
+        except OSError as exc:
+            return f"renamed a NEW lock and could not restore it ({exc!r}); tombstone: {tomb}"
+        return "a new lock appeared between check and removal; restored"
+    tomb.unlink()
+    if tomb.exists():
+        return f"tombstone still exists after unlink: {tomb}"
+    return None
+
+
+def _real_hidden(dirs: list[Path]) -> list[str]:
+    trust = load_trust()
+    return [h for d in dirs for h in invisible_owner_hosts(d, trust_admin_shares=trust)]
+
+
+def run(repo: Path, remove: bool, min_age: float, procs_fn=live_git_processes,
+        hidden_fn=_real_hidden) -> int:
+    dirs = git_dirs(repo)
+    if not dirs:
+        print(f"UNKNOWN: {repo} is not a git repository")
+        return 2
+    locks = sorted({p for d in dirs for p in find_locks(d)})
+    print(f"SCANNED: git_dirs={[str(d) for d in dirs]} locks={len(locks)}")
+    if not locks:
+        print("OK: no lock files")
+        return 0
+    remote = [str(d) for d in dirs if on_remote_fs(d)]
+    if remote:
+        print(f"REFUSE: git dir on a network/WSL filesystem {remote}; owners there are not visible here")
+        return 1
+    try:
+        hidden = hidden_fn(dirs)
+    except Unverifiable as exc:
+        print(f"UNKNOWN: cannot rule out an invisible owner: {exc}")
+        return 2
+    # Owner 2026-10-15: «разрешай удалять лок, если не найден владелец». A disk share (D:\ shared
+    # to a VM) is not itself an owner: such a lock is judged like any other, with a wider age
+    # margin, and the identity-checked rename still fails while a remote client holds it open.
+    # WSL stays a refusal: its git runs on the same files with no handle visible here.
+    others = [h for h in hidden if not h.startswith("share ")]
+    if others:
+        print(f"REFUSE: a lock owner could be invisible from here: {others}")
+        return 1
+    if hidden:
+        min_age = max(min_age, SHARE_MIN_AGE)
+        print(f"NOTE: {hidden} - a remote owner is not visible here; age margin {min_age:.0f}s")
+    try:
+        procs = procs_fn()
+    except Exception as exc:  # cannot prove absence of an owner -> not green
+        print(f"UNKNOWN: cannot enumerate processes: {exc!r}")
+        return 2
+
+    now = time.time()
+    verdict = 0
+    stale_seen = 0
+    removed = []
+    for lock in locks:
+        try:
+            snap = _identity(lock.stat())
+        except FileNotFoundError:
+            print(f"GONE: {lock}")
+            continue
+        state, detail = classify_lock(lock, procs, now, min_age)
+        if state == "GONE":
+            print(f"GONE: {lock}")
+            continue
+        if state != "STALE":
+            print(f"REFUSE: {lock} {detail}")
+            verdict = 1
+            continue
+        stale_seen += 1
+        if not remove:
+            print(f"STALE: {lock} {detail} (dry run; add --remove)")
+            continue
+        err = remove_checked(lock, snap)
+        if err:
+            print(f"FAIL: {lock}: {err}")
+            verdict = 1
+            continue
+        removed.append(lock)
+        print(f"REMOVED: {lock} ({detail}; identity-checked, verified absent)")
+
+    if removed:
+        st = subprocess.run(["git", "-C", str(repo), "status", "--porcelain"],
+                            capture_output=True, text=True)
+        if st.returncode != 0:
+            print(f"FAIL: git status exit {st.returncode} after removal: {st.stderr.strip()[:300]}")
+            return 1
+        print("VERIFIED: git status exit 0 after removal")
+    if verdict == 0 and stale_seen and not remove:
+        return 3
+    return verdict
+
+
+def self_test() -> int:
+    """Negative controls: every red case must come back red, the green one green."""
+    failures = []
+    module_run = globals()["run"]
+
+    def run(repo_, remove, min_age, procs_fn, hidden_fn=lambda dirs: []):
+        # the real share/WSL enumeration is exercised by its own cases below;
+        # here the temp repo's disk may itself be shared (D:\ is, on this machine)
+        return module_run(repo_, remove, min_age, procs_fn, hidden_fn)
+
+    with tempfile.TemporaryDirectory() as td:
+        repo = Path(td) / "r"
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        lock = repo / ".git" / "index.lock"
+        old = time.time() - 3600
+        no_procs = lambda: []  # noqa: E731
+
+        def stale_lock():
+            lock.write_bytes(b"")
+            os.utime(lock, (old, old))
+
+        lock.write_bytes(b"")  # fresh lock -> refuse, must survive
+        if run(repo, True, 600, no_procs) != 1 or not lock.exists():
+            failures.append("fresh lock was not refused")
+
+        stale_lock()  # owner started before it -> refuse
+        if run(repo, True, 600, lambda: [(1, "git.exe", old - 10)]) != 1 or not lock.exists():
+            failures.append("lock with live older owner was not refused")
+
+        # unreadable process (name/start None -> recorded as start 0.0) -> refuse
+        if run(repo, True, 600, lambda: [(7, "<unreadable>", 0.0)]) != 1 or not lock.exists():
+            failures.append("unreadable process was not treated as a possible owner")
+
+        future = time.time() + 3600  # mtime in the future -> refuse
+        os.utime(lock, (future, future))
+        if run(repo, True, 600, no_procs) != 1 or not lock.exists():
+            failures.append("future mtime was not refused")
+
+        stale_lock()  # enumeration failure -> UNKNOWN, keep file
+        def boom():
+            raise RuntimeError("no access")
+        if run(repo, True, 600, boom) != 2 or not lock.exists():
+            failures.append("enumeration failure was not UNKNOWN")
+
+        if run(repo, False, 600, no_procs) != 3 or not lock.exists():
+            failures.append("dry run did not report stale (exit 3) or removed the lock")
+
+        snap = _identity(lock.stat())  # file replaced after classification -> refuse
+        lock.unlink()
+        lock.write_bytes(b"new owner")
+        if remove_checked(lock, snap) is None or not lock.exists():
+            failures.append("a lock replaced after the check was removed")
+
+        stale_lock()  # only a process started AFTER it -> not an owner -> remove
+        if run(repo, True, 600, lambda: [(2, "git.exe", time.time())]) != 0 or lock.exists():
+            failures.append("stale lock with no possible owner was not removed")
+        if list((repo / ".git").glob("index.lock.stale-*")):
+            failures.append("tombstone left behind")
+
+        if run(Path(td), True, 600, no_procs) != 2:
+            failures.append("non-repo was not UNKNOWN")
+
+        share = lambda dirs: ["share HostD -> D:\\"]  # noqa: E731
+        # under a share: 1 h old (stale_lock) passes the 30-min margin; 20 min does not
+        stale_lock()
+        mid = time.time() - 1200
+        os.utime(lock, (mid, mid))
+        if run(repo, True, 600, no_procs, share) != 1 or not lock.exists():
+            failures.append("a 20-minute lock under a share was removed (margin is 30 min)")
+        if run(repo, True, 600, no_procs, lambda dirs: ["share HostD -> D:\\",
+                                                         "WSL distributions running: ['x']"]) != 1 \
+                or not lock.exists():
+            failures.append("lock with WSL running was not refused")
+        stale_lock()
+        if run(repo, True, 600, no_procs, share) != 0 or lock.exists():
+            failures.append("stale lock under a share with no possible owner was not removed")
+        stale_lock()
+        if run(repo, True, 600, lambda: [(3, "git.exe", old - 10)], share) != 1 or not lock.exists():
+            failures.append("lock under a share with a live older owner was removed")
+        stale_lock()  # WSL alone -> refuse, keep the lock
+        if run(repo, True, 600, no_procs, lambda dirs: ["WSL distributions running: ['x']"]) != 1 \
+                or not lock.exists():
+            failures.append("lock with WSL running (no share) was not refused")
+
+        def cannot_enumerate(dirs):
+            raise Unverifiable("registry denied")
+        if run(repo, True, 600, no_procs, cannot_enumerate) != 2 or not lock.exists():
+            failures.append("share enumeration failure was not UNKNOWN")
+
+    if not _covers("D:\\", "D:/x/y") or _covers("C:\\HomeShare", "C:/HomeShareX/y"):
+        failures.append("share prefix match wrong (drive root / sibling name)")
+
+    for f in failures:
+        print(f"SELF-TEST FAIL: {f}")
+    print("SELF-TEST", "PASS" if not failures else "FAIL")
+    return 0 if not failures else 1
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("repo", nargs="?", default=".")
+    ap.add_argument("--remove", action="store_true")
+    ap.add_argument("--min-age", type=float, default=DEFAULT_MIN_AGE)
+    ap.add_argument("--self-test", action="store_true")
+    a = ap.parse_args()
+    if a.self_test:
+        return self_test()
+    return run(Path(a.repo).resolve(), a.remove, a.min_age)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

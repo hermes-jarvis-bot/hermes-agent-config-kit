@@ -17,7 +17,7 @@ Solution: manifest-driven one-way sync (active -> repo clone) with three safegua
 Usage:
   python scripts/sync_public_config.py              # dry-run report (default)
   python scripts/sync_public_config.py --apply      # actually copy
-  python scripts/sync_public_config.py --scan-repo  # only scan the whole repo for markers
+  python scripts/sync_public_config.py --scan-repo  # scan the Git index (the publishable repo) for markers
   python scripts/sync_public_config.py --strict     # non-zero exit on any marker hit
 
 Comparison is EOL-normalized (CRLF==LF) so a git-clone on Windows does not produce
@@ -34,10 +34,11 @@ import shutil
 import subprocess
 import sys
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = REPO_ROOT / "sync-manifest.json"
+SCANNER_RELATIVE_PATH = "scripts/sync_public_config.py"
 
 SKIP_SUFFIXES = {".pyc", ".pyo"}
 SKIP_DIRS = {"__pycache__", ".git"}
@@ -107,6 +108,34 @@ def iter_files(root: Path):
         yield p
 
 
+def iter_indexed_files(root: Path):
+    """Yield the current Git index, not unrelated local runtime output.
+
+    ``--scan-repo`` is a publication gate.  Scanning arbitrary untracked files
+    turns a private report or cache into a false public-data failure although
+    Git cannot publish it.  A newly promoted source file enters this set when
+    staged, exactly when it becomes publishable.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "--cached", "-z"],
+            capture_output=True, check=False, timeout=20,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError(f"cannot enumerate Git index: {exc}") from exc
+    if result.returncode != 0:
+        raise RuntimeError("cannot enumerate Git index")
+    for raw in result.stdout.split(b"\0"):
+        if not raw:
+            continue
+        relative = Path(raw.decode("utf-8", errors="surrogateescape"))
+        if relative.suffix in SKIP_SUFFIXES or any(part in SKIP_DIRS for part in relative.parts):
+            continue
+        candidate = root / relative
+        if candidate.is_file():
+            yield candidate
+
+
 def marker_hits(text: str, markers: list[str]) -> list[str]:
     hits = []
     for m in markers:
@@ -119,7 +148,34 @@ def marker_hits(text: str, markers: list[str]) -> list[str]:
     return hits
 
 
-def main() -> int:
+def privacy_scan_exempt_paths(raw: object) -> set[str]:
+    """Validate the exact indexed paths allowed to contain public third-party data.
+
+    The exemption is deliberately narrower than a marker allow-list: it cannot
+    hide a hit in an agent-authored source file or reach outside the repository.
+    """
+    if raw is None:
+        return set()
+    if not isinstance(raw, list):
+        raise ValueError("privacy_scan_exempt_paths must be a list of exact relative paths")
+    result: set[str] = set()
+    reserved = {MANIFEST.name, SCANNER_RELATIVE_PATH}
+    for item in raw:
+        if not isinstance(item, str) or not item or "\\" in item or any(char in item for char in "*?["):
+            raise ValueError("privacy_scan_exempt_paths entries must be exact POSIX paths")
+        path = PurePosixPath(item)
+        normalized = path.as_posix()
+        if path.is_absolute() or normalized != item or "." in path.parts or ".." in path.parts:
+            raise ValueError(f"unsafe privacy scan exemption: {item}")
+        if normalized in reserved:
+            raise ValueError(f"reserved file cannot be privacy-scan-exempt: {item}")
+        if normalized in result:
+            raise ValueError(f"duplicate privacy scan exemption: {item}")
+        result.add(normalized)
+    return result
+
+
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--apply", action="store_true", help="write changes (default: dry-run)")
     ap.add_argument("--strict", action="store_true", help="exit 1 on any privacy-marker hit")
@@ -127,7 +183,7 @@ def main() -> int:
                     help="copy even when the repo version is newer or a large deletion is "
                          "proposed. Read the diff of every refused file first.")
     ap.add_argument("--scan-repo", action="store_true", help="only scan repo tree for markers")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     if not MANIFEST.exists():
         print(f"ERROR: manifest not found: {MANIFEST}", file=sys.stderr)
@@ -135,21 +191,40 @@ def main() -> int:
     cfg = json.loads(MANIFEST.read_text(encoding="utf-8"))
     markers: list[str] = cfg.get("privacy_markers", [])
     active_root = Path(cfg["active_root"]).expanduser()
+    try:
+        exempt_paths = privacy_scan_exempt_paths(cfg.get("privacy_scan_exempt_paths"))
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stdout)
+        return 2
 
     any_marker_hit = False
 
     if args.scan_repo:
-        print(f"== privacy scan of repo tree: {REPO_ROOT}")
-        for f in iter_files(REPO_ROOT):
-            if f == MANIFEST or f.resolve() == Path(__file__).resolve():
-                continue  # manifest/scanner legitimately contain the marker strings
-            text = norm_text(f)
-            if text is None:
-                continue
-            hits = marker_hits(text, markers)
-            if hits:
-                any_marker_hit = True
-                print(f"  MARKER {f.relative_to(REPO_ROOT)} :: {', '.join(hits)}")
+        print(f"== privacy scan of Git index: {REPO_ROOT}")
+        try:
+            missing_exemptions = sorted(path for path in exempt_paths if not (REPO_ROOT / path).is_file())
+            if missing_exemptions:
+                print(f"ERROR: privacy scan exemption target is missing: {', '.join(missing_exemptions)}",
+                      file=sys.stdout)
+                return 2
+            files = iter_indexed_files(REPO_ROOT)
+            for f in files:
+                if f == MANIFEST or f.resolve() == Path(__file__).resolve():
+                    continue  # manifest/scanner legitimately contain the marker strings
+                relative = f.relative_to(REPO_ROOT).as_posix()
+                if relative in exempt_paths:
+                    print(f"  EXEMPT {relative} :: declared immutable third-party metadata")
+                    continue
+                text = norm_text(f)
+                if text is None:
+                    continue
+                hits = marker_hits(text, markers)
+                if hits:
+                    any_marker_hit = True
+                    print(f"  MARKER {relative} :: {', '.join(hits)}")
+        except RuntimeError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
         if not any_marker_hit:
             print("  clean - no privacy markers found")
         return 1 if (any_marker_hit and args.strict) else 0

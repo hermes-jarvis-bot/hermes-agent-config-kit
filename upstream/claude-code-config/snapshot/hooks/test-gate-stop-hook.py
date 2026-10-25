@@ -100,6 +100,8 @@ except ImportError:  # fail-open: keep the original one-shot behaviour
     stop_budget_consume = stop_budget_exhausted = untrusted_block = None  # type: ignore[assignment]
 
 TEST_TIMEOUT_SEC = 180
+TEST_TIMEOUT_MIN_SEC = 30
+TEST_TIMEOUT_MAX_SEC = 1800
 MAX_OUTPUT_BYTES = 4000
 MIN_SESSION_MINUTES = 2
 # Gate name for the shared Stop-hook rejection budget (safety_common).
@@ -118,6 +120,17 @@ HIGH_RISK_MARKERS = (
 )
 IGNORED_PATH_PARTS = {".git", "node_modules", "dist", "build", ".venv", "__pycache__"}
 IGNORED_CONFIG_PATHS = {".claude/test-policy.json", ".claude/test-command"}
+# Records the agent harness keeps about the work, not the work. The user-task guard
+# writes .agent/user-tasks/<id>/terminal-receipt.json at Stop, and its .json suffix
+# counted as source here, so closing one gate started this one's suite. Measured
+# 2026-09-27: three receipts dirtied per Stop ran a fast suite into its 180 s timeout.
+# Twin of HARNESS_OUTPUT_ROOTS in root-cause-delivery-guard.py, which closed the same
+# class on its side on 2026-08-29; this list adds the transfer contracts, in every
+# location transfer-contract-guard.py accepts.
+HARNESS_RECORD_ROOTS = (
+    ".agent/user-tasks/", ".agent/delivery-cases/",
+    ".claude/transfers/", ".agent/transfers/", ".codex/transfers/",
+)
 
 # Verification depth, on the scope this hook already computes.
 #
@@ -188,6 +201,14 @@ def _is_ignored_path(path: str) -> bool:
     return bool(set(Path(path).parts) & IGNORED_PATH_PARTS)
 
 
+def _is_harness_record(path: str) -> bool:
+    # At any depth, not only at the Git root: the transfer guard roots itself at the
+    # nearest directory holding .claude or .agent, so a subproject keeps its contracts
+    # below the Git root (measured 2026-09-27: 18 such contracts in one repository).
+    normal = "/" + path.replace("\\", "/").lower()
+    return any("/" + root in normal for root in HARNESS_RECORD_ROOTS)
+
+
 def classify_paths(paths: list[str]) -> ChangeScope:
     """Classify a Git-visible change set without running repository code."""
     relevant = [
@@ -195,6 +216,7 @@ def classify_paths(paths: list[str]) -> ChangeScope:
         for path in paths
         if not _is_ignored_path(path)
         and path.replace("\\", "/").lower() not in IGNORED_CONFIG_PATHS
+        and not _is_harness_record(path)
     ]
     if not relevant:
         return ChangeScope("docs-only", "no relevant source or test files changed", False)
@@ -274,6 +296,34 @@ def load_policy_commands(cwd: Path) -> dict[str, list[str]]:
     return commands
 
 
+def windows_bash() -> str | None:
+    """The bash that can run a repository's `.sh` on Windows.
+
+    `shutil.which("bash")` usually answers `C:\\Windows\\System32\\bash.exe`: the
+    WSL launcher, which System32 puts ahead of Git on PATH. Without an installed
+    distro it exits 1 with "execvpe(/bin/bash) failed" and the script never runs;
+    a red verdict that is really a launch failure. Git for Windows ships the bash
+    these scripts are written for, next to the `git` the gate already needs, so
+    prefer it and keep the WSL launcher only as the last resort.
+    """
+    found = shutil.which("bash")
+    if found:
+        parent = Path(found).parent.name.lower()
+        if parent not in ("system32", "windowsapps"):
+            return found
+    git = shutil.which("git")
+    if git:
+        git_dir = Path(git).resolve().parent
+        # <root>\cmd\git.exe or <root>\mingw64\bin\git.exe
+        roots = (git_dir.parent, git_dir.parent.parent)
+        for root in roots:
+            for rel in (("bin", "bash.exe"), ("usr", "bin", "bash.exe")):
+                candidate = root.joinpath(*rel)
+                if candidate.is_file():
+                    return str(candidate)
+    return found
+
+
 def portable_argv(cmd: list[str], cwd: Path) -> list[str]:
     """Make a POSIX-authored test command runnable on Windows.
 
@@ -296,18 +346,77 @@ def portable_argv(cmd: list[str], cwd: Path) -> list[str]:
     The suffix is matched case-insensitively: Windows filenames are, so `INIT.SH`
     is a real file that fails exactly like `init.sh`. Matching only the lowercase
     form would leave the hole open for the spelling nobody thinks to test.
+
+    A bare program name (`npm test` in `.claude/test-command` or a policy) is the
+    same trap from the other side: CreateProcess appends only `.exe`, so `npm`,
+    `pnpm` and `yarn`, which are `.cmd` shims, raise WinError 2. Such a name is
+    replaced by the path `shutil.which` resolves through PATHEXT; if nothing
+    resolves, the command stays untouched for the same honest "cannot run".
     """
     if os.name != "nt" or not cmd:
         return cmd
     exe = cmd[0]
     if not exe.lower().endswith(".sh"):
-        return cmd
-    bash = shutil.which("bash")
+        if "/" in exe or "\\" in exe:
+            return cmd
+        resolved = shutil.which(exe)
+        return [resolved, *cmd[1:]] if resolved else cmd
+    bash = windows_bash()
     if not bash:
         return cmd
     # Forward slashes: bash reads its argument as a POSIX path, and cwd is
     # already the working directory of the subprocess.
     return [bash, exe.replace("\\", "/"), *cmd[1:]]
+
+
+def resolve_timeout(cwd: Path) -> int:
+    """How long the suite may run before we call it hung.
+
+    The module docstring has advertised `TEST_TIMEOUT_SEC` as a knob while the code held a
+    constant, so the documented control did not exist. It does now, and a project can also state
+    its own budget in `.claude/test-command` as a `# timeout: <seconds>` comment line - the honest
+    place for it, next to the command whose runtime it describes.
+
+    A suite that finishes green in 139 seconds must not be reported as a timeout at 180: that reads
+    exactly like a red suite while nothing was wrong, the failure mode these hooks exist to prevent.
+    Precedence: project directive, then environment, then the default. Malformed values are
+    announced on stderr rather than silently ignored.
+    """
+    def clamp(value: int) -> int:
+        return max(TEST_TIMEOUT_MIN_SEC, min(TEST_TIMEOUT_MAX_SEC, value))
+
+    override = cwd / ".claude" / "test-command"
+    if override.exists() and override.is_file():
+        try:
+            for raw_line in override.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if not line.startswith("#"):
+                    if line:
+                        break  # the command line; directives live above it
+                    continue
+                body = line.lstrip("#").strip()
+                if body.lower().startswith("timeout:"):
+                    text = body.split(":", 1)[1].strip()
+                    if text.isdecimal():
+                        try:
+                            return clamp(int(text))
+                        except ValueError:
+                            pass
+                    print("[test-gate] ignoring malformed '# timeout: " + text
+                          + "' in .claude/test-command", file=sys.stderr)
+        except OSError as exc:
+            print("[test-gate] cannot read .claude/test-command for its timeout: "
+                  + str(exc), file=sys.stderr)
+
+    env = os.environ.get("TEST_TIMEOUT_SEC", "").strip()
+    if env:
+        if env.isdecimal():
+            try:
+                return clamp(int(env))
+            except ValueError:
+                pass
+        print("[test-gate] ignoring malformed TEST_TIMEOUT_SEC=" + repr(env), file=sys.stderr)
+    return TEST_TIMEOUT_SEC
 
 
 def detect_test_command(cwd: Path) -> tuple[list[str], str] | None:
@@ -331,14 +440,18 @@ def detect_test_command(cwd: Path) -> tuple[list[str], str] | None:
         try:
             pkg = json.loads(pkg_json.read_text(encoding="utf-8"))
             if "test" in pkg.get("scripts", {}):
-                if (cwd / "pnpm-lock.yaml").exists() and shutil.which("pnpm"):
-                    return (["pnpm", "test"], "pnpm test")
-                if (cwd / "yarn.lock").exists() and shutil.which("yarn"):
-                    return (["yarn", "test"], "yarn test")
-                if (cwd / "bun.lockb").exists() and shutil.which("bun"):
-                    return (["bun", "test"], "bun test")
-                if shutil.which("npm"):
-                    return (["npm", "test", "--silent"], "npm test")
+                # Run the path `which` found, not the bare name: on Windows npm,
+                # pnpm and yarn are .cmd shims, and CreateProcess only appends
+                # .exe to a bare name, so ["npm", ...] dies with WinError 2 and
+                # the gate blocks every Stop on a suite that never ran.
+                if (cwd / "pnpm-lock.yaml").exists() and (exe := shutil.which("pnpm")):
+                    return ([exe, "test"], "pnpm test")
+                if (cwd / "yarn.lock").exists() and (exe := shutil.which("yarn")):
+                    return ([exe, "test"], "yarn test")
+                if (cwd / "bun.lockb").exists() and (exe := shutil.which("bun")):
+                    return ([exe, "test"], "bun test")
+                if exe := shutil.which("npm"):
+                    return ([exe, "test", "--silent"], "npm test")
         except (json.JSONDecodeError, OSError):
             pass
 
@@ -372,14 +485,14 @@ def detect_test_command(cwd: Path) -> tuple[list[str], str] | None:
 
     has_tests_dir = _dir_has_test_files(cwd / "tests") or _dir_has_test_files(cwd / "test")
 
-    if (has_pytest_ini or has_pyproject_pytest or has_tests_dir) and shutil.which("pytest"):
-        return (["pytest", "--tb=short", "-q"], "pytest")
+    if (has_pytest_ini or has_pyproject_pytest or has_tests_dir) and (exe := shutil.which("pytest")):
+        return ([exe, "--tb=short", "-q"], "pytest")
 
-    if (cwd / "Cargo.toml").exists() and shutil.which("cargo"):
-        return (["cargo", "test", "--quiet"], "cargo test")
+    if (cwd / "Cargo.toml").exists() and (exe := shutil.which("cargo")):
+        return ([exe, "test", "--quiet"], "cargo test")
 
-    if (cwd / "go.mod").exists() and shutil.which("go"):
-        return (["go", "test", "./..."], "go test")
+    if (cwd / "go.mod").exists() and (exe := shutil.which("go")):
+        return ([exe, "test", "./..."], "go test")
 
     return None
 
@@ -455,6 +568,9 @@ def main() -> int:
     )
 
     failures: list[str] = []
+    # Resolved ONCE: the number enforced and the number reported must be the same number, even if
+    # a suite rewrites its own .claude/test-command while running.
+    timeout_sec = resolve_timeout(cwd)
     for cmd, label in commands:
         cmd = portable_argv(cmd, cwd)
         try:
@@ -464,7 +580,7 @@ def main() -> int:
                 cmd,
                 cwd=cwd,
                 capture_output=True,
-                timeout=TEST_TIMEOUT_SEC,
+                timeout=timeout_sec,
                 text=True,
                 encoding="utf-8",
                 errors="replace",
@@ -472,7 +588,7 @@ def main() -> int:
             )
         except subprocess.TimeoutExpired:
             failures.append(
-                f"{label}: timeout after {TEST_TIMEOUT_SEC}s; no green evidence was produced"
+                f"{label}: timeout after {timeout_sec}s; no green evidence was produced"
             )
             continue
         except (FileNotFoundError, OSError) as e:
@@ -556,7 +672,79 @@ def _record_cli(argv: list[str]) -> int:
     return 0
 
 
+def _self_test() -> int:
+    """`--self-test` - prove the timeout resolution, because nothing else does.
+
+    An independent review found that `isdigit()` accepts characters `int()` refuses ("2" superscript
+    is one), so a repository writing `# timeout: <that>` raised a ValueError past the OSError handler,
+    killed this hook, and the Stop gate was skipped without a word. A gate that repository text can
+    silently switch off is worse than no gate, so the predicate now has a test that fails if anyone
+    loosens it again.
+    """
+    import tempfile
+
+    failures = 0
+
+    def check(label: str, got: object, want: object) -> None:
+        nonlocal failures
+        if got != want:
+            failures += 1
+            print(f"  FAIL {label}: got {got!r}, wanted {want!r}")
+        else:
+            print(f"  ok   {label}: {got!r}")
+
+    saved = os.environ.pop("TEST_TIMEOUT_SEC", None)
+    try:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            (root / ".claude").mkdir()
+            cmd = root / ".claude" / "test-command"
+
+            cmd.write_text("# no directive\npytest -q\n", encoding="utf-8")
+            check("no directive, no env", resolve_timeout(root), TEST_TIMEOUT_SEC)
+
+            os.environ["TEST_TIMEOUT_SEC"] = "420"
+            check("env only", resolve_timeout(root), 420)
+
+            cmd.write_text("# timeout: 90\npytest -q\n", encoding="utf-8")
+            check("directive beats env", resolve_timeout(root), 90)
+
+            cmd.write_text("# timeout: 99999\npytest -q\n", encoding="utf-8")
+            check("clamped to the ceiling", resolve_timeout(root), TEST_TIMEOUT_MAX_SEC)
+
+            cmd.write_text("# timeout: 5\npytest -q\n", encoding="utf-8")
+            check("clamped to the floor", resolve_timeout(root), TEST_TIMEOUT_MIN_SEC)
+
+            # the regression that mattered: a value isdigit() accepts and int() refuses must NOT
+            # crash the hook, because a crash here skips the whole gate
+            cmd.write_text("# timeout: \u00b2\npytest -q\n", encoding="utf-8")
+            check("superscript does not kill the gate", resolve_timeout(root), 420)
+
+            cmd.write_text("# timeout: soon\npytest -q\n", encoding="utf-8")
+            check("non-numeric falls through to env", resolve_timeout(root), 420)
+
+            os.environ["TEST_TIMEOUT_SEC"] = "\u00b2"
+            cmd.write_text("# no directive\npytest -q\n", encoding="utf-8")
+            check("superscript in the env is refused too", resolve_timeout(root), TEST_TIMEOUT_SEC)
+            os.environ["TEST_TIMEOUT_SEC"] = "420"
+
+            cmd.write_text("pytest -q\n# timeout: 90\n", encoding="utf-8")
+            check("a directive below the command is not a directive", resolve_timeout(root), 420)
+
+            os.environ.pop("TEST_TIMEOUT_SEC", None)
+            check("no file at all", resolve_timeout(root / "absent"), TEST_TIMEOUT_SEC)
+    finally:
+        os.environ.pop("TEST_TIMEOUT_SEC", None)
+        if saved is not None:
+            os.environ["TEST_TIMEOUT_SEC"] = saved
+
+    print(f"SCANNED: cases=10 failures={failures}")
+    return 1 if failures else 0
+
+
 if __name__ == "__main__":
+    if "--self-test" in sys.argv:
+        sys.exit(_self_test())
     if "--record" in sys.argv:
         sys.exit(_record_cli(sys.argv))
     sys.exit(main())
