@@ -3,7 +3,7 @@
 
 ## 2026-08-29 - PUBLIC PUSH BLOCKED: THE SEMANTIC LEG OF THE PRE-PUSH SCAN CANNOT RUN
 
-**Status**: missing-dep
+**Status**: RESOLVED 2026-10-28 - waiting commit 89aef8c is in origin/main; the semantic leg runs again (Agent B rotates registered logins on quota), e.g. the push of PR #31 printed "Agent A passed, invoking Agent B ... on 1 chunk(s)" and "both agents passed".
 
 `git push` to `AnastasiyaW/codex-claude-code-config` is refused, and refused correctly:
 
@@ -40,9 +40,28 @@ drift, and the next editor changes whichever one they find first. Whether the se
 be deleted, made a thin loader, or is wired into some other harness (Codex reads its own config)
 is not a call for a session that only measured which one Claude Code loads.
 
+**Re-measured 2026-10-28** (branch fix/delivery-guard-problems). The copy is not in this repo:
+`%USERPROFILE%\.claude\hooks\` is outside any git tree. Now 43308 bytes, mtime 2026-10-13,
+sha256 prefix 56f5d9080209fc7b; the wired copy is 35ce545a90d30e62 on main 4940341.
+- No harness registers it: `settings.json` (3 hook entries), `~/.codex/hooks.json` (3) and
+  `claude-code-private/machines/Happyin/{settings,codex-hooks}.json` (3 each) all name
+  `claude-code-config/hooks/root-cause-delivery-guard.py`. The live root-cause-delivery skill in
+  `~/.claude/skills`, `~/.codex/skills`, `~/.agents/skills` and this repo uses the wired path too.
+  The only file reference left is `~/.claude/.skill-trees-backup-2026-08-23/` (a backup).
+- But it IS run: `logs/safety.log` has 52 commands calling `python ~/.claude/hooks/root-cause-delivery-guard.py
+  verify|capture|...`, the latest 2026-10-26. The cause was the wired guard itself: its "no
+  PLAN_FROZEN case" block message told agents to run the CLI at `~/.claude/hooks/`. Fixed here:
+  the message now names the running file (`Path(__file__)`), tested in
+  `hooks/tests/test_delivery_guard_machine_messages.py`.
+
+**Remaining owner decision**: delete `%USERPROFILE%\.claude\hooks\root-cause-delivery-guard.py`
+(or replace it with a loader of the wired file). Safe to act once this branch is merged and
+pulled into the live folder; before that, agents still get the old message. Agents already
+holding the old command in a handoff would then fail loudly instead of running stale case logic.
+
 ## 2026-09-15 - DELIVERY GUARD STILL CLASSIFIES PEER AND CODEX MACHINE MESSAGES
 
-**Status**: arch-decision
+**Status**: RESOLVED 2026-10-28 - owner's rule given with the task: messages from other agents, sessions, Codex and harness notifications never count as her request. `owner_text` removes closed `<cross-session-message>`, `<agent-message>` (incl. `[Subagent hand-back]`), `<subagent_notification>` and `<system-reminder>` elements, and drops whole "Stop hook feedback:" prompts and rendered "Another Claude session sent a message:" prompts; unclosed tags still classify (fail closed). Still reproduced on main 4940341: 22 live intents in `~/.claude/state/root-cause-delivery` have the digest of these shapes (15 bare peer elements, 4 behind a linked-sessions reminder, 2 agent-message hand-backs, 1 task notification plus plugin reminder; latest 2026-10-23), plus 4 from "Stop hook feedback:" in August. Codex hands `<subagent_notification>` over as a user-role message (65 of 65 closed, 250 newest rollouts); whether Codex fires UserPromptSubmit for it is still unmeasured, so it is stripped defensively. Evidence: `.agent/delivery-cases/delivery-guard-machine-messages-20261028/evidence/` - test red on main (22 of 36 wrong) and green after (36/36), run_guard_regressions 349/349, mutation_probe 15/15 killed, transcript replay: peer 195 -> 0 intents, no owner-word loss. Independent fresh-context review: PROCEED (its tag-name finding fixed; quadratic-regex and pasted-wrapper ceilings documented in the code). Ceiling: a teammate's real incident report no longer opens an intent by itself; the receiving agent opens one through the owner or `init`.
 
 The fix at a555849 excludes Claude Code <task-notification> elements from intent
 classification. The case is .agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915.
@@ -62,7 +81,7 @@ land a structural exclusion with a behavioural test.
 
 ## 2026-09-24 - PUBLIC PUSH BLOCKED AGAIN: SEMANTIC SCAN CLI OUT OF WEEKLY QUOTA
 
-**Status**: missing-dep
+**Status**: RESOLVED 2026-10-28 - waiting commit b892835 is in origin/main; both scan legs ran on every public push today (PRs #23-#31).
 
 Same gate as 2026-08-29, different cause. The first attempt was stopped by Agent A on a real
 private host name in a self-test string; that commit was never pushed and was amended to a
@@ -86,7 +105,41 @@ status - the gate must print that both agents passed.
 
 ## 2026-09-26 - STOP-GUARD: ENGLISH DIRECTIVE WORDS FIRE ANYWHERE IN A REPORT
 
-**Status**: arch-decision
+**Status**: RESOLVED 2026-10-28 on branch `fix/stop-guard-false-positives` (also closes
+REQ-1536EA2F40F5). The WIP this entry waited for is on main. `hooks/stop-phrase-guard.py`:
+1. An English directive (`_USER_WORK_DIRECTIVE`, and `_INSTRUCTION_VERB` in the shape window)
+   counts only in an imperative slot: opening its clause after a break, bullet or lead adverb,
+   or right after "please"/"you [modal]…"/"don't forget to"/"тебе нужно"; never when Russian
+   follows it ("; open вопросов"), nor a count on a line that already speaks Russian ("4 set",
+   ", run 41 passed"; "Run 3 times" still counts). Russian forms stay position-free.
+2. A whitespace-free backticked span (repo, branch, path) is judged by its own clause only, not
+   by a verb or "Пользователь" elsewhere in the 260-char window.
+3. A directive inside a quoted command is that command's word; the span is judged as a shape,
+   and a verb inside it no longer flags it when its clause reports it ("`Open https://…`
+   returns", "возвращал"); `_REPORT_PREDICATE` learned the Russian past/3rd-person forms that
+   `_REPORT_LEAD` already had.
+
+4. Performance (the hook has no timeout): slot, verb, addressee and I/we positions are indexed
+   once per message; `agent_owns_phrase` is asked only of instructions and skips sentences with
+   no I/we. Measured old -> new: 12k "the run" 21 s -> 0.09 s, 12k "please run" 32 s -> 0.1 s,
+   5000 bare spans 4.6 s -> 0.09 s; four timed self-test cases pin it.
+
+Evidence: the new self-test cases give 17 FAIL lines on the old functions (controls there fail
+only by a different trigger label: old still caught them) and pass now; controls (`Run \`npm
+test\` in your terminal`, "Please copy this into PowerShell.", "Запусти у себя \`python x.py\`",
+"Set \`FOO=1\` and run it.", "You will need to run …", "Run 3 times …", a dash, a task box)
+are caught; guard regressions 289/289; `scripts/mutation_probe.py`: new helpers 30/30 killed;
+`shape_is_instruction` + `agent_capable_user_homework` + `agent_owns_phrase` 71/92, the 21
+survivors are the ones the same functions had before the change (untouched lines). Replay of
+3000 real assistant messages: 201 verdicts dropped (sampled: factual reports), 0 added. A
+fresh-context Opus review (HOLD) found a quadratic span path, the digit rule and lost
+phrasings; all fixed, its 70-case probe now loses only "Once that is done run the installer."
+(no clause break; accepted). Still blocked by old and new alike: "Run time: 3 seconds.", "Open
+questions: none." (a label noun at clause start). The scratch-cwd gap moved to its own entry.
+An independent re-review of 4052e3a (HOLD) found that the Russian-follows rule read past a
+masked one-word command ("Затем run `make` чтобы …", "Please run `setup.ps1` у себя."): six
+hand-offs that main blocks passed. The follow-up commit checks only what directly follows the
+verb; the six are must-block self-test cases (red on 4052e3a, green now).
 
 Found while closing REQ-EDC941FD1708 (commit `511efa3`, hyphen-in-word is not a flag). The
 report of that finished fix was itself blocked as homework. Measured with
@@ -118,7 +171,37 @@ after a negated modal), and `Open`/`Запусти` from quoted test inputs insi
 backtick spans ("`Open https://…` returns `'Open'`"). The position rule above covers both;
 the negated modal also belongs among its non-imperative leads.
 
-Same session, second gap: `has_evidence_bound_external_task` looks only under
+## 2026-10-28 - STOP-GUARD: HAND-OFFS NEITHER MAIN NOR PR #40 CATCHES
+
+**Status**: arch-decision
+
+Found by the independent re-review of PR #40. Measured 2026-10-28: `agent_capable_user_homework`
+returns None for each line on origin/main and on the PR branch alike (probe
+`D:/tmp/claude/stopfp/gaps.py`):
+
+- "You can now push with `git push`." (`git push` is not a shape and "push" is not listed)
+- "Осталось только выполнить у себя `make release`." / "Нужно будет руками запустить
+  `setup.ps1`." (an infinitive after "осталось/нужно" hands work over; the listed forms
+  "выполни/запусти" do not match the infinitive "-ить")
+- "Перезапусти `nginx` и проверь." / "Сделай `npm ci` перед стартом." (Russian singular
+  imperatives outside the list; `_RU_IMPERATIVE` takes only "-ите/-йте/-ьте" because "-и/-й"
+  collide with plural nouns and adjectives)
+- "Your turn: `make release`." (a lead-in that assigns without a verb)
+- "I'll continue in the next session." (a deferral, not a command; belongs to `scan_phrases`)
+
+The choice needed: a Russian imperative/infinitive grammar that does not reopen the noun
+collisions, or a short list of hand-off lead-ins. Not fixed in PR #40, whose scope is false
+positives.
+
+**Recheck**: each line above as a must-block self-test case, with the report controls of PR
+#40 staying silent.
+
+## 2026-09-30 - STOP-GUARD: EVIDENCE-BOUND ORDER NOT FOUND FROM A SCRATCH CWD
+
+**Status**: arch-decision
+
+Split out of the entry above on 2026-10-28; unchanged since 2026-09-30 (`b10aeb3` session).
+`has_evidence_bound_external_task` looks only under
 `repo_root(Path.cwd())`, so a session whose cwd is a non-git scratch workspace can never
 bind its valid BLOCKED_EXTERNAL order. Measured in
 `.agent/user-tasks/REQ-5B886CC0BC3A/gate-smoke.log`: bound=False from the scratch cwd,
@@ -128,7 +211,7 @@ paths), never in arbitrary ones.
 
 ## 2026-09-30 15:58 - PUBLIC PUSH BLOCKED: SEMANTIC SCAN CLI OUT OF WEEKLY QUOTA (b10aeb3)
 
-**Status**: missing-dep
+**Status**: RESOLVED 2026-10-28 - waiting commit b10aeb3 is in origin/main; both scan legs ran on every public push today (PRs #23-#31).
 
 Same gate and cause as 2026-09-24. Refused twice, the second time captured by machine in
 `.agent/user-tasks/REQ-5B886CC0BC3A/push-refusal.log`:
@@ -151,7 +234,41 @@ of REQ-5B886CC0BC3A.
 
 ## 2026-09-26 14:40 - human-confirmation-guard: deletes hidden in wrappers pass; quoted words false-block
 
-**Status**: arch-decision
+**Status**: RESOLVED 2026-10-28 (branch `fix/command-text-is-data`). Re-measured first: of the
+group-1 wrappers only `iex "ri ..."` still passed (subshell, group, if, xargs, find -exec, env,
+nohup, busybox, `\rm`, timeout, nice, bash/sh/powershell -c, unlink, inline python, and the
+SAFE-pattern paths already blocked). `remote_command` now unwraps `iex`/`Invoke-Expression`.
+Group 2: `safety_common._mask_message_data` reads the whole command with quote rules and blanks
+quoted arguments of `git [-C ..] commit|tag` and `gh pr|issue|release create|comment|edit`
+(multi-line included), and of echo/printf whose one output is a plain file nothing else in the
+command can run; it masks nothing on `$(`, backticks, `${`, here-docs, `$'..'` or `\"`, on a
+pipe, a compound command (`{ }`, if/while/for, `exec`) or typographic quotes, and nothing at all
+outside a Bash tool event (PowerShell quotes and escapes differ). The per-line print mask also
+stops masking when typographic quotes or backticks appear: `git commit -m 'msg’ ; Remove-Item ..`
+was a PowerShell bypass on origin/main (found by the automated security review). Independent
+review round 2 found `{ ..; git tag -l --format='P'; } | sh`, `printf -v GIT_EDITOR`, and a hook
+written after `cd .git/hooks`; all three are must-block cases now. Review of e73a804 found the
+print target was a denylist: printf into `.claude/settings*.json` hooks, a systemd unit, cron
+files and fish config was masked. `_plain_file_target` is now an allowlist (relative path, no
+dot-directory except a leading `.claude/tmp/`, extension txt/md/log/msg/csv); the six commands
+are must-block cases (red at e73a804, green after; mutation probe 56 of 56 killed).
+Rounds on ccda9e8 and f758e24 kept finding names an .md/.txt list missed (CLAUDE.local.md,
+AGENT.md, agents/, commands/, requirements/ ...), hard links, and links made earlier in the
+same command. The premise is removed: a printf/echo payload is masked only when the print is
+the whole command, the target is under `.claude/tmp/` or inside TEMP/TMP, and no existing
+component is a symlink or junction and an existing target is a regular file with one link.
+Everything else stays visible (docs are written with the Write tool, not printf).
+Review of b9c1fbd: scheduled tasks on this machine run .ps1 files from TEMP and from
+.claude/tmp, so scratch alone is not inert; the last suffix must also be txt/md/log/csv.
+`agent_policy_gates.commit_invocations` now sees commits inside `bash/sh -c`, `powershell -c`
+and git aliases (`!` aliases included). Evidence: `hooks/tests/test_command_text_is_data.py`
+(202 cases, 12 red on main, all green after; registered in `run_guard_regressions.py`),
+`test_agent_policy_commit_gate.py::test_commit_inside_a_shell_string_or_alias_is_seen`
+(red before, green after), `human-confirmation-guard.py --self-test` PASS, mutation probe on
+the nine new helpers: 238 of 238 killed. Remaining by design: a destructive word inside the quoted
+argument of any OTHER command, or a commit message with `\"`, `$(` or a here-doc, still blocks.
+
+Original status: arch-decision
 
 Found by the independent review of `031ff27` (temp files deletable without consent). Both
 behaviours are identical at the previous HEAD; `031ff27` neither opened nor closed them.
@@ -195,3 +312,83 @@ after instructions for the owner ("выполни у себя: `kill 4242`"), an
 Options that were weighed: (a) the same strict grammar for stop/kill (safe, but natural phrasings like
 "убей 4242, он висит" stop passing) or (b) keep heuristics and accept these classes. The resolution
 above is the middle path between them; the three probe rows are now refused.
+
+## 2026-10-28 09:30 - transfer-contract-guard reads a git commit message as a transfer command
+
+**Status**: RESOLVED 2026-10-28 (branch `fix/command-text-is-data`). Root cause measured: the
+message mask already existed for single-line `git commit -m`, but `executable_text` works line
+by line, so a multi-line message, `git -C dir commit`, `git tag -m` and `printf ... > file`
+were never masked. Fixed once in `safety_common._mask_message_data` (see the 2026-09-26 14:40
+entry); a substitution inside the message keeps the whole command visible. Evidence:
+`hooks/tests/test_command_text_is_data.py` DATA cases (measured commands) and TRANSFER cases.
+
+Original status: arch-decision
+
+`git commit -m "... Copy-Item/robocopy ..."` is blocked as a transfer: the quoted
+message is data, but `safety_common.executable_text` masks quoted arguments only
+for search/print commands. Masking commit messages there is a decision for every
+guard that shares the helper (a command substitution inside double quotes still
+executes, so the mask must keep it). Workaround: `git commit -F <file>`.
+Same class in human-confirmation-guard: a commit message containing the word
+`rmdir` was blocked as a deletion (commit e923e33 had to go through -F).
+Found by session 71b3da3f while committing 8a36515.
+
+## 2026-10-28 14:00 - message masking hides git options and secret reads (pre-existing on main)
+
+**Status**: arch-decision
+
+Reported by the independent review of PR #38; measured with `executable_text` on origin/main
+and on the PR head (2026-10-28):
+- `git commit "--no-verify" -m x` -> `git commit   -m x` on both. The per-line mask
+  (`_PRINTS_OR_SEARCHES` includes `git commit`) blanks every quoted argument, options included.
+- `gh issue comment 1 --body-file "<secret path>"` -> the path is blanked on main by the
+  per-line mask; the PR's whole-command pass keeps `--body-file` values, the per-line one does not.
+- `gh pr create --body "$(cat id_rsa)"` -> kept visible on both (substitution). Whether the
+  publish guard treats it as a secret read is a separate question for that guard.
+- `git commit -m '...' > x.sh; sh x.sh` -> kept visible on both (the redirect stops masking).
+  Listed for completeness, not reproduced as a gap.
+- `git tag "-d" v1` was a regression of PR #38 itself and is fixed there (quoted options are
+  no longer masked by the whole-command pass).
+Direction: in the per-line mask, too, blank only message values, never a quoted word that
+starts with `-` and never a `--*-file` / `-F` value. Every command guard shares the helper,
+so this needs its own review.
+
+**Recheck**: add `git commit "--no-verify"` and `gh issue comment --body-file "<path>"` as
+must-stay-visible rows to `test_command_text_is_data.py`, then rerun `run_guard_regressions.py`
+and the mutation probe.
+
+## 2026-10-28 09:30 - handoff Closure Audit and PROBLEMS.md are prose that machines parse
+
+**Status**: RESOLVED (branch feat/handoff-json-sidecar, owner go-ahead 2026-10-28)
+
+Proposal from the mindfulmodeler review (session 71b3da3f): a small JSON sidecar
+next to each handoff (status, slug, closure-audit enums, next step, unfinished
+items with tracker links) and JSONL entries for PROBLEMS.md, so agent_roster.py
+and handoff-closure-audit-guard.py read fields instead of regexes.
+
+Done: optional `X.json` next to handoff `X.md` (`hooks/handoff_sidecar.py`: schema,
+validator, `write`/`check` helper). The guard validates it on either file's write and
+still accepts prose-only handoffs; agent_roster.py matches by its `session_id` and takes
+its `project` first. PROBLEMS.md was not turned into JSONL: the gap was two hooks with
+their own parsers and status lists, so `hooks/problems_md.py` now holds the parser and
+the status values for problems-md-validator.py and the handoff guard. Accepted
+difference for the guard's ticket list: it now reads the validator's looser `Status:`
+line (unbolded, indented) and requires `## ` before the date; on 548 real PROBLEMS.md
+files x 106 dates both lists matched exactly. Tests:
+`hooks/tests/test_handoff_sidecar.py` (in run_guard_regressions.py).
+
+## 2026-10-28 12:30 - harness-load-advisor reads a product's "false positives" as harness overload
+
+**Status**: RESOLVED 2026-10-28 (PR AnastasiyaW/codex-claude-code-config#32, merge 3564cba;
+live hook hash 4ef2a06 equals origin/main; 38 tests OK, 26/26 mutants killed, reviewer PROCEED
+on f61883f). Remaining known misses: a complaint whose feedback word is more than 40 characters
+from the subject; "the gate flags/reports false positives".
+
+The `explicit-feedback` signal matches `ложн\w* срабатыван\w*` / `false positive` anywhere in
+the final reply, and `_profile()` labels it `staging-smoke` when "smoke" appears anywhere (here
+the file name `click_smoke.py`). A report on a Crossweft sandbox run ("ложных срабатываний про
+кнопки не было", the click test `click_smoke.py`) blocked Stop three times although no gate or
+profile of ours ran in that session. Fix direction: require a harness/gate subject in the same
+sentence for `explicit-feedback` (as `declared-overload` does) and skip negated forms ("не было
+ложных срабатываний"). A public-repo hook change needs a red/green test and an independent
+reviewer, so it is not patched in passing.

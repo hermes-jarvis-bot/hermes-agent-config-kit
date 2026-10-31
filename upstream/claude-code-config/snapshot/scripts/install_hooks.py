@@ -60,6 +60,8 @@ Opt-in extras (use --extras):
   - session-feedback-capture    Stop          queues Claude/Codex sessions for human-gated correction distillation
   - feedback-pending-show       SessionStart  surfaces the bounded distillation backlog
   - shared-branch-guard          PreToolUse    protects marked checkouts shared by several workers
+  - publish-bypass-guard         PreToolUse    blocks publishing routes that skip the pre-push leak scan
+  - merge-gate-guard             PreToolUse    lands PRs on the default branch only through scripts/safe_merge.py
 
 Usage
 -----
@@ -160,6 +162,8 @@ EXTRAS: list[tuple[str, str, str | None]] = [
     ("session-feedback-capture.py", "Stop", None),
     ("feedback-pending-show.py", "SessionStart", None),
     ("shared-branch-guard.py", "PreToolUse", "Bash|PowerShell"),
+    ("publish-bypass-guard.py", "PreToolUse", "Bash|PowerShell"),
+    ("merge-gate-guard.py", "PreToolUse", "Bash|PowerShell"),
 ]
 
 # Claude calls its delegation boundary Task. Codex exposes spawn_agent through
@@ -173,7 +177,7 @@ CODEX_NATIVE_EXTRAS = [
 ]
 
 # Shared utilities (not hooks themselves, but imported by installed hooks)
-SHARED = ["safety_common.py", "skill_contract_state.py"]
+SHARED = ["safety_common.py", "skill_contract_state.py", "handoff_sidecar.py", "problems_md.py"]
 
 # One local, unpushed implementation used a narrow batch-only name.  Retire its
 # registrations when the generic task guard is installed, while settings.json
@@ -288,10 +292,14 @@ def _save_settings(path: Path, data: dict, dry_run: bool) -> None:
         print(f"  [dry-run] would write {path}")
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    # Backup existing
+    # .json.bak holds the previous run; .json.bak-first keeps the pre-installer file,
+    # which a daily re-run (codex_update.py) would otherwise overwrite on day two.
     if path.exists():
-        backup = path.with_suffix(".json.bak")
-        backup.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+        current = path.read_text(encoding="utf-8")
+        first = path.with_suffix(".json.bak-first")
+        if not first.exists():
+            first.write_text(current, encoding="utf-8")
+        path.with_suffix(".json.bak").write_text(current, encoding="utf-8")
     tmp = path.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n",
                    encoding="utf-8")
