@@ -80,7 +80,7 @@ MAX_CAPTURE_BYTES = 12_000
 # must not turn a slow passing reproducer into a synthetic rc=124 failure.
 CAPTURE_TIMEOUT_SEC = 900
 ACTIVE_FOR_EDITS = {"PLAN_FROZEN", "IMPLEMENTING"}
-COMPLETE_FOR_STOP = {"VERIFIED", "SEALED", "BLOCKED"}
+COMPLETE_FOR_STOP = {"VERIFIED", "SEALED", "BLOCKED", "SUPERSEDED"}
 VALID_STATUS = {
     "INTAKE",
     "ANALYZED",
@@ -89,6 +89,7 @@ VALID_STATUS = {
     "VERIFIED",
     "SEALED",
     "BLOCKED",
+    "SUPERSEDED",
 }
 CODE_SUFFIXES = {
     ".bat", ".c", ".cc", ".cmd", ".cpp", ".cs", ".css", ".cxx", ".go",
@@ -405,6 +406,24 @@ _MARKER_LEAD = re.compile(r"(?:<system-reminder>\s*)?" + re.escape(SYSTEM_NOTIFI
 # failures opened a false incident intent and blocked every hub edit. Only a block closed by
 # its own id is removed; an unclosed or mismatched one stays and is classified (fail closed).
 _PASTED_BLOCK = re.compile(r'<pasted_content id="([^"<>]+)">.*?</pasted_content id="\1">', re.DOTALL)
+# delivery-guard-machine-messages-20261028: other agents and the harness reach this hook through the
+# same prompt field. Live intents were recorded from a bare <cross-session-message ...> element, one
+# behind a "Linked sessions" <system-reminder>, <agent-message ...> subagent hand-backs, a plugin
+# review <system-reminder> after a task notification, and "Stop hook feedback:" prompts. Codex
+# delivers <subagent_notification> as a user-role message. None of them is the owner's request.
+# Only an element closed by its own tag is removed; an unclosed one stays and is classified.
+# simplification: owner words are lost when she starts a prompt with a pasted "Stop hook feedback:"
+# or "Another Claude session sent a message:" plus an element, or writes one of these closed
+# elements herself (none of 1500+ human prompts in the 2026-10-28 replay). Many unclosed tags make
+# the lazy match quadratic, the same class as _PASTED_BLOCK. Upgrade path: origin.kind from the
+# transcript record, as the task-notification ceiling above says.
+_MACHINE_BLOCK = re.compile(
+    r"<(cross-session-message|agent-message|subagent_notification|system-reminder)(?=[\s>])[^>]*>.*?</\1>",
+    re.DOTALL,
+)
+# The transcript rendering puts this line before a peer element and harness guidance after it.
+_PEER_WRAPPER_LEAD = "Another Claude session sent a message:"
+_STOP_FEEDBACK_LEAD = "Stop hook feedback:"
 
 
 def owner_text(prompt: str) -> str:
@@ -414,23 +433,28 @@ def owner_text(prompt: str) -> str:
     removed through the last closing tag, so several concatenated notifications
     go together and words written after the last one are still classified.
     Pasted third-party text (harness <pasted_content id=X> blocks) is removed
-    wherever it appears. Text without that structure is returned as is.
+    wherever it appears, and so are closed messages from other agents and harness
+    reminders. A Stop-hook feedback prompt or a rendered peer message is machine
+    text as a whole. Text without that structure is returned as is.
     """
     text = _PASTED_BLOCK.sub("", prompt).lstrip()
+    if text.startswith(_PEER_WRAPPER_LEAD) and _MACHINE_BLOCK.search(text):
+        return ""
+    text = _MACHINE_BLOCK.sub("", text).lstrip()
+    if text.startswith(_STOP_FEEDBACK_LEAD):
+        return ""
     if _MARKER_LEAD.match(text):
         opening = _NOTIFICATION_OPEN.search(text)
     else:
         opening = _NOTIFICATION_OPEN.match(text)
     if opening is None:
         return text
-    end = text.rfind(NOTIFICATION_CLOSE, opening.end())
-    if end < 0:
+    _, closed, after = text[opening.end():].rpartition(NOTIFICATION_CLOSE)
+    if not closed:
         # An unclosed element proves nothing (no real record is truncated), so
         # keep the old classification rather than let owner words pass the gate.
         return text
-    # A wrapper's trailing </system-reminder> stays in the result: it carries no
-    # words the classifier matches.
-    return text[end + len(NOTIFICATION_CLOSE):]
+    return after
 
 
 def classify_prompt(prompt: str) -> str | None:
@@ -631,6 +655,64 @@ def labeled_fields(text: str) -> dict[str, str]:
     return fields
 
 
+def owner_paths_of(case: dict[str, Any]) -> set[str]:
+    layer = case.get("layer") if isinstance(case.get("layer"), dict) else {}
+    paths = layer.get("owner_paths") if isinstance(layer.get("owner_paths"), list) else []
+    return {item for item in paths if isinstance(item, str) and item.strip()}
+
+
+def superseded_record(case: dict[str, Any]) -> dict[str, Any]:
+    record = case.get("superseded")
+    return record if isinstance(record, dict) else {}
+
+
+def all_cases(root: Path) -> list[tuple[dict[str, Any], Path]]:
+    base = root / CASE_ROOT
+    if not base.is_dir():
+        return []
+    found: list[tuple[dict[str, Any], Path]] = []
+    for path in base.glob("*/case.json"):
+        case = _read_json(path)
+        if case:
+            found.append((case, path))
+    return found
+
+
+def _supersede_errors(case: dict[str, Any], root: Path | None) -> list[str]:
+    record = superseded_record(case)
+    by_case = record.get("by_case")
+    if not isinstance(by_case, str) or not by_case.strip():
+        return ["SUPERSEDED needs superseded.by_case"]
+    errors: list[str] = []
+    if not isinstance(record.get("reason"), str) or not record["reason"].strip():
+        errors.append("SUPERSEDED needs superseded.reason")
+    if not isinstance(record.get("recorded_at"), (int, float)):
+        errors.append("SUPERSEDED needs superseded.recorded_at")
+    if root is None:
+        return errors
+    try:
+        canonical, _ = load_case(root, by_case)
+    except ValueError:
+        return errors + ["superseded.by_case is not a valid case id"]
+    if canonical is None:
+        return errors + ["superseded.by_case names a missing case"]
+    if canonical.get("status") == "SUPERSEDED":
+        return errors + ["superseded chain: the canonical case is itself SUPERSEDED"]
+    if not owner_paths_of(case) & owner_paths_of(canonical):
+        errors.append("superseded case shares no layer.owner_paths entry with its canonical case")
+    return errors
+
+
+def _correction_errors(correction: dict[str, Any], root: Path) -> list[str]:
+    try:
+        data = (root / str(correction.get("evidence_path", ""))).read_bytes()
+    except OSError:
+        return ["retriage.measured_correction evidence is missing on disk"]
+    if hashlib.sha256(data).hexdigest() != correction.get("sha256"):
+        return ["retriage.measured_correction evidence digest is stale"]
+    return []
+
+
 def validation_errors(
     case: dict[str, Any],
     *,
@@ -685,6 +767,12 @@ def validation_errors(
         retriage = case.get("retriage") if isinstance(case.get("retriage"), dict) else {}
         if retriage.get("after_failed_attempt") != failures or not nonempty_strings(retriage.get("expanded_owner_paths")):
             errors.append("two failed attempts require retriage.after_failed_attempt and expanded_owner_paths")
+    retriage_record = case.get("retriage") if isinstance(case.get("retriage"), dict) else {}
+    correction = retriage_record.get("measured_correction")
+    if isinstance(correction, dict) and root is not None:
+        errors.extend(_correction_errors(correction, root))
+    if status == "SUPERSEDED":
+        errors.extend(_supersede_errors(case, root))
 
     if status in {"VERIFIED", "SEALED"}:
         after = verification.get("after")
@@ -744,7 +832,7 @@ def validation_errors(
                     if not fields.get("observed"):
                         errors.append("BLOCKED blocker evidence needs an observed external condition")
     if require_terminal and status not in COMPLETE_FOR_STOP:
-        errors.append("case is not terminal: need VERIFIED, SEALED, or BLOCKED")
+        errors.append("case is not terminal: need VERIFIED, SEALED, BLOCKED, or SUPERSEDED")
     return errors
 
 
@@ -960,6 +1048,58 @@ def record_failed_attempt(root: Path, case_id: str, hypothesis: str, changed_pat
     return 0, f"CASE: recorded failed attempt {len(attempts)}"
 
 
+def supersede_case(
+    root: Path, case_id: str, canonical_id: str, reason: str, recorded_by: str,
+) -> tuple[int, str]:
+    """Close a duplicate case as SUPERSEDED by a canonical case for the same cause."""
+    case, path = load_case(root, case_id)
+    if case is None:
+        return 2, f"CASE: FAIL - missing {path}"
+    if case.get("status") in COMPLETE_FOR_STOP:
+        return 2, f"CASE: FAIL - supersede requires an unfinished case; {case_id} is {case.get('status')}"
+    if not reason.strip():
+        return 2, "CASE: FAIL - supersede requires a non-empty --reason"
+    if canonical_id == case_id:
+        return 2, "CASE: FAIL - a case cannot supersede itself"
+    try:
+        canonical, _ = load_case(root, canonical_id)
+    except ValueError as exc:
+        return 2, f"CASE: FAIL - {exc}"
+    if canonical is None:
+        return 2, f"CASE: FAIL - canonical case is missing: {canonical_id}"
+    if canonical.get("status") == "SUPERSEDED":
+        return 2, f"CASE: FAIL - canonical {canonical_id} is SUPERSEDED; chains are refused"
+    for other, _ in all_cases(root):
+        if other.get("status") == "SUPERSEDED" and superseded_record(other).get("by_case") == case_id:
+            return 2, f"CASE: FAIL - {case_id} is the canonical case of a superseded duplicate; chains are refused"
+    shared = sorted(owner_paths_of(case) & owner_paths_of(canonical))
+    if not shared:
+        return 2, "CASE: FAIL - canonical case shares no layer.owner_paths entry with this case"
+    case["status"] = "SUPERSEDED"
+    case["superseded"] = {
+        "by_case": canonical_id,
+        "reason": reason.strip(),
+        "recorded_by": recorded_by,
+        "recorded_at": time.time(),
+        "shared_owner_paths": shared,
+    }
+    save_case(path, case)
+    return 0, f"CASE: SUPERSEDED by {canonical_id}"
+
+
+def measured_correction(root: Path, raw: str) -> tuple[dict[str, Any] | None, str]:
+    """Hash a repository-local measured correction that states an ``Observed:`` line."""
+    try:
+        receipt = (root / raw).resolve()
+        relative_receipt = receipt.relative_to(root)
+        data = receipt.read_bytes()
+    except (OSError, ValueError):
+        return None, "CASE: FAIL - measured correction must be a readable file inside the repository"
+    if not labeled_fields(data.decode("utf-8", errors="replace")).get("observed"):
+        return None, "CASE: FAIL - measured correction needs a labeled Observed: line with the measured condition"
+    return {"evidence_path": _normal(relative_receipt), "sha256": hashlib.sha256(data).hexdigest()}, ""
+
+
 def emit_block(reason: str) -> None:
     print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
 
@@ -981,7 +1121,8 @@ def block_missing_case(intent: dict[str, Any], detail: str = "") -> None:
         "Source edit blocked: this repository has an active " + kind + " delivery intent, "
         "but no valid PLAN_FROZEN delivery case. " + detail
         + "Create .agent/delivery-cases/<id>/case.json with the affected layer and bounded plan, then freeze it. Use: "
-        "python ~/.claude/hooks/root-cause-delivery-guard.py init <case-id> "
+        # The running file, not a fixed path: an unwired copy under ~/.claude/hooks/ once sat there.
+        f"python \"{Path(__file__).resolve().as_posix()}\" init <case-id> "
         f"--kind {kind} --summary \"...\". Case documents themselves remain writable."
     )
 
@@ -1196,8 +1337,16 @@ def cli(argv: list[str]) -> int:
     attempt.add_argument("--changed-path", action="append", default=[])
     retriage = sub.add_parser("retriage")
     retriage.add_argument("case_id")
-    retriage.add_argument("--expanded-owner-path", action="append", required=True)
+    retriage.add_argument("--expanded-owner-path", action="append", default=[])
     retriage.add_argument("--causal-hypothesis", required=True)
+    retriage.add_argument(
+        "--measured-correction",
+        help="repository file with a labeled Observed: line; replaces the two-failed-attempts requirement",
+    )
+    supersede = sub.add_parser("supersede")
+    supersede.add_argument("case_id")
+    supersede.add_argument("--by", required=True, help="canonical case id in this repository")
+    supersede.add_argument("--reason", required=True)
     blocked = sub.add_parser("block")
     blocked.add_argument("case_id")
     blocked.add_argument("--external-prerequisite", required=True)
@@ -1257,9 +1406,21 @@ def cli(argv: list[str]) -> int:
         code, message = record_failed_attempt(root, args.case_id, args.hypothesis, args.changed_path)
         print(message)
         return code
+    if args.command == "supersede":
+        code, message = supersede_case(
+            root, args.case_id, args.by, args.reason, os.environ.get("AGENT_SESSION_ID", "unscoped"),
+        )
+        print(message, file=sys.stderr if code else sys.stdout)
+        return code
     if args.command == "retriage":
         failures = sum(1 for item in case.get("attempts", []) if isinstance(item, dict) and item.get("result") == "FAIL")
-        if failures < 2:
+        correction = None
+        if args.measured_correction:
+            correction, message = measured_correction(root, args.measured_correction)
+            if correction is None:
+                print(message, file=sys.stderr)
+                return 2
+        elif failures < 2:
             print("CASE: FAIL - retriage is required after two failed attempts, not before", file=sys.stderr)
             return 2
         if case.get("status") != "IMPLEMENTING":
@@ -1268,7 +1429,7 @@ def cli(argv: list[str]) -> int:
         layer = case.get("layer") if isinstance(case.get("layer"), dict) else {}
         known_owners = set(layer.get("owner_paths") or [])
         expanded = [item for item in args.expanded_owner_path if item not in known_owners]
-        if not expanded:
+        if not expanded and correction is None:
             print("CASE: FAIL - retriage must add at least one new owner boundary", file=sys.stderr)
             return 2
         plan = case.get("plan") if isinstance(case.get("plan"), dict) else {}
@@ -1285,6 +1446,17 @@ def cli(argv: list[str]) -> int:
             "expanded_owner_paths": expanded,
             "previous_hypothesis": previous_hypothesis,
         }
+        if correction is not None:
+            case["retriage"]["measured_correction"] = correction
+            case.setdefault("history", []).append({
+                "event": "retriage",
+                "basis": "measured-correction",
+                "recorded_at": time.time(),
+                "previous_hypothesis": previous_hypothesis,
+                "causal_hypothesis": args.causal_hypothesis,
+                "evidence_path": correction["evidence_path"],
+                "sha256": correction["sha256"],
+            })
         case["status"] = "ANALYZED"
         save_case(path, case)
         print("CASE: retriage recorded")

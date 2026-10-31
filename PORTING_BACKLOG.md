@@ -41,21 +41,21 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | Area | Files in snapshot | Ported | Rejected | Left out |
 | --- | ---: | ---: | ---: | ---: |
 | Root docs/config | 12 | 0 | 0 | 12 |
-| `.claude-plugin/` | 1 | 0 | 0 | 1 |
-| `.github/` | 1 | 0 | 0 | 1 |
+| `.claude-plugin/` | 2 | 0 | 0 | 2 |
+| `.github/` | 3 | 0 | 0 | 3 |
 | `agents/` | 8 | 0 | 0 | 8 |
 | `alternatives/` | 19 | 0 | 0 | 19 |
-| `docs/` | 31 | 0 | 0 | 31 |
+| `docs/` | 34 | 0 | 0 | 34 |
 | `evals/` | 29 | 0 | 0 | 29 |
-| `hooks/` | 111 | 24 | 13 | 74 |
+| `hooks/` | 131 | 24 | 13 | 94 |
 | `principles/` | 31 | 30 | 0 | 1 |
 | `references/` | 6 | 0 | 0 | 6 |
-| `rules/` | 36 | 29 | 0 | 7 |
-| `scripts/` | 99 | 0 | 1 | 98 |
+| `rules/` | 38 | 29 | 0 | 9 |
+| `scripts/` | 110 | 0 | 1 | 109 |
 | `skills/` | 379 | 155 | 0 | 224 |
 | `templates/` | 50 | 34 | 0 | 16 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **818** | **272** | **14** | **532** |
+| **Total** | **857** | **272** | **14** | **571** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
@@ -64,7 +64,7 @@ Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only 
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
 
-_Last recomputed against upstream commit `9a56783f7000a3302e946de51eacd014ffd16ee7` (`upstream.lock.json`'s `last_synced_sha`)._
+_Last recomputed against upstream commit `b3d71f1d18168277648d71dec68ad5e6aa470778` (`upstream.lock.json`'s `last_synced_sha`)._
 
 <!-- END SNAPSHOT_BASELINE_TABLE -->
 

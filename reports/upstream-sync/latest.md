@@ -1,797 +1,282 @@
-# Upstream sync report: 9a56783f7000a3302e946de51eacd014ffd16ee7..9a56783f7000a3302e946de51eacd014ffd16ee7
+# Upstream sync report: 9a56783f7000a3302e946de51eacd014ffd16ee7..b3d71f1d18168277648d71dec68ad5e6aa470778
 
-Generated: 2026-10-25T04:28:11.776853+00:00
+Generated: 2026-10-31T17:14:31.252453+00:00
 Source: `AnastasiyaW/claude-code-config` branch `main`
 Base SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
-Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
+Target SHA: `b3d71f1d18168277648d71dec68ad5e6aa470778`
 
 ## Summary
 
-- Commits included: 0
-- Files changed/snapshotted: 838
+- Commits included: 123
+- Files changed/snapshotted: 120
 - Generated artefacts: 237
 - Missing supported sources: 0
-- Manual re-approval candidates: 149
-- Manual-review candidates: 210
-- Unsupported candidates: 1
-- Risk counts: {"high": 210, "low": 255, "medium": 373}
+- Manual re-approval candidates: 14
+- Manual-review candidates: 58
+- Unsupported candidates: 2
+- Risk counts: {"high": 58, "low": 30, "medium": 32}
 
 ## Commits
 
-- Initial snapshot or no compare commit data.
+- `c9bef0f` Add link to awesome-claude-code-hooks in Complementary Tools
+- `5b869f8` rules: long-wait-cache-ttl (50-minute wait cap, 1h subagent cache); docs: evidence-backed visual workflow patterns from OpenVLHarness
+- `457976e` README: what's new - long waits and 1h cache, evidence-backed visual workflow
+- `8565db9` Merge pull request #22 from AnastasiyaW/feat/long-wait-visual-evidence
+- `82e5c99` Merge pull request #17 from loqimean/add-hooks-link
+- `ca53122` hooks: a local copy into TEMP is not a transfer; session scratchpad needs no folder marker
+- `d19a079` PROBLEMS: commit-message false positive in transfer guard; handoff JSON sidecar proposal
+- `747ef26` transfer-contract-guard: close the four bypasses found by independent review
+- `4baf1da` PROBLEMS: commit-message false positive also hits human-confirmation-guard
+- `32e23b6` test_transfer_local_temp: neutral placeholder paths (no home-folder shapes)
+- `4876f90` UPDATES: 2026-10-28 entry (temp backups, mutation probe); fix changelog title
+- `88b88b3` Merge pull request #23 from AnastasiyaW/fix/temp-backup-not-a-transfer-clean
+- `eb78529` docs: ideas re-checked against primary sources (ub-mode/pstack, Harness2, OpenVLHarness, OpenAI dead-code guide, autoresearch)
+- `6af06ec` Merge pull request #24 from AnastasiyaW/docs/ub-mode-ideas-20261028
+- `a647283` Add crap_probe.py: advisory CRAP score per Python function
+- `a11e5ea` mutation_probe: arithmetic, literal, chained-comparison mutants; auto timeout
+- `771cfd9` Pilot: repeats, one-change check, lesson ledger
+- `adc8a5a` Add failure_mine.py: read-only miner of agent failures in transcripts
+- `a3babeb` Merge pull request #27 from AnastasiyaW/feat/pilot-repeats-lessons
+- `dcb9230` failure_mine: count each tool_result once, house exit codes, is_hook_block controls
+- `24765cf` Fix crap_probe review findings: fail closed on unmeasured inputs
+- `a6aa88e` mutation_probe: kill timed-out test trees; cleanup failure exits 2; more self-test samples
+- `5770022` Merge pull request #25 from AnastasiyaW/feat/crap-probe
+- `10f2ef0` Merge pull request #26 from AnastasiyaW/feat/mutation-probe-more-mutants
+- `00ad86d` Merge pull request #28 from AnastasiyaW/feat/failure-mine
+- `57bfed9` Add publish-bypass-guard: block routes that skip the pre-push leak scan
+- `e193aab` publish-bypass-guard: close seven gaps found by fresh-context review
+- `1e3fc83` fix: harness-load-advisor needs a gate subject for feedback words
+- `9449f67` publish-bypass-guard: close re-review bypasses, canonical chain hook
+- `551e833` fix: harness-load-advisor review findings (negation scope, plurals, stage subject)
+- `138c59c` publish-bypass-guard: wrapper options, push target rewrites, GH_REPO
+- `da47425` Merge pull request #29 from AnastasiyaW/feat/publish-bypass-guard
+- `f4d4277` fix: harness-load-advisor reads feedback within one clause of the subject
+- `c32c6a9` Harden the public pre-push scan against unscanned content (#30)
+- `ec5b89a` docs: harness-care rule and UPDATES entry for the verification tools and publish-route guard
+- `e0f8b28` Merge pull request #31 from AnastasiyaW/docs/harness-care-updates-20261028
+- `c291022` fix: harness-load-advisor third review (report verbs, validators, dash copula)
+- `f61883f` fix: harness-load-advisor dash copula only before a judgement; "показался"
+- `3564cba` Merge pull request #32 from AnastasiyaW/fix/harness-load-advisor-subject-20261028
+- `4f5299e` Ship the repo as a Claude Code plugin with a generated hooks.json, rules index, and Codex update command
+- `53e39e1` Plugin: forbid a manifest version, document the python requirement, keep the pre-installer settings backup
+- `7cf2897` Merge pull request #33 from AnastasiyaW/feat/team-plugin-marketplace
+- `41d9eaf` docs: team plugin install fails on a long CLAUDE_CONFIG_DIR path on Windows
+- `4940341` Merge pull request #34 from AnastasiyaW/docs/team-plugin-longpath
+- `61ffb9f` Plugin: skill paths resolve inside the plugin, rules index skips the user's own rules, UTF-8 handoff output
+- `d257863` PROBLEMS: three missing-dep push blockers resolved (commits landed, semantic leg runs)
+- `ec024dd` Skill copies get real paths; lock and sync skip git-ignored files; wider skill path check
+- `b96c32a` Merge pull request #35 from AnastasiyaW/docs/problems-resolve-missing-dep
+- `24c96c2` Skill path check reads every skill .md; quote substituted paths; fix sibling and proposed-layout references
+- `183c0d9` delivery-guard: machine messages are not the owner's delivery intent
+- `a1f1ca5` Merge pull request #37 from AnastasiyaW/fix/delivery-guard-problems
+- `e73a804` guards: message text is data; wrapped deletes and commits stay visible
+- `f071764` PROBLEMS: record the resolved harness-load-advisor false positive (PR 32)
+- `110ca68` Merge pull request #36 from AnastasiyaW/fix/plugin-1251-paths
+- `c5969ed` Merge pull request #39 from AnastasiyaW/docs/problems-hla-entry
+- `4052e3a` stop-phrase-guard: report words and named spans are not hand-offs
+- `764eb87` handoff JSON sidecar and one PROBLEMS.md parser
+- `ccda9e8` guards: printed-file targets are an allowlist; quoted options stay visible
+- `56387e6` Merge origin/main into feat/handoff-json-sidecar
+- `a5c519a` Merge pull request #41 from AnastasiyaW/feat/handoff-json-sidecar
+- `f6b27bf` stop-phrase-guard: a masked command does not hide the verb before it
+- `ce7c034` Merge remote-tracking branch 'origin/main' into fix/stop-guard-false-positives
+- `f758e24` guards: printed-file targets exclude instruction files and resolve links
+- `d92b3fc` Merge pull request #40 from AnastasiyaW/fix/stop-guard-false-positives
+- `b9c1fbd` guards: printed payload is data only in scratch, alone, with no link
+- `b5208c1` guards: scratch payloads are data only in .txt .md .log .csv files
+- `762792c` Merge pull request #38 from AnastasiyaW/fix/command-text-is-data
+- `29b03da` Plugin: ship publish-bypass-guard and document its effect without the global scan
+- `244d2bc` publish-bypass-guard: hook file names are not a push; tests for PLUGIN_EXTRAS
+- `b055630` publish-bypass-guard: keep the broad git/push test minus benign hook names; drop redirections before parsing
+- `752cd1d` publish-bypass-guard: quote-aware redirection cut; interpreter code is not shell; stash push and code mentioning push pass
+- `7644657` publish-bypass-guard: a multi-line quoted message is one argument (fail closed on #, $', backslash, here-doc)
+- `c4dc174` publish-bypass-guard: interpreter code that builds git push as a list stays blocked
+- `defb362` publish-bypass-guard test: list-form git given by full path
+- `d85cbc5` Merge pull request #42 from AnastasiyaW/feat/plugin-publish-guard-v2
+- `0ca1c1e` human-confirmation-guard: owner-named file in a drive root; mid-turn message as content blocks
+- `466374d` Merge pull request #43 from AnastasiyaW/fix/delete-root-file-by-owner-20261028
+- `c9060c0` human-confirmation-guard: a named unit stops with sudo -n, .service and status checks
+- `34a56da` Merge pull request #44 from AnastasiyaW/fix/hcg-stop-unit-main-20261029
+- `d9d51cd` human-confirmation-guard: owner-approved unit stops apply to services only
+- `59baf24` Merge pull request #45 from AnastasiyaW/fix/hcg-unit-type-allowlist-20261029
+- `906baa1` plugin: ship token savers (Benjamin-Plus injection, verified RTK rewrite)
+- `e490aea` rtk: Bash only; name the shipped rule in Benjamin precedence; warn about duplicate Benjamin
+- `b27f275` docs: token overspend findings and the interim measures that retire with official fixes
+- `cf406f3` Merge pull request #46 from AnastasiyaW/feat/plugin-token-savers-20261030
+- `c907f80` docs+mods: skill-list ceiling, always-loaded rules, linked-chat cost; generic pult mod
+- `58e05e4` pult: never write a handoff or INDEX.md through a link leading outside the project; warn that handoffs hold chat text
+- `3fc51f4` pult: refuse a dangling link at the final path; tests walk up through missing folders, sibling prefix, drive-letter case
+- `476ee7c` pult: check every level of the path for links, refuse a link at the file even into the project, refuse an unlistable folder; case-insensitive names
+- `a14fa45` pult: refuse links at every level below the root, even ones that stay inside the project; clearer skip message
+- `29e14f8` repeated-attempt-guard: premise-loop note when one error returns after two fixes; read PostToolUseFailure
+- `9260f30` repeated-attempt-guard: skip bad state lines (4 of 89,835 had silenced it), compact to the window, bare exit codes are not attempts, shell reads count; document wiring
+- `dc3c14f` repeated-attempt-guard: same-session reads clear the block, cd-prefixed reads count, writes into files are not reads, per-process compaction file
+- `d1d0106` Merge pull request #47 from AnastasiyaW/docs/token-findings-pult-20261030
+- `027b7b2` Merge pull request #48 from AnastasiyaW/feat/premise-loop-guard-20261030
+- `3641df5` repeated-attempt-guard: shell errors without the word error (No such file, not found, cannot, denied) count as failures
+- `a194983` Merge pull request #49 from AnastasiyaW/feat/premise-loop-guard-fix2-20261030
+- `4ab3bac` merge gate: land PRs on the default branch only through safe_merge
+- `af0fe87` merge-gate-guard: a repeated -b on checkout leaves the new branch unknown
+- `d0c671c` Merge branch 'main' into feat/merge-gate-20261030
+- `38887b7` Merge pull request #51 from AnastasiyaW/feat/merge-gate-20261030
+- `a8d282c` human-confirmation-guard: say which test-VM restart form passes
+- `82b8bf0` root-cause-delivery: SUPERSEDED terminal status and measured-correction retriage
+- `2b902f5` root-cause-delivery-guard tests: kill all supersede/retriage mutants
+- `1ecd3ae` Merge pull request #52 from AnastasiyaW/fix/test-vm-restart-hint-20261031
+- `bbe2c76` merge gate: on a repo without CI the owner's own request to merge lifts the no-checks refusal
+- `f12dd30` Merge pull request #54 from AnastasiyaW/fix/owner-approved-merge-no-ci-20261031
+- `72faee4` safe_merge: every refusal prints the agent's next repair step; rule: a refusal starts the fix
+- `c2b7241` Merge pull request #55 from AnastasiyaW/fix/merge-refusal-next-steps-20261031
+- `ed8d079` chore: refresh skills-lock (CI check said it was stale)
+- `502165d` Merge branch 'main' into feat/rcd-supersede-retriage-20261031
+- `3139f28` Merge pull request #53 from AnastasiyaW/feat/rcd-supersede-retriage-20261031
+- `6db778a` hooks: remote branch removal on the owner's request; merge-gate checks deletes against the live default
+- `913fcaa` tests: merge-gate fakes ls-remote; deleting a non-default main is allowed
+- `a0b8336` Merge pull request #56 from AnastasiyaW/fix/branch-delete-on-request-20261031
+- `bb590b7` merge-gate: map Git Bash /d/... paths after cd on Windows
+- `8f76cdc` Merge pull request #57 from AnastasiyaW/fix/merge-gate-msys-cd-20261031
+- `2695fbd` merge-gate: accept the owner's typo of vlivai as a request to merge
+- `7d61bc2` Merge pull request #58 from AnastasiyaW/fix/merge-ask-typo-20261031
+- `c2cfb98` safe_merge: count only the newest run of a check name per app
+- `0858098` Merge pull request #59 from AnastasiyaW/fix/safe-merge-latest-run-per-name-20261031
+- `43dd821` human-confirmation-guard: a ~digit name Windows confirms as long is not an 8.3 alias
+- `b3d71f1` Merge pull request #60 from AnastasiyaW/fix/hcg-tilde-longname-20261031
 
 ## File classification
 
 ### auto-convert
 
-- `principles/02-proof-loop.md`
-- `principles/05-structured-reasoning.md`
-- `rules/app-prelaunch-security-checklist.md`
 - `rules/deletion-confirm-and-verify.md`
 - `rules/finish-the-task.md`
 - `rules/no-guessing.md`
-- `skills/ai-ml/flux2-lora-training/SKILL.md`
-- `skills/ai-ml/vlm-segmentation/references/diffusion-engineering.md`
-- `skills/ai-ml/vlm-segmentation/references/gpu-deployment.md`
-- `skills/ai-ml/vlm-segmentation/references/vlm-segmentation.md`
-- `skills/development/architecture-first/references/clean-architecture-original.md`
-- `skills/development/architecture-first/references/clean-architecture/boundaries-and-layers.md`
-- `skills/development/architecture-first/references/clean-architecture/details-and-code-organization.md`
-- `skills/development/architecture-first/references/clean-architecture/python-implementation.md`
-- `skills/development/architecture-first/references/clean-architecture/solid-and-components.md`
-- `skills/development/architecture-first/references/domain-driven-design-original.md`
-- `skills/development/architecture-first/references/domain-driven-design/bounded-contexts.md`
-- `skills/development/architecture-first/references/domain-driven-design/building-blocks.md`
-- `skills/development/architecture-first/references/domain-driven-design/domain-events.md`
-- `skills/development/architecture-first/references/domain-driven-design/repositories-factories.md`
-- `skills/development/architecture-first/references/domain-driven-design/strategic-design.md`
-- `skills/development/architecture-first/references/domain-driven-design/ubiquitous-language.md`
-- `skills/development/code-complexity/references/clean-code-original.md`
-- `skills/development/code-complexity/references/clean-code/code-smells.md`
-- `skills/development/code-complexity/references/clean-code/comments-formatting.md`
-- `skills/development/code-complexity/references/clean-code/error-handling.md`
-- `skills/development/code-complexity/references/clean-code/functions-and-methods.md`
-- `skills/development/code-complexity/references/clean-code/naming-conventions.md`
-- `skills/development/code-complexity/references/clean-code/testing-principles.md`
-- `skills/development/code-complexity/references/pragmatic-programmer-original.md`
-- `skills/development/code-complexity/references/pragmatic-programmer/broken-windows.md`
-- `skills/development/code-complexity/references/pragmatic-programmer/contracts-assertions.md`
-- `skills/development/code-complexity/references/pragmatic-programmer/dry-orthogonality.md`
-- `skills/development/code-complexity/references/pragmatic-programmer/estimation-portfolio.md`
-- `skills/development/code-complexity/references/pragmatic-programmer/reversibility.md`
-- `skills/development/code-complexity/references/pragmatic-programmer/tracer-bullets.md`
-- `skills/development/code-complexity/references/software-design-philosophy-original.md`
-- `skills/development/code-complexity/references/software-design-philosophy/comments-as-design.md`
-- `skills/development/code-complexity/references/software-design-philosophy/complexity-symptoms.md`
-- `skills/development/code-complexity/references/software-design-philosophy/deep-modules.md`
-- `skills/development/code-complexity/references/software-design-philosophy/general-vs-special.md`
-- `skills/development/code-complexity/references/software-design-philosophy/information-hiding.md`
-- `skills/development/code-complexity/references/software-design-philosophy/strategic-programming.md`
-- `skills/development/refactoring-safely/references/refactoring-patterns-original.md`
-- `skills/development/refactoring-safely/references/refactoring-patterns/composing-methods.md`
-- `skills/development/refactoring-safely/references/refactoring-patterns/moving-features.md`
-- `skills/development/refactoring-safely/references/refactoring-patterns/organizing-data.md`
-- `skills/development/refactoring-safely/references/refactoring-patterns/refactoring-workflow.md`
-- `skills/development/refactoring-safely/references/refactoring-patterns/simplifying-conditionals.md`
-- `skills/development/refactoring-safely/references/refactoring-patterns/smell-catalog.md`
-- `skills/development/system-and-data-design/references/ddia-systems-original.md`
-- `skills/development/system-and-data-design/references/ddia-systems/batch-stream.md`
-- `skills/development/system-and-data-design/references/ddia-systems/data-models.md`
-- `skills/development/system-and-data-design/references/ddia-systems/fault-tolerance.md`
-- `skills/development/system-and-data-design/references/ddia-systems/partitioning.md`
-- `skills/development/system-and-data-design/references/ddia-systems/replication.md`
-- `skills/development/system-and-data-design/references/ddia-systems/storage-engines.md`
-- `skills/development/system-and-data-design/references/ddia-systems/transactions.md`
-- `skills/development/system-and-data-design/references/system-design-original.md`
-- `skills/development/system-and-data-design/references/system-design/building-blocks.md`
-- `skills/development/system-and-data-design/references/system-design/common-designs.md`
-- `skills/development/system-and-data-design/references/system-design/database-scaling.md`
-- `skills/development/system-and-data-design/references/system-design/estimation-numbers.md`
-- `skills/development/system-and-data-design/references/system-design/four-step-process.md`
-- `skills/development/system-and-data-design/references/system-design/reliability-operations.md`
-- `skills/frontend/frontend-design/SKILL.md`
-- `skills/frontend/frontend-design/references/components-frameworks.md`
-- `skills/frontend/frontend-design/references/layout-css.md`
-- `skills/frontend/frontend-design/references/performance-a11y.md`
-- `skills/frontend/frontend-design/references/visual-styles.md`
-- `skills/ios/ios-development/SKILL.md`
-- `skills/ios/ios-development/references/architecture.md`
-- `skills/ios/ios-development/references/data.md`
-- `skills/ios/ios-development/references/metal-graphics.md`
-- `skills/ios/ios-development/references/navigation.md`
-- `skills/ios/ios-development/references/networking.md`
-- `skills/ios/ios-development/references/performance.md`
-- `skills/ios/ios-development/references/swiftui.md`
-- `skills/ios/ios-development/references/uikit.md`
-- `skills/operational/observability-monitoring/SKILL.md`
-- `skills/video-production/remotion-production-guide/SKILL.md`
-- `skills/video-production/video-post-production/SKILL.md`
-- `templates/agent-task/fix-log.md`
-- `templates/agent-task/handoff.md`
-- `templates/agent-task/problems.md`
-- `templates/agent-task/scratchpad.md`
-- `templates/agent-task/spec.md`
-- `templates/proof-plan.md`
 
 ### manual-reapproval
 
-- `principles/01-harness-design.md`
-- `principles/03-autoresearch.md`
-- `principles/04-deterministic-orchestration.md`
-- `principles/06-multi-agent-decomposition.md`
-- `principles/07-codified-context.md`
-- `principles/08-skills-best-practices.md`
-- `principles/09-supply-chain-defense.md`
-- `principles/10-agent-security.md`
-- `principles/11-documentation-integrity.md`
-- `principles/12-low-signal-residual-training.md`
-- `principles/13-research-pipeline.md`
-- `principles/14-managed-agents.md`
-- `principles/15-red-lines.md`
-- `principles/16-project-chronicles.md`
-- `principles/17-dbs-skill-creation.md`
-- `principles/18-multi-session-coordination.md`
-- `principles/19-inter-agent-communication.md`
-- `principles/20-vulnerability-detection-pipeline.md`
-- `principles/21-knowledge-base-enforcement.md`
-- `principles/22-visual-context-pattern.md`
-- `principles/23-anti-pattern-as-config.md`
-- `principles/24-merge-conflict-resolution.md`
-- `principles/25-coordination-primitives-mapping.md`
-- `principles/26-no-pre-existing-evasion.md`
-- `principles/27-feature-tracking.md`
-- `principles/28-feature-layer-architecture.md`
-- `principles/29-mvp-agent-blueprint.md`
-- `principles/30-gates-that-cannot-bootstrap.md`
-- `rules/activity-journal-and-state-registry.md`
-- `rules/agent-docs-freshness.md`
-- `rules/api-utf8-posting.md`
-- `rules/autonomy-risk-tiers.md`
-- `rules/cross-harness-agents-md.md`
-- `rules/edit-formats-and-tiering.md`
-- `rules/file-organization-cohesion.md`
-- `rules/folder-lifecycle-labels.md`
-- `rules/git-source-of-truth.md`
 - `rules/learn-from-corrections.md`
-- `rules/memory-maintenance.md`
-- `rules/moa-gemini-delegation-eval.md`
-- `rules/no-claude-attribution.md`
-- `rules/post-ui-change-review.md`
-- `rules/quality-code.md`
 - `rules/quality-over-tokens-independent-verify.md`
-- `rules/rlm-context-as-program.md`
-- `rules/safety-billing.md`
-- `rules/secrets-as-data.md`
 - `rules/session-handoff.md`
-- `rules/silent-failure-detection.md`
-- `rules/system-verification-independent.md`
-- `rules/transfer-contracts.md`
-- `rules/verify-at-consumer.md`
-- `rules/verify-git-currency-first.md`
-- `skills/agent-harness-design/SKILL.md`
-- `skills/ai-ml/diffusion-engineering/SKILL.md`
-- `skills/ai-ml/diffusion-engineering/references/architectures.md`
-- `skills/ai-ml/diffusion-engineering/references/encoders-data.md`
-- `skills/ai-ml/diffusion-engineering/references/eval-debug.md`
-- `skills/ai-ml/diffusion-engineering/references/memory.md`
-- `skills/ai-ml/diffusion-engineering/references/samplers.md`
-- `skills/ai-ml/diffusion-engineering/references/training.md`
-- `skills/ai-ml/flux2-klein-prompting/SKILL.md`
 - `skills/ai-ml/ml-research-lab/SKILL.md`
-- `skills/ai-ml/notebooklm-grounded-research/SKILL.md`
-- `skills/ai-ml/notebooklm-grounded-research/references/workflow.md`
-- `skills/ai-ml/vlm-segmentation/SKILL.md`
 - `skills/architecture/feature-new/SKILL.md`
 - `skills/architecture/layer-new/SKILL.md`
-- `skills/architecture/plan-swarm-review/SKILL.md`
-- `skills/architecture/plan-swarm-review/references/vulnerability-kb.md`
 - `skills/creative/pixel-art-storyboard/SKILL.md`
-- `skills/creative/pixel-art-storyboard/references/dataset-to-library-actionable.md`
-- `skills/creative/pixel-art-storyboard/references/easing-curves.md`
-- `skills/creative/pixel-art-storyboard/references/element-library-scaling-architecture.md`
-- `skills/creative/pixel-art-storyboard/references/high-detail-pipeline.md`
-- `skills/creative/pixel-art-storyboard/references/looped-animation-techniques.md`
-- `skills/creative/pixel-art-storyboard/references/pinterest-to-library-pipeline.md`
-- `skills/creative/pixel-art-storyboard/references/retouch-style-guide.md`
-- `skills/creative/pixel-art-storyboard/references/scene-description-framework.md`
-- `skills/creative/pixel-art-storyboard/references/smoother-animation-baking.md`
-- `skills/creative/pixel-art-storyboard/references/three-registers.md`
 - `skills/creative/pixel-art-studio/SKILL.md`
-- `skills/creative/pixel-art-studio/references/01-techniques.md`
 - `skills/creative/pixel-art-studio/references/02-palette-theory.md`
-- `skills/creative/pixel-art-studio/references/03-shading-materials.md`
-- `skills/creative/pixel-art-studio/references/04-animation.md`
-- `skills/creative/pixel-art-studio/references/05-quality-rubric.md`
-- `skills/creative/pixel-art-studio/references/06-tools-and-libraries.md`
-- `skills/creative/pixel-art-studio/references/07-cultural-styles.md`
-- `skills/creative/pixel-art-studio/references/08-json-schema.md`
-- `skills/development/architecture-first/SKILL.md`
 - `skills/development/architecture-quality/SKILL.md`
-- `skills/development/code-complexity/SKILL.md`
-- `skills/development/control-cli/SKILL.md`
-- `skills/development/control-ui/SKILL.md`
-- `skills/development/deep-review/SKILL.md`
-- `skills/development/deslop/SKILL.md`
 - `skills/development/distill-feedback/SKILL.md`
-- `skills/development/harness-feedback/SKILL.md`
-- `skills/development/proof-verify/SKILL.md`
-- `skills/development/proof-verify/references/kb-aware-verification.md`
-- `skills/development/refactoring-safely/SKILL.md`
 - `skills/development/repo-map/SKILL.md`
-- `skills/development/system-and-data-design/SKILL.md`
 - `skills/development/testing-strategy/SKILL.md`
-- `skills/development/thermo-nuclear-code-quality-review/SKILL.md`
-- `skills/development/verify-this/SKILL.md`
-- `skills/development/workflow-orchestration/SKILL.md`
-- `skills/lean-code/SKILL.md`
-- `skills/operational/cross-harness-continuation/SKILL.md`
-- `skills/operational/cross-harness-continuation/references/CONTINUITY.example.json`
-- `skills/operational/gemini-delegate/SKILL.md`
 - `skills/operational/harness-audit/SKILL.md`
-- `skills/operational/harness-audit/references/checklist-per-subsystem.md`
-- `skills/operational/harness-audit/references/scoring-rubric.md`
-- `skills/operational/observability-monitoring/references/source-notes.md`
-- `skills/plan-to-tickets/SKILL.md`
-- `skills/video-production/product-meaning-extractor/SKILL.md`
-- `skills/video-production/script-evaluator/SKILL.md`
-- `skills/video-production/video-narrative-arc/SKILL.md`
-- `skills/writing/article-structure-review/SKILL.md`
-- `skills/writing/humanize-english/SKILL.md`
-- `skills/writing/humanize-russian/SKILL.md`
-- `templates/agent-task/README.md`
-- `templates/agent-task/evidence/README.md`
-- `templates/agent-task/state.json`
-- `templates/agent-task/trace.jsonl`
-- `templates/agent-task/verdict.json`
-- `templates/kb-skeleton/AGENTS.md`
-- `templates/kb-skeleton/README.md`
-- `templates/kb-skeleton/docs/index.md`
-- `templates/kb-skeleton/docs/kb/INVARIANTS.md`
-- `templates/kb-skeleton/docs/kb/README.md`
-- `templates/kb-skeleton/docs/kb/conventions.md`
-- `templates/kb-skeleton/docs/kb/decisions.md`
-- `templates/kb-skeleton/docs/kb/gotchas.md`
-- `templates/kb-skeleton/docs/kb/modules/example.md`
-- `templates/kb-skeleton/docs/kb/patterns.md`
-- `templates/kb-skeleton/docs/layers/README.md`
-- `templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/README.md`
-- `templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/features/_FEATURE-TEMPLATE.md`
-- `templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/history.md`
-- `templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/decisions.md`
-- `templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/gotchas.md`
-- `templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/invariants.md`
-- `templates/kb-skeleton/docs/layers/_LAYER-TEMPLATE/kb/patterns.md`
-- `templates/long-run-project/PRD-BOOTSTRAP.md`
-- `templates/long-run-project/README.md`
-- `templates/transfer-contract.json`
 
 ### manual-review
 
 - `hooks/README.md`
-- `hooks/activity-journal-guard.py`
-- `hooks/agent-skill-contract.py`
 - `hooks/agent_policy_gates.py`
-- `hooks/api-key-leak-detector.py`
-- `hooks/article-voice-gate.py`
-- `hooks/ask-question-guard.py`
-- `hooks/backup-retention-cleanup.py`
-- `hooks/benjamin-plus-inject.py`
-- `hooks/claude-attribution-guard.py`
-- `hooks/codex_hook_dispatch.py`
-- `hooks/command-injection-guard.py`
-- `hooks/continuity-contract-guard.py`
-- `hooks/continuity-session-check.py`
-- `hooks/conversation-history-capture.py`
-- `hooks/coord-claim-guard.py`
-- `hooks/cyrillic-bash-guard.py`
-- `hooks/db-snapshot-guard.py`
-- `hooks/dependency-currency-guard.py`
-- `hooks/dependency-provenance-guard.py`
-- `hooks/destructive-command-guard.py`
 - `hooks/directory-creation-guard.py`
-- `hooks/disk-pressure-advisor.py`
-- `hooks/docs-staleness-guard.py`
-- `hooks/feature-list-validator.py`
-- `hooks/feedback-pending-show.py`
-- `hooks/file-cohesion-guard.py`
-- `hooks/git-auto-backup.py`
-- `hooks/git-destructive-guard.py`
-- `hooks/git-lock-homework-guard.py`
-- `hooks/git-source-gate.py`
-- `hooks/github-workflow-security.py`
 - `hooks/handoff-closure-audit-guard.py`
-- `hooks/handoff-resume-gate.py`
-- `hooks/handoff-to-todo.py`
+- `hooks/handoff_sidecar.py`
 - `hooks/harness-load-advisor.py`
-- `hooks/hook-tree-drift-check.py`
+- `hooks/hooks.json`
 - `hooks/human-confirmation-guard.py`
-- `hooks/kb-validate-gate.py`
-- `hooks/keyword-skill-router.py`
-- `hooks/launch-watch-guard.py`
-- `hooks/live-tree-guard.py`
-- `hooks/long-run-detector.py`
-- `hooks/module-shape-advisor.py`
-- `hooks/open-items-are-work-orders.py`
-- `hooks/outward-claim-evidence-guard.py`
-- `hooks/over-engineering-advisor.py`
-- `hooks/plan-gate.py`
-- `hooks/powershell-dynamic-execution-guard.py`
-- `hooks/pre-push-claude-attribution.py`
-- `hooks/pre-push-personal-email-guard.py`
+- `hooks/merge-gate-guard.py`
+- `hooks/plugin-rules-context.py`
+- `hooks/pre-push-chain.sh`
 - `hooks/pre-push-public-repo-scan.py`
-- `hooks/precompact-handoff-guard.py`
 - `hooks/problems-md-validator.py`
+- `hooks/problems_md.py`
+- `hooks/publish-bypass-guard.py`
 - `hooks/repeated-attempt-guard.py`
 - `hooks/root-cause-delivery-guard.py`
+- `hooks/rtk-plugin-hook.py`
 - `hooks/safety_common.py`
-- `hooks/secret-leak-guard.py`
-- `hooks/secret-on-disk-guard.py`
-- `hooks/self-harm-guard.py`
-- `hooks/session-drift-validator.py`
-- `hooks/session-feedback-capture.py`
 - `hooks/session-handoff-check.py`
-- `hooks/session-handoff-reminder.py`
-- `hooks/shape_common.py`
-- `hooks/shared-branch-guard.py`
-- `hooks/skill_contract_state.py`
 - `hooks/stop-phrase-guard.py`
-- `hooks/subagent-evidence-receipt.py`
-- `hooks/subagent-skill-context.py`
-- `hooks/task-cycle-controller.py`
-- `hooks/task-inbox-show.py`
-- `hooks/telegram-mass-send-guard.py`
-- `hooks/test-gate-stop-hook.py`
-- `hooks/test-muting-guard.py`
 - `hooks/tests/run_guard_regressions.py`
-- `hooks/tests/smoke_hooks_live.py`
 - `hooks/tests/test_agent_policy_commit_gate.py`
-- `hooks/tests/test_agent_policy_gates.py`
-- `hooks/tests/test_article_voice_gate_scope.py`
-- `hooks/tests/test_delete_from_list.py`
-- `hooks/tests/test_delivery_guard_notification_intent.py`
-- `hooks/tests/test_delivery_guard_scope.py`
-- `hooks/tests/test_guard_evasions.py`
-- `hooks/tests/test_guard_evasions_round2.py`
-- `hooks/tests/test_guard_evasions_round3.py`
-- `hooks/tests/test_guard_evasions_round4.py`
-- `hooks/tests/test_guard_evasions_round5.py`
-- `hooks/tests/test_guard_evasions_round6.py`
-- `hooks/tests/test_guard_evasions_round7.py`
-- `hooks/tests/test_human_confirmation_authority.py`
-- `hooks/tests/test_human_confirmation_image_rm.py`
-- `hooks/tests/test_human_confirmation_move_to_temp.py`
-- `hooks/tests/test_powershell_coverage.py`
-- `hooks/tests/test_powershell_dynamic_execution_guard.py`
+- `hooks/tests/test_command_text_is_data.py`
+- `hooks/tests/test_delivery_guard_machine_messages.py`
+- `hooks/tests/test_handoff_sidecar.py`
+- `hooks/tests/test_human_confirmation_branch_rm.py`
+- `hooks/tests/test_human_confirmation_root_file.py`
+- `hooks/tests/test_human_confirmation_tilde_name.py`
+- `hooks/tests/test_merge_gate_branch_delete.py`
+- `hooks/tests/test_merge_gate_guard.py`
 - `hooks/tests/test_pre_push_public_repo_scan.py`
-- `hooks/tests/test_reconciliation_owner_stamp.py`
-- `hooks/tests/test_reconciliation_stop_scope.py`
-- `hooks/tests/test_root_cause_proof_executor.py`
-- `hooks/tests/test_safety_common_scope.py`
-- `hooks/tests/test_stop_reentry_common.py`
-- `hooks/tests/test_task_cycle_controller.py`
-- `hooks/tests/test_transfer_contract_collision.py`
-- `hooks/tests/test_transfer_guard_scope.py`
-- `hooks/tests/test_user_task_completion_guard.py`
-- `hooks/todo-inbox.py`
+- `hooks/tests/test_pre_push_scan_hardening.py`
+- `hooks/tests/test_publish_bypass_guard.py`
+- `hooks/tests/test_root_cause_supersede_retriage.py`
+- `hooks/tests/test_transfer_local_temp.py`
 - `hooks/transfer-contract-guard.py`
-- `hooks/unbuffered-progress-advisor.py`
-- `hooks/user-task-completion-guard.py`
-- `hooks/verify-deleted-guard.py`
-- `hooks/widget-test-guard.py`
-- `scripts/access_inventory.py`
-- `scripts/ace_context_merge.workflow.js`
 - `scripts/agent_roster.py`
-- `scripts/architecture_audit.py`
-- `scripts/audit_skill_hook_wiring.py`
-- `scripts/build_hook_catalog.py`
-- `scripts/check_harness_parity.py`
-- `scripts/cleanup_handoffs.py`
-- `scripts/cleanup_temp_workspace.py`
-- `scripts/codex_hook_dispatch_install.py`
-- `scripts/context_degradation.py`
-- `scripts/cross_reference_check.py`
-- `scripts/delete_from_list.py`
-- `scripts/dependency-alternatives.py`
-- `scripts/find_duplicate_implementations.py`
-- `scripts/find_duplicate_requirements.py`
-- `scripts/folder_lifecycle_audit.py`
-- `scripts/gemini-switch.sh`
-- `scripts/generate_skills_catalog.py`
+- `scripts/codex_update.py`
+- `scripts/crap_probe.py`
+- `scripts/failure_mine.py`
 - `scripts/generate_skills_lock.py`
-- `scripts/git-hooks/pre-push`
-- `scripts/git_stale_lock.py`
-- `scripts/harness_feedback_report.py`
 - `scripts/harness_improvement_pilot.py`
 - `scripts/install_hooks.py`
-- `scripts/kvcache_stats.py`
-- `scripts/openscience_skill_inventory.py`
-- `scripts/orphan_reaper.py`
-- `scripts/pc_load_watch.py`
-- `scripts/reasoning_metrics.py`
-- `scripts/recover_skill_trees.py`
-- `scripts/relocate_temp_workspace.py`
-- `scripts/repair_codex_plugin_hook_schema.py`
-- `scripts/replay_retry_guard_keys.py`
-- `scripts/review_handoff_memory_loop.py`
+- `scripts/mutation_probe.py`
+- `scripts/plugin_build.py`
 - `scripts/rtk_integration.py`
-- `scripts/rules_drift_report.py`
-- `scripts/scan_report.py`
-- `scripts/sched_task.py`
-- `scripts/skill_frontmatter.py`
-- `scripts/skill_lint.py`
-- `scripts/sweep_private_markers.py`
-- `scripts/sync_public_config.py`
+- `scripts/safe_merge.py`
+- `scripts/skill_paths.py`
 - `scripts/sync_skills_to_codex.py`
-- `scripts/task_cycle_heartbeat.py`
-- `scripts/term_drift_check.py`
-- `scripts/test_agent_skill_contract.py`
-- `scripts/test_agentic_rag_model_policy.py`
-- `scripts/test_app_security_checklist.py`
-- `scripts/test_audit_skill_hook_wiring.py`
-- `scripts/test_cleanup_handoffs.py`
-- `scripts/test_cleanup_temp_workspace.py`
-- `scripts/test_codex_hook_dispatch.py`
-- `scripts/test_continuity_contract.py`
-- `scripts/test_conversation_history_capture.py`
-- `scripts/test_cross_reference_check.py`
-- `scripts/test_cursor_team_kit_adoption.py`
-- `scripts/test_dependency_provenance_guard.py`
-- `scripts/test_directory_creation_guard.py`
-- `scripts/test_generate_skills_catalog.py`
-- `scripts/test_generate_skills_lock.py`
 - `scripts/test_harness_improvement_pilot.py`
 - `scripts/test_harness_load_advisor.py`
-- `scripts/test_high_risk_review_gate.py`
-- `scripts/test_install_hooks_paths.py`
-- `scripts/test_keyword_skill_router.py`
-- `scripts/test_lifecycle_hook_contracts.py`
-- `scripts/test_no_silent_pass.py`
-- `scripts/test_openscience_skill_inventory.py`
-- `scripts/test_plan_gate.py`
-- `scripts/test_relocate_temp_workspace.py`
-- `scripts/test_repair_codex_plugin_hook_schema.py`
-- `scripts/test_repo_map_counts.py`
-- `scripts/test_review_handoff_memory_loop.py`
-- `scripts/test_review_skill_contracts.py`
+- `scripts/test_plugin_build.py`
 - `scripts/test_rtk_integration.py`
-- `scripts/test_safety_common_block.py`
-- `scripts/test_shape_single_source.py`
-- `scripts/test_shell_test_command.py`
-- `scripts/test_stage_ledger_validator.py`
-- `scripts/test_subagent_evidence_receipt.py`
-- `scripts/test_subagent_skill_context.py`
-- `scripts/test_sync_public_config.py`
+- `scripts/test_skill_paths.py`
 - `scripts/test_sync_skills_to_codex.py`
-- `scripts/test_task_completion_hooks.py`
-- `scripts/test_task_cycle_heartbeat.py`
-- `scripts/test_term_drift_check.py`
-- `scripts/test_test_gate_scope.py`
-- `scripts/test_test_strategy.py`
-- `scripts/test_transfer_contract.py`
-- `scripts/test_validate_agent_tickets.py`
-- `scripts/test_validate_config.py`
-- `scripts/tests/fixtures/hooks/sleeper.py`
-- `scripts/tests/test_pc_load_watch.py`
-- `scripts/tests/test_sched_task.py`
-- `scripts/validate_agent_tickets.py`
-- `scripts/validate_config.py`
-- `scripts/validate_kb_links.py`
-- `scripts/verify_plugin_prerequisites.py`
-
-### planned
-
-- `workflows/EFFECTIVE-AGENTS.md`
-- `workflows/README.md`
-- `workflows/deep-review-flow.js`
-- `workflows/research-cn-ru.js`
-- `workflows/rlm-explore.js`
+- `scripts/tests/fake_gh.py`
+- `scripts/tests/test_safe_merge.py`
 
 ### review
 
-- `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/case.json`
-- `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/evidence/after-00.txt`
-- `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/evidence/after-01.txt`
-- `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/evidence/after-02.txt`
-- `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/evidence/before-00.txt`
-- `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/evidence/before-supplement-unfixed-hook.txt`
-- `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/evidence/replay-real-events.txt`
-- `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/evidence/replay_events.py`
-- `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/independent-review-2.md`
-- `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/independent-review-3.md`
-- `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/independent-review.md`
-- `.agent/delivery-cases/harness2-bounded-pilot-20261024/case.json`
-- `.agent/delivery-cases/harness2-bounded-pilot-20261024/evidence/after-00.txt`
-- `.agent/delivery-cases/harness2-bounded-pilot-20261024/independent-review.md`
-- `.agent/delivery-cases/public-privacy-scan-existing-markers-20261024/case.json`
-- `.agent/delivery-cases/public-privacy-scan-existing-markers-20261024/evidence/after-00.txt`
-- `.agent/delivery-cases/public-privacy-scan-existing-markers-20261024/independent-review.md`
-- `.agent/delivery-cases/transfer-guard-cannot-close-a-cleaned-copy-20260901/case.json`
-- `.agent/delivery-cases/transfer-guard-cannot-close-a-cleaned-copy-20260901/evidence/after-00.txt`
-- `.agent/delivery-cases/transfer-guard-cannot-close-a-cleaned-copy-20260901/evidence/before-00.txt`
-- `.gitattributes`
-- `.github/workflows/skills-lock-check.yml`
-- `.gitignore`
-- `AGENTS.md`
+- `.agent/delivery-cases/delivery-guard-machine-messages-20261028/evidence/after.txt`
+- `.agent/delivery-cases/delivery-guard-machine-messages-20261028/evidence/before-main-4940341.txt`
+- `.agent/delivery-cases/delivery-guard-machine-messages-20261028/evidence/mutation_probe.txt`
+- `.agent/delivery-cases/delivery-guard-machine-messages-20261028/evidence/run_guard_regressions.txt`
+- `.agent/delivery-cases/delivery-guard-machine-messages-20261028/evidence/transcript-replay-old-vs-new.txt`
+- `.github/workflows/merge-gate-check.yml`
+- `.github/workflows/plugin-check.yml`
 - `CLAUDE.md`
-- `HOW-IT-WORKS.md`
-- `LICENSE`
-- `MAINTENANCE.md`
 - `PROBLEMS.md`
 - `README.md`
 - `UPDATES.md`
-- `agents/ci-watcher.md`
-- `agents/pixel-art-animation-reviewer.md`
-- `agents/pixel-art-composition-reviewer.md`
-- `agents/pixel-art-interaction-reviewer.md`
-- `agents/pixel-art-quality-board.md`
-- `agents/pixel-art-reviewer.md`
-- `agents/pixel-art-style-reviewer.md`
-- `agents/thermo-nuclear-code-quality-review.md`
-- `alternatives/README.md`
-- `alternatives/agent-mailbox-system.md`
-- `alternatives/agents-md-rule-loading.md`
-- `alternatives/code-review.md`
-- `alternatives/codebase-map-scoping.md`
-- `alternatives/context-management.md`
-- `alternatives/design-md-pattern.md`
-- `alternatives/docker-sandbox-claude-code.md`
-- `alternatives/kb-code-sync.md`
-- `alternatives/managed-agents.md`
-- `alternatives/memory-strategies.md`
-- `alternatives/multi-agent-patterns.md`
-- `alternatives/optimization.md`
-- `alternatives/orchestration.md`
-- `alternatives/reasoning-regression-debugging.md`
-- `alternatives/session-handoff.md`
-- `alternatives/skill-management-tools.md`
-- `alternatives/token-economy.md`
-- `alternatives/workspace-organization.md`
-- `docs/a-launch-is-a-promise.md`
-- `docs/a-passing-test-is-not-a-release.md`
-- `docs/a-save-log-is-not-a-retention-guarantee.md`
-- `docs/agent-tool-evals/2026-06-26-keenable-clips-evaluation.md`
-- `docs/development-skill-routing.md`
-- `docs/finishing-what-you-started.md`
-- `docs/form-mistaken-for-content.md`
 - `docs/harness-improvement-pilot.md`
-- `docs/hook-audit-reconciliation-2026-08-16.md`
-- `docs/openscience-ml-domain-eval.md`
-- `docs/openscience-ml-skill-inventory.json`
-- `docs/output-legibility.md`
-- `docs/reports/claude-architecture-quality-handoff-2026-08-03.md`
-- `docs/research/2026-08-23-skill-routing-and-epistemic-challenge.md`
-- `docs/research/2026-08-architecture-readable-code.md`
-- `docs/research/2026-08-cursor-team-kit-adoption.md`
-- `docs/research/2026-08-testing-and-agent-evals.md`
-- `docs/research/2026-09-05-research-built-skill-lifecycle.md`
-- `docs/research/agent-memory-archive-prior-solution-2026-07-22.md`
-- `docs/research/cross-harness-continuation.md`
-- `docs/research/obsidian-mind-adoption-2026-07-28.md`
+- `docs/publish-bypass-guard.md`
 - `docs/rtk-integration.md`
-- `docs/runtime-wiring.md`
-- `docs/skill-tree-recovery.md`
-- `docs/skills-organised-by-author.md`
-- `docs/starting-from-what-you-remember.md`
-- `docs/task-cycle-controller.md`
-- `docs/temp-cleanup-policy.example.json`
-- `docs/temp-workspace-cleanup.md`
-- `docs/temp-workspace-relocation.md`
-- `docs/why-agents-circle-instead-of-acting.md`
-- `evals/hooks/cases.json`
-- `evals/hooks/fixtures/research-built-skill/SKILL.md`
-- `evals/hooks/fixtures/research-built-skill/continuation-bad-trace.json`
-- `evals/hooks/fixtures/research-built-skill/continuation-reused-eval.json`
-- `evals/hooks/fixtures/research-built-skill/continuation.json`
-- `evals/hooks/fixtures/research-built-skill/eval-missing-trace.json`
-- `evals/hooks/fixtures/research-built-skill/eval-not-better.json`
-- `evals/hooks/fixtures/research-built-skill/eval-prose-trace.json`
-- `evals/hooks/fixtures/research-built-skill/eval-trace-not-better.json`
-- `evals/hooks/fixtures/research-built-skill/eval-trace.json`
-- `evals/hooks/fixtures/research-built-skill/eval-trace.txt`
-- `evals/hooks/fixtures/research-built-skill/eval.json`
-- `evals/hooks/fixtures/research-built-skill/local-evidence.txt`
-- `evals/hooks/fixtures/research-built-skill/maintenance.md`
-- `evals/hooks/fixtures/research-built-skill/original-task-trace.json`
-- `evals/hooks/fixtures/research-built-skill/research.json`
-- `evals/hooks/fixtures/research-built-skill/research.md`
-- `evals/hooks/fixtures/research-built-skill/review-prose-trace.json`
-- `evals/hooks/fixtures/research-built-skill/review-self.json`
-- `evals/hooks/fixtures/research-built-skill/review-trace.json`
-- `evals/hooks/fixtures/research-built-skill/review-trace.txt`
-- `evals/hooks/fixtures/research-built-skill/review.json`
-- `evals/hooks/fixtures/sample-skill/SKILL.md`
-- `evals/hooks/fixtures/skill-gap-receipt-legacy-create.md`
-- `evals/hooks/fixtures/skill-gap-receipt-pass.md`
-- `evals/hooks/fixtures/skill-gap-receipt-research-pass.md`
-- `evals/hooks/fixtures/skill-gap-receipt-research-shallow.md`
-- `evals/hooks/fixtures/skill-gap-receipt-unchecked.md`
-- `evals/hooks/run_hook_evals.py`
-- `principles/README.md`
-- `references/benjamin-plus/LICENSE`
-- `references/benjamin-plus/PROVENANCE.md`
-- `references/benjamin-plus/RULESET.md`
-- `references/benjamin-plus/injected-instruction.md`
+- `docs/team-plugin.md`
+- `docs/token-overspend-interim.md`
+- `mods/pult/.claude-plugin/plugin.json`
+- `mods/pult/.gitignore`
+- `mods/pult/README.md`
+- `mods/pult/hooks/hooks.json`
+- `mods/pult/hooks/register.tsx`
+- `mods/pult/tests/hooks.test.ts`
+- `mods/pult/tests/pure.test.ts`
+- `mods/pult/tsconfig.json`
+- `mods/pult/types/index.d.ts`
 - `references/benjamin-plus/local-precedence.md`
-- `references/security-tooling-guide.md`
-- `rules/README.md`
-- `rules/live-tree-is-receive-only.md`
-- `rules/long-run-harness.md`
-- `rules/no-commit-junk.md`
-- `rules/no-pre-existing-evasion.md`
+- `rules/long-wait-cache-ttl.md`
+- `rules/merge-gate.md`
 - `rules/safety-hooks.md`
-- `rules/safety.md`
 - `skills-lock.json`
-- `skills/README.md`
 - `skills/agent-harness-design/references/agent-approval-records.md`
-- `skills/agent-harness-design/references/agent-budgets.md`
 - `skills/agent-harness-design/references/agent-evals.md`
 - `skills/agent-harness-design/references/agent-event-model.md`
 - `skills/agent-harness-design/references/agent-observability.md`
 - `skills/agent-harness-design/references/agent-plan-artifact.md`
-- `skills/agent-harness-design/references/agent-skill-install-checklist.md`
 - `skills/agent-harness-design/references/agent-streaming.md`
-- `skills/agent-harness-design/references/agent-tool-design.md`
-- `skills/agent-harness-design/references/agentic-rag-model-policy.md`
-- `skills/agent-harness-design/references/context-trust-labels.md`
-- `skills/agents-best-practices/ATTRIBUTION.md`
-- `skills/agents-best-practices/LICENSE-upstream`
-- `skills/agents-best-practices/SKILL.md`
-- `skills/agents-best-practices/references/agent-legibility-feedback-loops.md`
-- `skills/agents-best-practices/references/agentic-loop.md`
-- `skills/agents-best-practices/references/architecture.md`
-- `skills/agents-best-practices/references/checklists.md`
-- `skills/agents-best-practices/references/coding-agents.md`
-- `skills/agents-best-practices/references/completion-reconciliation.md`
-- `skills/agents-best-practices/references/context-memory-compaction.md`
-- `skills/agents-best-practices/references/coverage-audit.md`
-- `skills/agents-best-practices/references/environment-adaptive-tools.md`
-- `skills/agents-best-practices/references/evals.md`
-- `skills/agents-best-practices/references/mvp-agent-blueprint.md`
-- `skills/agents-best-practices/references/planning-and-goals.md`
-- `skills/agents-best-practices/references/prompt-caching-and-cost.md`
-- `skills/agents-best-practices/references/provider-api-patterns.md`
-- `skills/agents-best-practices/references/security-observability.md`
-- `skills/agents-best-practices/references/self-refining-recursive-harnesses.md`
-- `skills/agents-best-practices/references/skills-and-connectors.md`
-- `skills/agents-best-practices/references/source-links.md`
-- `skills/agents-best-practices/references/speculative-tool-execution.md`
-- `skills/agents-best-practices/references/system-prompts-instructions.md`
-- `skills/agents-best-practices/references/tools-and-permissions.md`
-- `skills/agents-best-practices/references/workflow-orchestration.md`
-- `skills/ai-ml/forensic-prompt-compiler/SKILL.md`
-- `skills/ai-ml/notebooklm-grounded-research/scripts/verify_notebooklm_setup.py`
-- `skills/architecture/feature-new/scripts/reserve_feature_id.py`
 - `skills/architecture/harness-design/SKILL.md`
-- `skills/creative/pixel-art-storyboard/templates/grid-cover.html`
-- `skills/creative/pixel-art-storyboard/templates/single-cover.html`
-- `skills/creative/pixel-art-studio/elements/catalog.html`
-- `skills/creative/pixel-art-studio/elements/elements.js`
-- `skills/creative/pixel-art-studio/examples/bounce-tag.gif`
-- `skills/creative/pixel-art-studio/examples/bouncing-dot-sheet.png`
-- `skills/creative/pixel-art-studio/examples/bouncing-dot.apng`
-- `skills/creative/pixel-art-studio/examples/bouncing-dot.gif`
-- `skills/creative/pixel-art-studio/examples/bouncing-dot.json`
-- `skills/creative/pixel-art-studio/examples/endesga-32-preview.png`
-- `skills/creative/pixel-art-studio/examples/fantasy-covers/index.html`
-- `skills/creative/pixel-art-studio/examples/fantasy-covers/scenarios.md`
-- `skills/creative/pixel-art-studio/examples/heart-bayer4-db16.png`
-- `skills/creative/pixel-art-studio/examples/heart-preprocessed-16x16.png`
-- `skills/creative/pixel-art-studio/examples/heart-test.json`
-- `skills/creative/pixel-art-studio/examples/heart-test.png`
-- `skills/creative/pixel-art-studio/examples/heavenly-hues-preview.png`
-- `skills/creative/pixel-art-studio/examples/library-demo/index.html`
-- `skills/creative/pixel-art-studio/examples/tier2-detail-demo/index.html`
-- `skills/creative/pixel-art-studio/examples/twilight-covers/index-v2-static.html`
-- `skills/creative/pixel-art-studio/examples/twilight-covers/index-v2.html`
-- `skills/creative/pixel-art-studio/examples/twilight-covers/index.html`
-- `skills/creative/pixel-art-studio/examples/walk-template.json`
-- `skills/creative/pixel-art-studio/scripts/animate.py`
-- `skills/creative/pixel-art-studio/scripts/bake_animation.py`
-- `skills/creative/pixel-art-studio/scripts/dither.py`
-- `skills/creative/pixel-art-studio/scripts/palette.py`
-- `skills/creative/pixel-art-studio/scripts/palettes/aap-64.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/apollo.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/db16.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/db32.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/design-seeds/_index.json`
-- `skills/creative/pixel-art-studio/scripts/palettes/design-seeds/color-escape.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/design-seeds/color-imagination.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/design-seeds/color-palette.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/design-seeds/color-serve.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/design-seeds/color-set.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/design-seeds/color-wander.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/design-seeds/heavenly-hues.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/design-seeds/nature-tones.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/design-seeds/rose-palette.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/design-seeds/tropical-tones.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/endesga-32.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/endesga-64.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/gameboy-dmg.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/gameboy-pocket.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/gugong-red-wall.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/nes.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/nyx8.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/obangsaek.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/pico-8.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/qinghua.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/resurrect-64.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/slso8.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/steam-lords.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/stoneshard-inspired.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/sweetie-16.hex`
-- `skills/creative/pixel-art-studio/scripts/palettes/wuxing.hex`
-- `skills/creative/pixel-art-studio/scripts/preprocess.py`
-- `skills/creative/pixel-art-studio/scripts/quality_check.py`
-- `skills/creative/pixel-art-studio/scripts/render.py`
-- `skills/development/bug-reproducer/ATTRIBUTION.md`
-- `skills/development/bug-reproducer/LICENSE-upstream`
 - `skills/development/bug-reproducer/SKILL.md`
-- `skills/development/bug-reproducer/agents/openai.yaml`
-- `skills/development/bug-reproducer/references/bug-discovery-playbook.md`
-- `skills/development/bug-reproducer/references/report-schema.md`
-- `skills/development/bug-reproducer/references/reproduction-playbook.md`
-- `skills/development/bug-reproducer/scripts/capture_command.py`
-- `skills/development/bug-reproducer/scripts/compare_evidence.py`
-- `skills/development/bug-reproducer/scripts/generate_report.py`
-- `skills/development/bug-reproducer/scripts/test_compare_evidence.py`
-- `skills/development/distill-feedback/scripts/extract_feedback_queue.py`
-- `skills/development/proof-verify/references/proven-stage-contracts.md`
-- `skills/development/proof-verify/scripts/validate_stage_ledger.py`
 - `skills/development/refactoring-safely/references/dead-code-sweep.md`
-- `skills/development/repo-map/scripts/repo_map.py`
 - `skills/development/root-cause-delivery/SKILL.md`
 - `skills/development/workflow-orchestration/references/lessons-and-gaps.md`
-- `skills/development/workflow-orchestration/references/orchestration-patterns.md`
-- `skills/development/workflow-orchestration/references/research-findings-2026-05-30.md`
-- `skills/development/workflow-orchestration/references/workflow-template.js`
-- `skills/development/workflow-orchestration/scripts/test_accounting.mjs`
-- `skills/development/workflow-orchestration/scripts/validate.mjs`
-- `skills/frontend/motion-framer/LICENSE`
-- `skills/frontend/motion-framer/SKILL.md`
-- `skills/frontend/motion-framer/assets/examples/README.md`
-- `skills/frontend/motion-framer/assets/starter_motion/README.md`
-- `skills/frontend/motion-framer/assets/starter_motion/index.html`
-- `skills/frontend/motion-framer/assets/starter_motion/package.json`
-- `skills/frontend/motion-framer/assets/starter_motion/src/App.css`
-- `skills/frontend/motion-framer/assets/starter_motion/src/App.jsx`
-- `skills/frontend/motion-framer/assets/starter_motion/src/components/DraggableBox.jsx`
-- `skills/frontend/motion-framer/assets/starter_motion/src/components/HoverCard.jsx`
-- `skills/frontend/motion-framer/assets/starter_motion/src/components/StaggerList.jsx`
-- `skills/frontend/motion-framer/assets/starter_motion/src/main.jsx`
-- `skills/frontend/motion-framer/assets/starter_motion/vite.config.js`
-- `skills/frontend/motion-framer/references/api_reference.md`
-- `skills/frontend/motion-framer/scripts/animation_generator.py`
-- `skills/frontend/motion-framer/scripts/variant_builder.py`
-- `skills/frontend/ui-design/SKILL.md`
-- `skills/frontend/ui-design/agents/openai.yaml`
-- `skills/frontend/ui-design/references/editable-visual-assets.md`
-- `skills/frontend/ui-ux-pro-max/LICENSE`
 - `skills/frontend/ui-ux-pro-max/SKILL.md`
-- `skills/frontend/ui-ux-pro-max/data/app-interface.csv`
-- `skills/frontend/ui-ux-pro-max/data/catalog-summary.json`
-- `skills/frontend/ui-ux-pro-max/data/charts.csv`
-- `skills/frontend/ui-ux-pro-max/data/colors.csv`
-- `skills/frontend/ui-ux-pro-max/data/data-provenance.json`
-- `skills/frontend/ui-ux-pro-max/data/google-font-licenses.json`
-- `skills/frontend/ui-ux-pro-max/data/google-fonts.csv`
-- `skills/frontend/ui-ux-pro-max/data/icons.csv`
-- `skills/frontend/ui-ux-pro-max/data/landing.csv`
-- `skills/frontend/ui-ux-pro-max/data/motion.csv`
-- `skills/frontend/ui-ux-pro-max/data/phosphor-icons-upstream.json`
-- `skills/frontend/ui-ux-pro-max/data/products.csv`
-- `skills/frontend/ui-ux-pro-max/data/react-performance.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/angular.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/astro.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/avalonia.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/flutter.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/html-tailwind.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/javafx.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/jetpack-compose.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/laravel.csv`
-- ... 85 more
+- `skills/operational/desktop-sessions-discovery/SKILL.md`
 
 ### unsupported
 
+- `.claude-plugin/marketplace.json`
 - `.claude-plugin/plugin.json`
 
 ## Missing supported sources
