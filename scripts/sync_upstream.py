@@ -1257,6 +1257,25 @@ def adapt_source_text(source_path: str, text: str) -> str:
             text,
             flags=re.DOTALL,
         )
+        # The upstream rule also documents a Claude-specific relocation helper. Keep the
+        # relocation contract and its arguments, but do not emit an executable path from the
+        # upstream harness into a Hermes skill. The adapter does not currently ship a matching
+        # Hermes command, so use a neutral reviewed-tool description rather than inventing one.
+        text = re.sub(
+            r"`python (?:~/.claude/claude-code-config/|"
+            r"~/.claude/|the configured Hermes profile/claude-code-config/)"
+            r"scripts/relocate_from_list\.py([^`]*)`",
+            r"`the Hermes-approved relocation safety tool\1`",
+            text,
+        )
+        text = text.replace(
+            "`... relocate_from_list.py",
+            "`... the Hermes-approved relocation safety tool",
+        )
+        text = text.replace(
+            "`hooks/tests/test_relocate_list.py`",
+            "`the corresponding Hermes relocation regression test`",
+        )
         text = text.replace("~/.claude/", "the configured Hermes profile/")
         text = text.replace("`.claude/shell-snapshots/`", "`the configured Hermes profile's shell-snapshots/`")
         text = text.replace("`git-lock-homework-guard.py`", "`the Hermes git-lock safety guard`")

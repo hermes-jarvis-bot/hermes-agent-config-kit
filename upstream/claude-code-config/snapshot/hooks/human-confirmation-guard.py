@@ -175,6 +175,9 @@ DESTRUCTIVE_INTENT = [
     # was blocked, because `--force\b` matches its prefix.
     r"\bgit\s+push\b[^|;&\n]*?\s(?-i:(?:-[a-zA-Z]*f|--force))\b(?!-with-lease)",
     *GIT_FORCE_BRANCH_DELETE_PATTERNS,
+    # owner 2026-10-31: removing a remote branch is a delete and passes only on her request (_branch_rm_approval)
+    r"\bgit\s+push\b[^|;&\n]*\s(?-i:--delete|-d)(?=\s|$)",
+    r"\bgit\s+push(?:\s+-{1,2}[\w-]+(?:=\S+)?)*\s+[^\s|;&-][^\s|;&]*(?:\s+[^\s|;&]+)*?\s+\+?:[\w./-]+(?=\s|$|[;&|])",
     r"\bgit\s+clean\s+-[fdx]+",
     r"\bgit\s+filter-branch\b",
     r"\bgit\s+filter-repo\b",
@@ -225,11 +228,11 @@ DESTRUCTIVE_INTENT = [
     r"\bip\s+link\s+(delete|del)\b",
     r"\bip\s+route\s+(flush|delete|del)\b",
 
-    # Communication APIs. `gh pr close` without `-d` / `--delete-branch`
-    # preserves the branch and GitHub supports reopening the pull request, so it
-    # is reversible project state, not deletion.
+    # Communication APIs. `gh pr close` without `-d` / `--delete-branch` and
+    # `gh issue close` are reversible project state (both reopen), not deletion;
+    # `gh issue delete` is permanent.
     r"\bgh\s+pr\s+close\b[^|;&\n]*\s(?:-d|--delete-branch)\b",
-    r"\bgh\s+issue\s+close\b",
+    r"\bgh\s+issue\s+delete\b",
 
     # IAM / permissions
     r"\baws\s+iam\s+(delete|remove)-\w+",
@@ -330,6 +333,8 @@ def _local_config() -> dict:
 
 _CFG = _local_config()
 WORKSHOP_VM_SSH_TARGET = str(_CFG.get("ephemeral_docker_ssh_target") or "")
+SSH_WRAPPER_SCRIPTS = frozenset(
+    c for c in (_CFG.get("ssh_wrapper_scripts") or []) if isinstance(c, str) and c.strip("/\\"))
 WORKSHOP_VM_APPROVED_DOCKER_CONTAINERS = frozenset(
     c for c in (_CFG.get("ephemeral_docker_containers") or []) if isinstance(c, str) and c)
 
@@ -412,9 +417,20 @@ def delete_targets(segment: str) -> list[str] | None:
         return None
     def norm_word(w: str) -> str:  # \rm, r''m, r`m (PowerShell escape) all run `rm`
         return re.sub(r"[\\'\"`]", "", w).lower().rsplit("/", 1)[-1].removesuffix(".exe")
-    while toks and (norm_word(toks[0]) in COMMAND_PREFIXES or toks[0].endswith(("{", "("))
-                    or re.fullmatch(r"\w+=\S*|\d+|-\w+", toks[0])):
-        toks = toks[1:]
+    while toks:
+        if norm_word(toks[0]) == "timeout":
+            # review 2026-10-28: `timeout -s KILL 5 rm F` ran a delete the guard never parsed
+            toks = toks[1:]
+            while toks and toks[0].startswith("-"):
+                if toks.pop(0) in ("-k", "-s") and toks:
+                    toks.pop(0)
+            if toks and re.fullmatch(r"\d+(?:\.\d+)?[smhd]?", toks[0]):
+                toks = toks[1:]
+        elif (norm_word(toks[0]) in COMMAND_PREFIXES or toks[0].endswith(("{", "("))
+              or re.fullmatch(r"\w+=\S*|\d+|-\w+", toks[0])):
+            toks = toks[1:]
+        else:
+            break
     if not toks:
         return None
     verb = norm_word(toks[0])
@@ -587,6 +603,22 @@ UNPARSED = "\x00unparsed-ssh"
 INNER_SHELLS = {"bash", "sh", "zsh", "dash", "ksh"}
 
 
+def _probe_cmd(toks: list[str], i: int) -> str | None:
+    """Owner 2026-11-04 («поправь хук»): a password-only server takes its commands through
+    `python <wrapper> --cmd '<remote command>'` (paramiko). The wrappers are listed by path suffix in
+    the local config (`ssh_wrapper_scripts`), so private script names stay out of this file. That form
+    is ssh for the rules here; `<wrapper> <file>` hides the command and stays unreadable for deletes."""
+    word = toks[i].replace("\\", "/").rsplit("/", 1)[-1].lower().removesuffix(".exe") if i < len(toks) else ""
+    script = toks[i + 1].replace("\\", "/").lower() if i + 1 < len(toks) else ""
+    if (word in {"python", "python3", "py"} and len(toks) == i + 4 and toks[i + 2] == "--cmd"
+            and any(script.endswith(s.replace("\\", "/").lower()) for s in SSH_WRAPPER_SCRIPTS)):
+        return toks[i + 3]
+    return None
+
+
+PS_SPACED_PATH = re.compile(r"[A-Za-z]:[\\/][^;|&`$()<>'\"\n]* [^;|&`$()<>'\"\n]*")
+
+
 def remote_command(segment: str) -> str | None:
     """The command a `[timeout N] ssh [opts] host CMD` / `tailscale ssh host CMD` segment runs remotely.
 
@@ -609,12 +641,23 @@ def remote_command(segment: str) -> str | None:
     word = toks[i].rsplit("/", 1)[-1].lower().removesuffix(".exe") if i < len(toks) else ""
     if word in INNER_SHELLS and i + 2 < len(toks) and re.fullmatch(r"-[a-z]*c", toks[i + 1]):
         return toks[i + 2]  # bash -c '<cmd>': the string is the command (review 2026-10-06)
+    if word in {"iex", "invoke-expression"} and i + 1 < len(toks):
+        # PROBLEMS.md 2026-09-26 14:40: `iex "ri C:\data\x"` ran a delete the guard never parsed
+        rest = toks[i + 2:] if toks[i + 1].lower() in {"-command", "-c"} else toks[i + 1:]
+        return " ".join(rest) or None
     if word in {"powershell", "pwsh"}:
         j = i + 1
         while j < len(toks) and toks[j].lower() not in {"-c", "-command", "-encodedcommand", "-ec"}:
             j += 1
         if j + 1 < len(toks):
-            return UNPARSED if toks[j].lower() in {"-encodedcommand", "-ec"} else " ".join(toks[j + 1:])
+            if toks[j].lower() in {"-encodedcommand", "-ec"}:
+                return UNPARSED
+            # shlex took the quotes off: 'C:\\Program Files\\x' must stay one path. Only a bare path list is
+            # quoted back; a token with ; | & or a verb before the path is left for the segment parser.
+            return " ".join(f"'{t}'" if PS_SPACED_PATH.fullmatch(t) else t for t in toks[j + 1:])
+    probe = _probe_cmd(toks, i)
+    if probe is not None:
+        return probe
     if i < len(toks) and toks[i] == "tailscale" and toks[i + 1:i + 2] == ["ssh"]:
         i += 2
     elif i < len(toks) and toks[i].rsplit("/", 1)[-1].removesuffix(".exe") == "ssh":
@@ -636,6 +679,76 @@ def remote_command(segment: str) -> str | None:
     rest = toks[i + 1:]  # toks[i] is the host
     return " ".join(rest) if rest else None
 
+
+SSH_LOCAL_OPTS = ("proxycommand", "localcommand", "knownhostscommand", "match")
+
+
+def _ssh_option_values(segment: str) -> tuple[list[str], bool] | None:
+    """(values of every -o option, whether -F is given), read only between `ssh` and the host the
+    way remote_command reads them (combined flags -4o / -4oKey=v too); None if not splittable."""
+    try:
+        toks = shlex.split(segment, posix=True)
+    except ValueError:
+        return None
+    values: list[str] = []
+    has_config = False
+    # every token named ssh may start the real command (review: `sudo -u ssh ssh -o ...`)
+    for start in [k + 1 for k, t in enumerate(toks)
+                  if t.rsplit("/", 1)[-1].lower().removesuffix(".exe") == "ssh"]:
+        i = start
+        while i < len(toks) and toks[i].startswith("-") and toks[i] != "--":
+            tok = toks[i]
+            i += 1
+            for pos, c in enumerate(tok[1:]):
+                if c not in SSH_OPTS_WITH_ARG:
+                    continue
+                rest = tok[pos + 2:]
+                if not rest and i < len(toks):
+                    rest = toks[i]
+                    i += 1
+                if c == "o":
+                    values.append(rest)
+                has_config = has_config or c == "F"
+                break
+    return values, has_config
+
+
+def ssh_local_commands(segment: str) -> list[str]:
+    """Commands an ssh segment runs on THIS machine through -o ProxyCommand/LocalCommand/
+    KnownHostsCommand/Match exec (review 2026-10-28: `ssh -o ProxyCommand='rm F' h ls` passed)."""
+    if not re.search(r"(?:^|[\s/])ssh(?:\.exe)?\s", segment):
+        return []
+    out: list[str] = []
+    for opt in (_ssh_option_values(segment) or ([], False))[0]:
+        m = re.match(r"\s*(\w+)\s*(?:=|\s)\s*(.*)", opt, re.S)
+        if not m or m.group(1).lower() not in SSH_LOCAL_OPTS or not m.group(2).strip():
+            continue
+        value = m.group(2).strip()
+        if m.group(1).lower() == "match":
+            e = re.search(r"\bexec\s+(.+)", value, re.S)
+            if not e:
+                continue
+            try:
+                value = " ".join(shlex.split(e.group(1), posix=True)) or e.group(1)
+            except ValueError:
+                value = e.group(1)
+        out.append(value)
+    return out
+
+
+def ssh_may_run_local_code(segment: str) -> bool:
+    """An ssh segment whose options can run a command here (-F config with Match exec, any -o
+    other than a few plain transport settings): its deletes are never owner-approvable."""
+    if not re.search(r"(?:^|[\s/])ssh(?:\.exe)?\s", segment):
+        return False
+    parsed = _ssh_option_values(segment)
+    if parsed is None or parsed[1]:
+        return True
+    return any(not SSH_SAFE_OPT.fullmatch(v.strip()) for v in parsed[0])
+
+
+SSH_SAFE_OPT = re.compile(r"(?i)(?:BatchMode=(?:yes|no)|ConnectTimeout=\d+|ServerAliveInterval=\d+|"
+                          r"ServerAliveCountMax=\d+|StrictHostKeyChecking=(?:yes|no|accept-new))")
 
 def split_segments(text: str) -> list[str]:
     """Split on && || ; | newline, but never inside '...' or "..." (a commit
@@ -668,7 +781,10 @@ def split_steps(text: str) -> list[tuple[str, str]]:
             buf, sep = [], text[i:i + 2]
             i += 2
             continue
-        elif c in ";|\n":
+        elif c in ";|\n" or (c == "&" and text[i - 1:i] not in (">", "<")
+                               and text[i + 1:i + 2] != ">"):
+            # a lone & (background) ends a command too; >& <& &> are redirections (review 2026-10-28:
+            # `ssh h rm F&rm F` ran the second rm locally while it was judged as remote)
             out.append(("".join(buf), sep))
             buf, sep = [], c
         else:
@@ -736,7 +852,7 @@ def decide(cmd: str) -> tuple[bool, str | None]:
     # review round 11: shell quoting splits a name ('' "" \ `) - match on the de-quoted text too
     dequoted = re.sub(r"[\"'`\\]", "", cmd)
     if (LIST_MENTION.search(cmd) or LIST_MENTION.search(dequoted)) and not _benign_list_mention(cmd):
-        return False, "delete_from_list run"
+        return False, "list script run"
     if INLINE_PY_DELETE.search(cmd):
         return False, "inline python delete"
     if GLOB_SCRIPT.search(cmd):  # review round 10: the script name hidden behind a shell glob
@@ -763,6 +879,11 @@ def decide(cmd: str) -> tuple[bool, str | None]:
         remote = remote_command(seg)
         if remote == UNPARSED:
             return False, "unparsed-remote-or-inner-command"
+        for local_cmd in ssh_local_commands(seg):
+            ok, rhit = decide(local_cmd)
+            if not ok:
+                return False, rhit or "ssh-local-command-delete"
+            flagged = flagged or bool(rhit)
         if remote:
             ok, rhit = decide(remote)
             if not ok:
@@ -816,7 +937,11 @@ NOT_A_RESTART_GO = re.compile(r"\bне\s+(?:надо\s+|нужно\s+|стоит
 # The whole segment is a restart and nothing else: no rm, no power-off, no service stop beside it.
 RESTART_SEGMENT = re.compile(
     r"(?:sudo\s+(?:-\S+\s+)*)?(?:reboot|systemctl\s+reboot|shutdown\s+-r(?:\s+(?:now|\+\d+))?|"
-    r"virsh\s+reboot\s+[\w.-]+|restart-computer(?:\s+-force)?)\s*;?", re.IGNORECASE)
+    r"virsh\s+reboot\s+[\w.-]+|restart-computer(?:\s+-force)?|"
+    # owner 2026-11-03 ("перезапусти test-gpu-20261101"): a Hyper-V guest, graceful or hard
+    r"restart-vm\s+(?:-name\s+)?[\w.-]+(?:\s+-type\s+reboot)?(?:\s+-force)?)\s*;?", re.IGNORECASE)
+PS_RESTART_VM_WRAPPER = re.compile(r"\bpowershell(?:\.exe)?\s+(?:-noprofile\s+)?-command\s+(?=restart-vm\b)",
+                                   re.IGNORECASE)
 # Owner 2026-10-14 ("для виртуалок не надо моего да на перегрузку, это не опасное действие"):
 # restarting one of OUR test VMs needs no approval. Closed lists, not a "looks like a VM" guess:
 # a rented VPS is also a VM but may run production, and a KVM host carries several guests.
@@ -844,7 +969,9 @@ TEST_VM_WINDOWS_RESTART = re.compile(
 # rebuildable from git, so asking to clean images approves removing images named by tag or digest.
 # No flags: without -f docker refuses an image a container still uses, so a live service is safe.
 IMAGE_INTENT = re.compile(
-    r"\b(?:почисти(?:те)?|почистить|очисти(?:те)?|удали(?:те)?|удалить|убери(?:те)?|снеси(?:те)?)\b"
+    # imperfective imperatives too: owner 2026-10-24 «удаляй старые образы на контабо» was refused
+    r"\b(?:почисти(?:те)?|почистить|очисти(?:те)?|чисти(?:те)?|удали(?:те)?|удалить|удаляй(?:те)?|"
+    r"убери(?:те)?|убирай(?:те)?|снеси(?:те)?|сноси(?:те)?)\b"
     r"|\bclean\b|\bremove\b|\bdelete\b|\bprune\b", re.IGNORECASE)
 IMAGE_MENTION = re.compile(r"образ|\bimages?\b", re.IGNORECASE)
 IMAGE_REF = r"[a-z0-9][a-z0-9._/-]*(?::[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}|@sha256:[0-9a-f]{64})"
@@ -960,14 +1087,14 @@ def unit_disable_requested(prompt: str, unit: str) -> bool:
 DISABLE_SPAN = re.compile(r"\bsystemctl\s+disable\s+([A-Za-z][\w@.\-]{2,})(?=\s*$|\s*;)", re.IGNORECASE)
 
 
-def disable_units(cmd: str) -> list[str]:
-    """Units a command disables (ssh unwrapped); stop/kill operands are not included."""
+def disable_units(cmd: str, verb: str = "disable") -> list[str]:
+    """Units a command disables (or stops, verb="stop"), ssh unwrapped; kill operands are not included."""
     out: list[str] = []
     for seg in (s.strip() for s in split_segments(executable_text(cmd))):
         remote = remote_command(seg)
         if remote and remote != UNPARSED:
-            out += disable_units(remote)
-        elif STOP_SEGMENT.fullmatch(seg) and re.search(r"\bsystemctl\s+disable\b", seg, re.IGNORECASE):
+            out += disable_units(remote, verb)
+        elif STOP_SEGMENT.fullmatch(seg) and re.search(r"\bsystemctl\s+" + verb + r"\b", seg, re.IGNORECASE):
             out += _segment_targets(seg)
     return out
 
@@ -1006,7 +1133,7 @@ _SIG = r"(?:-(?:9|15|2|KILL|TERM|INT|SIGKILL|SIGTERM|SIGINT)|-s\s+(?:9|15|2|KILL
 _LIT = r"[A-Za-z][\w\-/=:.]{2,}(?:[ ][\w\-/=:.]+)*"   # '.' allowed; the pattern is then matched as a regex
                                                       # against STOP_PROTECTED_CMDLINES in stop_only
 STOP_SEGMENT = re.compile(
-    r"(?:sudo\s+)?(?:"
+    r"(?:sudo\s+(?:-n\s+)?)?(?:"   # -n only makes sudo fail instead of prompting (owner 2026-10-29)
     r"kill(?:\s+" + _SIG + r")?(?:\s+" + _PID + r")+|"
     r"pkill(?:\s+" + _SIG + r")?(?:\s+-[fx])*\s+(?:'" + _LIT + r"'|\"" + _LIT + r"\"|[A-Za-z][\w\-]{2,})|"
     r"killall(?:\s+" + _SIG + r")?\s+[A-Za-z][\w\-]{2,}|"
@@ -1020,20 +1147,30 @@ STOP_PROTECTED = re.compile(r"\b(?:sshd?|systemd|init|networking|networkmanager|
                             r"dockerd|containerd|kubelet|wg-quick|wg|wireguard|openvpn|autossh|frpc|frps|socat|"
                             r"ngrok|chisel|sshuttle|dropbear|stunnel|xray|v2ray|zerotier(?:-one)?|firewalld|"
                             r"gpg-agent|tunnel|getty(?:@[\w.-]+)?|dbus(?:-broker)?|polkit|udev|"
-                            r"xrdp(?:-sesman)?|x11vnc|vncserver(?:@[\w.:-]+)?|tigervnc\w*|anydesk|rustdesk)\b",
+                            r"xrdp(?:-sesman)?|x11vnc|vncserver(?:@[\w.:-]+)?|tigervnc\w*|anydesk|rustdesk|"
+                            # review 2026-10-29: units that take the network interface down cut ssh too
+                            r"ifup(?:@[\w.:-]+)?|ifupdown|ifplugd|wpa_supplicant(?:@[\w.:-]+)?|netplan\w*|"
+                            r"dhclient|dhcpcd|connman|iwd|[\w@.-]+\.target|user@[\w.-]*|"
+                            r"network(?:-manager)?(?=(?:\.service)?$))\b",
                             re.IGNORECASE)   # getty: console login; dbus/polkit/udev: the box itself
 STOP_PROTECTED_CMDLINES = ("sshd", "sshd: root@pts/0", "/usr/sbin/sshd -D", "ssh -W host:22", "systemd", "init",
                            "/sbin/init", "NetworkManager", "rclone mount gdrive: /mnt", "cloudflared tunnel run",
                            "tailscaled", "dockerd", "containerd", "kubelet", "openvpn", "autossh -M 0", "wg-quick up wg0",
                            "frpc -c frpc.toml", "socat TCP-LISTEN:2222", "ngrok tcp 22", "chisel client",
                            "sshuttle -r h", "dropbear", "stunnel", "xray run", "v2ray run", "zerotier-one",
-                           "firewalld", "gpg-agent --daemon")
+                           "firewalld", "gpg-agent --daemon",
+                           # review 2026-10-29: pkill fragments of network daemons ('wpa_supp', 'networkd')
+                           "/sbin/wpa_supplicant -u -s -O /run/wpa_supplicant", "/sbin/dhclient -4 -v eth0",
+                           "dhcpcd -q eth0", "/lib/systemd/systemd-networkd", "/usr/sbin/ifplugd -i eth0",
+                           "/usr/sbin/connmand -n", "/usr/libexec/iwd", "/usr/sbin/NetworkManager --no-daemon")
 # Read-only commands allowed beside a stop or a restart (review 2026-10-12, finding 1).
 STOP_COMPANION = re.compile(
     r"(?:sleep\s+\d+|ps(?:\s+-[A-Za-z]+(?:\s+[\w,]+)?)*|pgrep(?:\s+-[A-Za-z]+)*\s+(?:'[^'\n]*'|\"[^\"\n]*\"|[\w.\-]+)|"
     r"nvidia-smi(?:\s+(?:--query-[\w-]+=[\w.,-]+|--format=[\w.,-]+|--id=\d+|-i\s+\d+))*|uptime|date|echo\s+[\w=.:-]*|"
     r"grep(?:\s+-[A-Za-z]+)*\s+(?:'[^'\n]*'|\"[^\"\n]*\"|[\w.:\-\[\]]+)|head(?:\s+-n?\s*\d+)?|tail(?:\s+-n?\s*\d+)?|"
-    r"wc\s+-l|cut\s+-c\s*[\d-]+)\s*;?")
+    r"wc\s+-l|cut\s+-c\s*[\d-]+|"
+    # owner 2026-10-29: the exit code and the unit state right after a stop
+    r"echo\s+[\w=.:-]*\$\?|systemctl\s+(?:is-active|is-enabled|is-failed)(?:\s+[A-Za-z][\w@.\-]{2,})+)\s*;?")
 # Anything that makes the request not a plain go-ahead: negation, "keep", "no", a question.
 NOT_A_GO = re.compile(
     r"\bне\s+(?:надо\s+|нужно\s+|стоит\s+|смей\s+)?(?:удал|снос|снес|стир|сотр|трог|чист|убир|замен|перезапис)|"
@@ -1048,6 +1185,20 @@ CONFIRM_ONLY = re.compile(
     r"\s*(?:да|ага|ок|окей|ok|okay|yes|подтверждаю|удаляй|давай|можно)"
     r"(?:[\s,]+(?:да|удаляй|давай|можно|ок|ok|yes|подтверждаю|вс[её]|по\s+списку|список))*\s*[.!]*\s*",
     re.IGNORECASE)
+# Owner 2026-11-01 («присылается список того, что будет удаляться, и я говорю да; нужен единый формат»):
+# the one delete proposal format is a line starting «Удаление» followed by a fenced block of full paths.
+# A bare yes to an answer with that block approves exactly those paths (drive-root entries and files
+# included); paths mentioned elsewhere in the answer do not count, and the irreplaceable still needs her words.
+DELETE_BLOCK = re.compile(r"^[ \t>*_#]*удаление\b[^\n]*\n[ \t]*```[^\n]*\n(.*?)\n[ \t]*```",
+                          re.IGNORECASE | re.MULTILINE | re.DOTALL)
+
+
+def delete_block(answer: str) -> str | None:
+    """The full-path lines of the last «Удаление» block in my answer, or None when there is none."""
+    blocks = DELETE_BLOCK.findall(answer or "")
+    return blocks[-1] if blocks else None
+
+
 # "да /full/path" to my proposal: a go-ahead that names exactly what it covers (owner 2026-10-11).
 CONFIRM_PATHS = re.compile(
     r"\s*(?:да|ок|ok|yes|подтверждаю|удаляй|заменяй)[\s,:]+(?:[A-Za-z]:)?[\\/]\S+(?:\s+(?:[A-Za-z]:)?[\\/]\S+)*\s*",
@@ -1062,6 +1213,18 @@ LIST_SCRIPT = (Path(__file__).resolve().parent.parent / "scripts" / "delete_from
 # review 2026-10-11 F1: no separators, substitutions or redirects anywhere in a list-delete call
 LIST_CALL_FORBIDDEN = re.compile(r"[;|`$()<>\n\r{}]|&(?!\s)|\s&\s*\S.*&")
 PYTHON_NAMES = {"python", "python3", "py", "python.exe", "python3.exe", "py.exe"}
+# Owner 2026-11-01 («поправь хук»: the course layout by topic stopped at Move-Item, which this guard
+# reads as a delete). A rename list lives in ~/.claude/state/relocate-lists/<name>.txt, one
+# `SRC => DST` per line; my answer shows `relocate-list: <path> sha256:<hex>`, and her bare go-ahead
+# or her «переноси» to that answer approves exactly that file. Only scripts/relocate_from_list.py acts
+# on it: same volume, never over an existing target, both ends inside relocate_problem() limits.
+RELOCATE_LIST_DIR = Path.home() / ".claude" / "state" / "relocate-lists"
+RELOCATE_REF = re.compile(r"relocate-list:\s*(\S+?\.txt)\s+sha256:([0-9a-fA-F]{16,64})")
+RELOCATE_SCRIPT = LIST_SCRIPT.parent / "relocate_from_list.py"
+RELOCATE_INTENT = re.compile(r"перен[её]с|перенос|перемест|разлож|раскладыва|relocate|\bmove\b", re.IGNORECASE)
+RELOCATE_SEP = " => "
+RELOCATE_NOT = re.compile(r"(?<!\w)(?:не|нет|ни|стоп|погоди|подожди|оставь|not|no|don'?t|wait)(?!\w)|\?",
+                          re.IGNORECASE)
 
 
 # Owner decision 2026-10-11: "a general yes, without naming files, works for everything
@@ -1084,6 +1247,58 @@ IRREPLACEABLE = re.compile(_DB_FILE_RE + "|" + _DB_WORD_RE, re.IGNORECASE)
 # The request itself names a file or path (then only named targets are covered).
 NAMES_FILE = re.compile(r"[\w\-]+\.[A-Za-z0-9]{1,8}\b|[\w\-.]+[\\/][\w\-.]")
 CONTENT_SCAN_CAP = 200_000  # simplification: bounded walk; a bigger folder must be named explicitly
+
+
+# Owner 2026-10-31 (named the full paths of unused browser profiles; refused by R8): a browser profile
+# one of our own programs rebuilds is regenerable, so the owner naming its full path names the browser
+# databases inside it too. The parent folders are listed in a private file (a missing file = no
+# exemption); one level below such a parent, judged by the real path (a junction elsewhere does
+# not qualify).
+PROFILE_ROOTS_FILE = Path.home() / ".claude" / "claude-code-private" / "regenerable-browser-profiles.json"
+
+
+def _profile_roots() -> set[str]:
+    try:
+        data = json.loads(PROFILE_ROOTS_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return set()
+    roots = data.get("roots", []) if isinstance(data, dict) else []
+    # a listed parent must be a deep existing folder: never a drive root, a home or a home child
+    return {_norm(r).rstrip("/").lower() for r in roots
+            if isinstance(r, str) and _norm(r).rstrip("/").count("/") >= 5 and not _home_child(r)
+            and os.path.isdir(r)}
+
+
+def _worker_profile(target: str) -> bool:
+    try:
+        real = _norm(os.path.realpath(target)).rstrip("/").lower()
+    except OSError:
+        return False
+    parent, _, name = real.rpartition("/")
+    return bool(name) and parent in _profile_roots()
+
+
+# Inside a regenerable profile only browser databases (.db, .ldb, extensionless SQLite) are covered:
+# a dump, backup or password vault dropped there still has to be named. Real Chromium/WebView2
+# profiles hold none of these names (checked 2026-10-31 on nine worker profiles).
+NOT_BROWSER_DATA = re.compile(r"\.(?:sql|dump|pgdump|bak|kdbx|mdb|mdf|ibd|rdb)(?:\.(?:gz|zst|xz|bz2|zip|7z))?$|"
+                              r"backup|бэкап|pgdata|postgres|mysql|mongo|redis|dataset|датасет", re.IGNORECASE)
+
+
+def _profile_blocker(target: str) -> str | None:
+    """Why a named regenerable profile still cannot go: unreadable, too big, or foreign data inside."""
+    errors: list[OSError] = []
+    n = 0
+    for root, dirs, files in WALK(target, onerror=errors.append, followlinks=False):
+        for name in dirs + files:
+            n += 1
+            if n > CONTENT_SCAN_CAP:
+                return "too many entries to inspect"
+            if NOT_BROWSER_DATA.search(name):
+                return f"holds {name}, not browser data - the owner must name it herself"
+    if errors:
+        return f"part of the folder cannot be read ({errors[0]})"
+    return None
 
 
 INNER_NAME_CAP = 50  # simplification: more irreplaceable files inside a folder -> name them one by one
@@ -1116,42 +1331,131 @@ def _sqlite_header(p: Path) -> bool | None:
 
 
 def _temp_target_clear(t: str) -> bool:
-    """Inside temp the location decides, with exceptions (review 2026-10-13), each fail-closed:
-    a real database (extension, server marker or SQLite header - DB_FILE, not a word in a folder
-    name: car_dataset_inventory of jpgs in .claude/tmp is scratch), a link or a path that resolves
-    out of temp, and a folder too big or unreadable to check. A missing path (remote, already
-    gone) is judged by its name alone."""
+    """Inside temp the location decides, contents are not judged (owner 2026-11-07: temp folders
+    must clear without problems, so a database in temp is scratch; to keep one, pin it with
+    temp_registry add). What stays refused protects data OUTSIDE temp from a shell delete: a link,
+    a path that resolves out of temp, and a folder with a link inside or one that cannot be walked,
+    because Remove-Item may follow a junction. temp_registry sweep removes those itself without
+    following links, see temp_location_ok."""
     p = Path(t)
     kind = _kind(p)
     if kind == "missing":
-        return not DB_FILE.search(t)
+        return True
     if kind in ("error", "link") or not is_temp_target(_norm(os.path.realpath(t))):
         return False
     if kind == "file":
-        return not DB_FILE.search(t) and _sqlite_header(p) is False
+        return True
     errors: list[OSError] = []
     n = 0
     for root, dirs, files in WALK(p, onerror=errors.append, followlinks=False):
         for name in dirs + files:
             n += 1
-            f = Path(root) / name
-            fk = _kind(f)
-            if n > CONTENT_SCAN_CAP or fk in ("error", "link") or DB_FILE.search(f.as_posix()):
-                return False
-            if fk == "file" and _sqlite_header(f) is not False:
+            if n > CONTENT_SCAN_CAP or _kind(Path(root) / name) in ("error", "link"):
                 return False
     return not errors
 
 
-def irreplaceable_info(target: str, recursive: bool) -> tuple[str | None, list[str] | None]:
+def temp_location_ok(target: str) -> bool:
+    """One direct child of a temp folder, for temp_registry sweep, whose removal never follows a
+    link. The location alone decides; the folder holding it must really be inside temp too, so a
+    junction in the path cannot lead the sweep elsewhere."""
+    t = _norm(target).rstrip("/")
+    if not t or re.search(r"[$%`,]", t) or "/../" in f"/{t}/" or re.match(r"^[A-Za-z]{2,}:", t):
+        return False
+    if any(c in ("", ".") or c != c.rstrip(". ") for c in t.split("/")[1:]):
+        return False
+    if not is_temp_target(t):
+        return False
+    parent = _norm(os.path.realpath(os.path.dirname(t))).rstrip("/")
+    low = parent.lower()
+    return (low in _temp_roots() or bool(re.fullmatch(r"[a-z]:/(?:temp|tmp)", low))
+            or is_temp_target(parent) or low.endswith("/.claude/tmp"))
+
+
+# Owner 2026-11-07 («поправь хук»): her pasted list of four linked worktrees was refused as "too many
+# databases" because ops/migrations holds 92 schema .sql files. Inside a linked worktree (.git is a file,
+# so history lives in the main repository and survives) a file git tracks, unchanged from a HEAD that a
+# remote-tracking branch already contains, is restorable. Modified, untracked and ignored files, the main
+# repository itself and an unpushed HEAD are judged as before. git failing = no exemption.
+GIT = "git"
+
+
+def _git_restorable(p: Path) -> set[str] | None:
+    """Lower-case posix paths of files in worktree root p that git can give back exactly, or None."""
+    import subprocess
+
+    if _kind(p / ".git") != "file":
+        return None
+    # The folder is the one being deleted, so its git config is not trusted: the .git file must
+    # lead into <repo>/.git/worktrees/<name>, and settings that run commands are switched off.
+    try:
+        gitdir = (p / ".git").read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeDecodeError):
+        return None
+    if not gitdir.startswith("gitdir:"):
+        return None
+    real = Path(os.path.realpath(os.path.join(str(p), gitdir[len("gitdir:"):].strip())))
+    if real.parent.name != "worktrees" or real.parent.parent.name != ".git" or not (real / "HEAD").is_file():
+        return None
+    # The repository whose config git will read must lie outside the folder being deleted, and it must
+    # list this folder as its worktree: a forged .git inside the target cannot vouch for the target.
+    target = os.path.normcase(os.path.realpath(str(p)))
+    common = os.path.normcase(str(real.parent.parent))
+    if common == target or common.startswith(target.rstrip("\\/") + os.sep):
+        return None
+    # git reads config from <gitdir>/commondir when it exists: it must name that same repository.
+    try:
+        named = (real / "commondir").read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        named = None
+    except (OSError, UnicodeDecodeError):
+        return None
+    if named is not None and os.path.normcase(os.path.realpath(os.path.join(str(real), named))) != common:
+        return None
+    try:
+        back = (real / "gitdir").read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeDecodeError):
+        return None
+    if os.path.normcase(os.path.realpath(back)) != os.path.normcase(os.path.realpath(str(p / ".git"))):
+        return None
+    safe = ["-c", "core.fsmonitor=false", "-c", "core.hooksPath=", "-c", "diff.external=",
+            "-c", "core.sshCommand=", "-c", "core.pager=cat", "-c", "protocol.allow=never"]
+
+    def git(*args: str) -> str | None:
+        try:
+            r = subprocess.run([GIT, *safe, "-C", str(p), *args], capture_output=True, stdin=subprocess.DEVNULL,
+                               timeout=30, env={**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_OPTIONAL_LOCKS": "0"})
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return r.stdout.decode("utf-8", "replace") if r.returncode == 0 else None
+
+    if not (git("for-each-ref", "--contains", "HEAD", "--format=%(refname)", "refs/remotes") or "").strip():
+        return None
+    tracked = git("ls-files", "-z", "--cached")
+    changed = git("diff", "--no-ext-diff", "--no-textconv", "--name-only", "-z", "HEAD")
+    if tracked is None or changed is None:
+        return None
+    root = _norm(str(p)).rstrip("/").lower()
+    dirty = {f.lower() for f in changed.split("\0") if f}
+    return {f"{root}/{f.lower()}" for f in tracked.split("\0") if f and f.lower() not in dirty}
+
+
+def irreplaceable_info(target: str, recursive: bool,
+                       remote: bool = False) -> tuple[str | None, list[str] | None]:
     """(why the target needs the owner's own naming, irreplaceable file names inside a folder).
     (None, []) means regenerable; inner=None means the folder could not be fully inspected and
-    may not be deleted as a whole at all (review R9: fail closed, no naming escape)."""
+    may not be deleted as a whole at all (review R9: fail closed, no naming escape).
+    remote: the path runs inside `ssh <host> '...'`. It is still stat-ed here, because the same
+    text may also run locally in a form the parser does not read as a delete (review 2026-10-28:
+    `; mv`, `; timeout rm`, `-o ProxyCommand=`); only a local stat that fails is judged by path
+    alone (2026-10-28: a server home path with D:/tmp/... in it made the Windows lstat fail as "access denied")."""
     t = _norm(target).rstrip("/")
     if IRREPLACEABLE.search(t):
         return "database/backup/dataset path", []
     p = Path(t)
     kind = _kind(p)
+    if kind == "error" and remote:
+        return None, []
     if kind == "error":
         return "cannot be checked from here (access denied)", None
     if kind == "file":
@@ -1166,6 +1470,7 @@ def irreplaceable_info(target: str, recursive: bool) -> tuple[str | None, list[s
         inner: list[str] = []
         walk_errors: list[OSError] = []
         n = 0
+        restorable = _git_restorable(p) or set()
         # review R10: os.walk with onerror, not rglob (which silently skips unreadable subtrees)
         for root, dirs, files in WALK(p, onerror=walk_errors.append, followlinks=False):
             for name in dirs + files:
@@ -1174,6 +1479,8 @@ def irreplaceable_info(target: str, recursive: bool) -> tuple[str | None, list[s
                     return "too many entries to inspect", None
                 f = Path(root) / name
                 fk = _kind(f)
+                if fk == "file" and _norm(str(f)).lower() in restorable:
+                    continue
                 if fk == "error":
                     return f"cannot check {f.as_posix()} (access denied)", None
                 header = _sqlite_header(f) if fk == "file" else False
@@ -1196,7 +1503,7 @@ def irreplaceable_reason(target: str, recursive: bool) -> str | None:
     return irreplaceable_info(target, recursive)[0]
 
 
-LIST_MENTION = re.compile(r"(?<![\w])delete_from_list|deletion-approvals", re.IGNORECASE)
+LIST_MENTION = re.compile(r"(?<![\w])(?:delete|relocate)_from_list|deletion-approvals", re.IGNORECASE)
 # a .py path built by a glob, a variable or a substitution (review rounds 10-11)
 GLOB_SCRIPT = re.compile(r"\b(?:python3?|py)(?:\.exe)?[\"']?\s+[\"']?[^\s\"']*[*?\[\]$%{}`][^\s\"']*\.py\b",
                          re.IGNORECASE)
@@ -1344,7 +1651,7 @@ def _benign_list_mention(cmd: str) -> bool:
             or not argv[2].lower().endswith(".txt"):
         return False
     try:
-        return Path(argv[1]).expanduser().resolve(strict=True) == LIST_SCRIPT
+        return Path(argv[1]).expanduser().resolve(strict=True) in (LIST_SCRIPT, RELOCATE_SCRIPT)
     except OSError:
         return False
 
@@ -1365,6 +1672,25 @@ def read_deletion_list(path: str, sha: str) -> tuple[list[str] | None, str]:
         return None, f"{path}: the list changed after it was shown (sha256 mismatch)"
     entries = [ln.strip() for ln in data.decode("utf-8-sig", errors="replace").splitlines()]
     return [e for e in entries if e and not e.startswith("#")], ""
+
+
+def list_pasted_by_owner(prompt: str) -> bool:
+    """Owner 2026-11-01 («ты мне даёшь список, я его копирую, пишу там же удали — и ты всё удаляешь»):
+    her own message asks to delete, without negation or question. Whether it pastes every listed path
+    is checked per entry; then the list need not have been shown first."""
+    return (bool(DELETE_INTENT.search(prompt)) and not NOT_A_GO.search(prompt)
+            and not CONFIRM_ONLY.fullmatch(prompt))
+
+
+def _pasted_lines(prompt: str) -> set[str]:
+    """Her message as whole-line paths: a pasted block holds one path per line. A whole line, not a
+    substring, so "D:/x/a b" is not found inside a pasted "D:/x/a b old"."""
+    out = set()
+    for line in prompt.splitlines():
+        line = line.strip().strip("`'\"").strip()
+        line = re.sub(r"^(?:удали(?:те)?|удаляй|delete|remove)[\s:,]+", "", line, flags=re.IGNORECASE)
+        out.add(line.replace("\\", "/").rstrip("/").lower())
+    return out
 
 
 def list_delete_request(cmd: str, prompt: str, answer: str) -> tuple[list[tuple[str, bool]] | None, str]:
@@ -1390,10 +1716,12 @@ def list_delete_request(cmd: str, prompt: str, answer: str) -> tuple[list[tuple[
     if not same:
         return None, f"only {LIST_SCRIPT.as_posix()} may act on a deletion list"
     path, sha = argv[2], argv[4]
-    if not CONFIRM_ONLY.fullmatch(prompt):
-        return None, "a list delete needs a bare go-ahead to the answer that showed the list"
+    pasted = list_pasted_by_owner(prompt)
+    if not pasted and not CONFIRM_ONLY.fullmatch(prompt):
+        return None, ("a list delete needs a bare go-ahead to the answer that showed the list, "
+                      "or her own request to delete that pastes every listed path")
     shown = {(_list_key(p), s.lower()) for p, s in LIST_REF.findall(answer)}
-    if (_list_key(path), sha.lower()) not in shown:
+    if not pasted and (_list_key(path), sha.lower()) not in shown:
         return None, "this list and digest were not shown in my last answer"
     entries, why = read_deletion_list(path, sha)
     if entries is None:
@@ -1404,16 +1732,22 @@ def list_delete_request(cmd: str, prompt: str, answer: str) -> tuple[list[tuple[
         driveless = [e for e in entries if not re.match(r"^[A-Za-z]:[\\/]", e)]
         if driveless:
             return None, f"{driveless[0]}: a listed path needs a drive letter on Windows"
-    for e in entries:  # review R2: a list is a general go-ahead; the irreplaceable must be named in chat
-        why = irreplaceable_reason(e, True)
+    lines = _pasted_lines(prompt)
+    for e in entries:
+        if pasted:  # every entry, letter for letter, is a line of her own message; that names the irreplaceable too
+            if _norm(e).rstrip("/").lower() not in lines:
+                return None, f"{e}: not pasted in her message - every listed path must be"
+            continue
+        why = irreplaceable_reason(e, True)  # review R2: a bare yes is general; the irreplaceable needs her words
         if why:
             return None, f"{e}: irreplaceable ({why}) - name it in the chat, not in a list"
     return [(e, True) for e in entries], ""
 APPROVAL_LOG = Path.home() / ".claude" / "logs" / "deletion-approvals.jsonl"
 TRANSCRIPT_SCAN_CAP = 64 * 1024 * 1024
+PROTECTED_DOT = r"(?:^|/)\.(?:codex|ssh|secrets|gnupg|git|agents|config/gh)(?:/|$)"
 PROTECTED = re.compile(
     # .claude is judged separately (_claude_limit): the home one is protected, a project's is not
-    r"(?:^|/)\.(?:codex|ssh|secrets|gnupg|git|agents|config/gh)(?:/|$)|"
+    PROTECTED_DOT + "|"
     r"^(?:/etc|/usr|/bin|/sbin|/lib\w*|/boot|/sys|/proc|/dev|/var/lib|/srv/?$)(?:/|$)|"
     r"^[a-z]:/(?:windows|program files[^/]*|programdata|\.secrets|\$recycle\.bin)(?:/|$)|"
     r"^[a-z]:/users/[^/]+/appdata/(?:roaming|locallow)(?:/|$)|^/users/[^/]+/library(?:/|$)|"
@@ -1469,8 +1803,14 @@ def _human_text(e) -> str | None:
     origin = a.get("origin") if isinstance(a, dict) else None
     if (isinstance(a, dict) and a.get("type") == "queued_command" and a.get("commandMode") == "prompt"
             and isinstance(origin, dict) and origin.get("kind") == "human" and not a.get("isMeta")
-            and isinstance(a.get("prompt"), str)):
-        return a["prompt"]
+            and isinstance(a.get("prompt"), (str, list))):
+        # owner 2026-10-28: the host also writes the prompt as content blocks (a reminder plus her text).
+        # A reminder block is dropped whole: a closing tag quoted inside it must not end the strip early.
+        prompt = a["prompt"]
+        if isinstance(prompt, list):
+            prompt = [b for b in prompt if not (isinstance(b, dict) and isinstance(b.get("text"), str)
+                                                and b["text"].lstrip().startswith("<system-reminder>"))]
+        return _entry_text(prompt)
     return None
 
 
@@ -1492,17 +1832,24 @@ def _split_reply(text: str) -> tuple[str, str]:
 
 def owner_request(transcript_path: str) -> tuple[str, str] | None:
     """(latest owner message, my text it answers) from the host-written transcript."""
+    req = owner_request_at(transcript_path)
+    return req[:2] if req else None
+
+
+def owner_request_at(transcript_path: str) -> tuple[str, str, str] | None:
+    """owner_request plus the host timestamp of her message ("" when the entry has none)."""
     if not transcript_path:
         return None
     p = Path(transcript_path)
     if not p.is_file():
         return None
-    prompt, quoted, answer = None, "", []
+    prompt, quoted, answer, ts = None, "", [], ""
     for e in _tail_entries(p):
         if prompt is None:
             text = _human_text(e)
             if text is not None:
                 prompt, quoted = _split_reply(text)
+                ts = e.get("timestamp") if isinstance(e.get("timestamp"), str) else ""
                 if not prompt:
                     return None
             continue
@@ -1516,7 +1863,67 @@ def owner_request(transcript_path: str) -> tuple[str, str] | None:
                 break  # only my last message is what the owner answered
     if prompt is None:
         return None
-    return prompt, "\n".join(x for x in (quoted, *answer) if x)
+    return prompt, "\n".join(x for x in (quoted, *answer) if x), ts
+
+
+OWNER_LIST_FILE = re.compile(r"(?:[A-Za-z]:[\\/]|/)[^\n\r\"'<>|*?`]*?\.txt\b", re.IGNORECASE)
+OWNER_LIST_WORD = re.compile(r"списк|из\s+файла|по\s+файлу|в\s+файле|\blist\b|\bfrom\s+(?:the\s+)?file\b",
+                             re.IGNORECASE)
+OWNER_LIST_PATH_LINE = re.compile(r"(?:[A-Za-z]:[\\/]|/)[^\n\r\"'<>|*?`;&$]+")
+OWNER_LIST_MAX_BYTES = 1 << 20
+OWNER_LIST_MTIME_SLACK_S = 2.0  # host timestamp and file mtime come from two clocks of one machine
+
+
+def expand_owner_list_files(prompt: str, ts: str) -> tuple[str, str]:
+    """Owner 2026-11-08 («поправь хук, чтобы ему можно было дать текстовый файл со ссылками на
+    удаление»): a request to delete that names a .txt file counts as pasting its lines. The file must
+    exist and be unchanged since her message (mtime not after its timestamp), so a list edited after
+    she pointed at it names nothing. Only absolute paths are taken; a database or backup in the file still
+    needs her own typed words. The mtime check catches an accidental edit, not deliberate forgery (the
+    boundary stated in rules/deletion-confirm-and-verify.md). Returns (prompt with the lines appended,
+    why a named file or line was not used); the caller feeds that only to the path-deletion branches."""
+    # «удали C:\x\notes.txt» deletes that file; only «по списку / из файла» reads it as a list
+    words = OWNER_LIST_FILE.sub(" ", prompt)  # «list» inside a path name is not her wording
+    if not DELETE_INTENT.search(words) or NOT_A_GO.search(words) or not OWNER_LIST_WORD.search(words):
+        return prompt, ""
+    sent = parse_ts(ts)
+    extra, why = [], ""
+    for m in OWNER_LIST_FILE.finditer(prompt):
+        name = m.group(0).strip()
+        try:
+            raw = Path(name.replace("\\", "/")).expanduser()
+            if raw.is_symlink():
+                why = f"{name}: a deletion list must not be a link"
+                continue
+            p = raw.resolve(strict=True)
+            st = p.stat()
+            if not p.is_file() or st.st_size > OWNER_LIST_MAX_BYTES:
+                why = f"{name}: a deletion list must be a text file under 1 MB"
+                continue
+            if sent is None or st.st_mtime > sent + OWNER_LIST_MTIME_SLACK_S:
+                why = f"{name}: the list changed after her message (or the message has no time)"
+                continue
+            for ln in p.read_text(encoding="utf-8-sig", errors="replace").splitlines():
+                ln = ln.strip()
+                if not ln or ln.startswith("#"):
+                    continue
+                if not OWNER_LIST_PATH_LINE.fullmatch(ln):
+                    why = f"{name}: {ln[:80]!r} is not an absolute path - lines of a list are paths only"
+                    continue
+                if irreplaceable_reason(ln, True):
+                    why = f"{ln}: irreplaceable - name it in the chat, not in a list file"
+                    continue
+                extra.append(ln)
+        except OSError:
+            why = f"{name}: no such list file"
+    return ("\n".join([prompt, *extra]) if extra else prompt), why
+
+
+def parse_ts(ts: str) -> float | None:
+    try:
+        return __import__("datetime").datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+    except (ValueError, AttributeError):
+        return None
 
 
 def _is_recursive(verb: str, seg: str) -> bool:
@@ -1560,6 +1967,8 @@ def _delete_targets_in(cmd: str, allow_move: bool, allow_delete: bool) -> list[t
         remote = remote_command(seg)
         if remote == UNPARSED:
             return None
+        if remote and ssh_may_run_local_code(seg):
+            return None  # review 2026-10-28: -o ProxyCommand='rm F' ran an unnamed local delete
         if remote:
             sub = _delete_targets_in(remote, allow_move, allow_delete)
             if sub is None:
@@ -1590,6 +1999,9 @@ def _delete_targets_in(cmd: str, allow_move: bool, allow_delete: bool) -> list[t
 def restart_only(cmd: str) -> bool:
     """True when every destructive part of cmd (ssh unwrapped) is a plain restart verb and there
     is at least one. Anything else destructive next to it (rm, DROP, kill, poweroff) -> False."""
+    # A Windows host whose sshd shell is cmd needs `powershell -Command Restart-VM ...`; only that
+    # wrapper, only right before Restart-VM, is dropped, so every other wrapped command still refuses.
+    cmd = PS_RESTART_VM_WRAPPER.sub("", cmd)
     return _only_segments(cmd, RESTART_SEGMENT, STOP_COMPANION)
 
 
@@ -1673,7 +2085,7 @@ def _segment_targets(seg: str) -> list[str]:
     (re-review 2026-10-12, finding 2: a separate target regex missed `kill -s TERM 22`)."""
     toks = shlex.split(seg.rstrip(" ;"))
     if toks and toks[0] == "sudo":
-        toks = toks[1:]
+        toks = toks[2:] if toks[1:2] == ["-n"] else toks[1:]
     verb, args = toks[0].lower(), toks[1:]
     if verb == "systemctl":
         return args[1:]
@@ -1726,7 +2138,11 @@ def _offered_spans(text: str, strict: bool) -> list[str]:
                 continue
             prev = next((x for x in reversed(lines[:n]) if x.strip()), "")
             nxt = next((x for x in lines[n + 1:] if x.strip()), "")
-            if re.search(r"\bесли\b|\bif\b|\bкогда\b|\bwhen\b", prev, re.IGNORECASE) or (
+            # owner 2026-10-30: only the sentence that leads into the offer can set its condition; an
+            # earlier sentence of the paragraph ("хук пропускает, только если ...") explains, not conditions
+            lead_in = re.split(r"(?<=[.!?…])\s+", prev.strip())[-1]
+            if re.search(r"\bесли\b|\bif\b|\bкогда\b|\bwhen\b|\bиначе\b|\botherwise\b|\bunless\b|\bв\s+случае\b|"
+                         r"\bin\s+case\b", lead_in, re.IGNORECASE) or (
                     nxt and (PROPOSAL_NOT_GO.search(nxt) or NOT_A_GO.search(nxt.replace("?", " "))
                              or CANCEL_WORDS.search(nxt))):
                 continue
@@ -1802,6 +2218,14 @@ def stop_only(cmd: str) -> bool:
     # residual risk (documented): a pid is checked only for being named, not resolved to its process here
     if not targets or any(STOP_PROTECTED.search(t) for t in targets):
         return False
+    # review 2026-10-29: a unit is a service, by name or with .service; every other unit type (target,
+    # slice, scope, socket, mount, timer ...) is refused instead of listing the dangerous ones
+    try:
+        units = disable_units(cmd, "stop") + disable_units(cmd)
+    except ValueError:
+        return False
+    if any("." in u.removesuffix(".service") for u in units):
+        return False
     for t in targets:   # pkill/killall match by regex: 'ss.d' hits sshd although no word says so
         if not t.isdigit():
             try:
@@ -1863,12 +2287,24 @@ def _only_segments(cmd: str, allowed: re.Pattern, companions: re.Pattern | None 
     return found
 
 
+def _restart_lines_hesitate(prompt: str) -> bool:
+    """A question on its own line beside the restart line is a separate question, not doubt about the restart
+    (owner 2026-11-03: "что имеем?\\nперезапусти test-gpu-20261101" was refused). Any negation or wait
+    word anywhere, or a '?' on a line that mentions restarting, still voids it."""
+    for line in prompt.splitlines():
+        if not NOT_A_GO.search(line):
+            continue
+        if RESTART_MENTION.search(line) or NOT_A_GO.search(line.replace("?", "")):
+            return True
+    return False
+
+
 def _restart_approval(cmd: str, prompt: str, answer: str, event: dict) -> tuple[bool, str]:
     """A restart passes on the owner's own request, or on a bare yes to my proposal to restart."""
     if CONFIRM_ONLY.fullmatch(prompt):
         if not RESTART_MENTION.search(answer):
             return False, "a bare 'yes' to an answer that proposed no restart"
-    elif NOT_A_GO.search(prompt) or NOT_A_RESTART_GO.search(prompt):
+    elif NOT_A_RESTART_GO.search(prompt) or _restart_lines_hesitate(prompt):
         return False, "the request negates, hesitates or asks a question"
     elif not RESTART_INTENT.search(prompt):
         return False, "the latest request does not ask to restart"
@@ -1912,6 +2348,7 @@ def _stop_approval(cmd: str, prompt: str, answer: str, event: dict) -> tuple[boo
         return False, "stop command without readable targets"
     try:
         disabled = disable_units(cmd)
+        units = set(disable_units(cmd, "stop"))
     except ValueError:
         return False, "cannot parse the disable command"
     if disabled:
@@ -1937,11 +2374,16 @@ def _stop_approval(cmd: str, prompt: str, answer: str, event: dict) -> tuple[boo
             # a pid list may be joined by commas or "и"/"and" (owner 2026-10-13: «да, убей 37116 и 31004»)
             return re.search(r"(?:\bpid|процесс\w*|\bkill(?:\s+-\S+)*|\bубей(?:те)?|\bубивай(?:те)?|\bприбей(?:те)?|"
                              r"\bостанов\w*)"
+                             # owner 2026-11-03: «убей принудительно 61112» - a force adverb may sit before the pids
+                             r"(?:\s+(?:принудительно|насильно|жёстко|жестко|forcefully|force))?"
                              r"\s*[:#№]?\s*(?:\d+(?:[\s,]+|\s+(?:и|and)\s+))*" + t + r"(?!\d)(?![:.,/]\d)"
                              # review 2026-10-13: "убей 37116 и 22 часа" - a number before a time unit is no pid
                              r"(?!\s*(?:час|мин|сек|ч\b|h\b|m\b|s\b|hours?|min|sec))",
                              prompt, re.IGNORECASE) is not None
-        return re.search(r"(?<![\w.\-/~:])" + re.escape(t) + r"(?![\w\-/]|\.\w)", prompt) is not None
+        name = re.escape(t)
+        if t in units:   # owner 2026-10-29: a unit is named with or without .service on either side
+            name = re.escape(t.removesuffix(".service")) + r"(?:\.service)?"
+        return re.search(r"(?<![\w.\-/~:])" + name + r"(?![\w\-/]|\.\w)", prompt) is not None
     # third review 2026-10-12: when the owner names operands herself ("останови процесс 4242"), my proposal
     # cannot add others (4243); it counts only for a bare yes or a request that names no operand at all
     if not CONFIRM_ONLY.fullmatch(prompt) and (re.search(r"\d{2,}", prompt) or any(owner_named(t) for t in targets)):
@@ -1986,6 +2428,232 @@ def _image_rm_approval(cmd: str, prompt: str, answer: str, event: dict) -> tuple
     except OSError:
         return False, "cannot write the approval audit record"
     return True, "docker image removal"
+
+
+# Owner 2026-11-02 («Да, поправь хук»: «соглашаюсь на удаление пробной базы» was refused, DROP never passed):
+# a database is irreplaceable, so DROP DATABASE passes only when her own latest message asks to delete and
+# names every database itself; my proposal and a bare yes never count. Only one shape:
+# `[docker exec [-i] CONTAINER] psql [-U u] [-d db] [-h h] [-p n] [-X] [-q] -c "DROP DATABASE [IF EXISTS] name"`.
+DB_NAME = r"[A-Za-z_][A-Za-z0-9_]{2,62}"
+DB_DROP_SQL = r"DROP\s+DATABASE\s+(?:IF\s+EXISTS\s+)?(" + DB_NAME + r")\s*;?"
+DB_DROP_SEGMENT = re.compile(
+    r"(?:docker\s+exec\s+(?:-i\s+)?[\w.-]+\s+)?psql"
+    r"(?:\s+(?:-U\s*[\w-]+|-d\s*[\w-]+|-h\s*[\w.-]+|-p\s*\d+|-X|-q|-v\s+ON_ERROR_STOP=1))*"
+    r"\s+-c\s+(?:\"" + DB_DROP_SQL + r"\"|'" + DB_DROP_SQL + r"')(?:\s+2>&1)?\s*;?", re.IGNORECASE)
+DB_DROP_COMPANION = re.compile(r"(?:echo\s+[\w=.:-]*|grep(?:\s+-[A-Za-z]+)*\s+[\w.:-]+|head(?:\s+-n?\s*\d+)?|"
+                               r"tail(?:\s+-n?\s*\d+)?|wc\s+-l)\s*;?")
+DB_DROP_INTENT = re.compile(IMAGE_INTENT.pattern + r"|\bdrop\b|удалени[еяю]|снос\w*", re.IGNORECASE)
+DB_PROTECTED = {"postgres", "template0", "template1"}
+
+
+def db_drop_targets(cmd: str) -> list[str] | None:
+    """Database names when every destructive part of cmd (ssh unwrapped) is one psql DROP DATABASE, else None."""
+    # destructive-command-guard (layer 1) still wants its own trailing `# claude-bypass: destructive` marker
+    cmd = re.sub(r"\s+#\s*claude-bypass\s*:\s*destructive\s*$", "", cmd, flags=re.IGNORECASE)
+    if not _only_segments(cmd, DB_DROP_SEGMENT, DB_DROP_COMPANION):
+        return None
+    names = [a or b for a, b in re.findall(r"-c\s+(?:\"" + DB_DROP_SQL + r"\"|'" + DB_DROP_SQL + r"')",
+                                           executable_text(cmd), re.IGNORECASE)]
+    return names or None
+
+
+def _db_drop_approval(names: list[str], cmd: str, prompt: str, event: dict) -> tuple[bool, str]:
+    if CONFIRM_ONLY.fullmatch(prompt):
+        return False, "a bare 'yes' does not drop a database; the request must name it"
+    if NOT_A_GO.search(prompt):
+        return False, "the request negates, hesitates or asks a question"
+    if not DB_DROP_INTENT.search(prompt):
+        return False, "the latest request does not ask to delete a database"
+    system = [n for n in names if n.lower() in DB_PROTECTED]
+    if system:
+        return False, f"system database: {', '.join(system)}"
+    unnamed = [n for n in names if not re.search(r"(?<![\w])" + re.escape(n) + r"(?![\w])", prompt)]
+    if unnamed:
+        return False, f"databases not named in the request: {', '.join(unnamed)}"
+    try:
+        APPROVAL_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with APPROVAL_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"ts": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+                                 "session": event.get("session_id"), "action": "db-drop", "databases": names,
+                                 "request": prompt[:300], "command": cmd[:500]},
+                                ensure_ascii=False) + "\n")
+    except OSError:
+        return False, "cannot write the approval audit record"
+    return True, "database drop"
+
+
+# Owner 2026-10-31 («исправь хук, это мешает работе»: «удаляй» five old branches was refused): a remote
+# branch is removed on her request when every branch is named, in her words or in my answer she said a bare yes to.
+# Only `[cd DIR &&] git push [-q] <remote> --delete|-d b...` or `<remote> :b...`, read-only ls-remote beside it.
+# A branch is restorable from its sha (the default branch itself is refused by merge-gate and by GitHub).
+BRANCH_NAME = r"[\w][\w./-]*"
+BRANCH_RM_SEGMENT = re.compile(
+    r"git\s+push\s+(?:-q\s+)?[\w.@:/+-]+\s+(?:(?:--delete|-d)(?:\s+" + BRANCH_NAME + r")+|\+?:" + BRANCH_NAME +
+    r"(?:\s+\+?:" + BRANCH_NAME + r")*)(?:\s+2>&1)?\s*;?")
+BRANCH_RM_COMPANION = re.compile(r"(?:cd\s+(?:/d\s+)?(?:\"[^\"]+\"|'[^']+'|\S+)|git\s+ls-remote(?:\s+[\w.@:/+=-]+)*)\s*;?")
+
+
+def branch_rm_targets(cmd: str) -> list[str] | None:
+    """Branch names when cmd is only remote branch removals (plus cd / ls-remote), else None."""
+    if not _only_segments(cmd, BRANCH_RM_SEGMENT, BRANCH_RM_COMPANION):
+        return None
+    out: list[str] = []
+    for seg in (s.strip() for s in split_segments(executable_text(cmd))):
+        if not BRANCH_RM_SEGMENT.fullmatch(seg):
+            continue
+        toks = [t for t in seg.rstrip(";").split() if t not in ("-q", "2>&1")][3:]
+        out += [t.lstrip("+").lstrip(":") for t in toks if t not in ("--delete", "-d")]
+    return out or None
+
+
+PASTED_TAG = re.compile(r"</?pasted_content\b[^>\n]*>", re.IGNORECASE)
+
+
+def _branch_rm_approval(branches: list[str], cmd: str, prompt: str, answer: str, event: dict) -> tuple[bool, str]:
+    # The names being removed are not her words: "no" inside finish-no-join-master is not a refusal
+    # (owner 2026-11-01, «да» + the pasted list was refused).
+    words = PASTED_TAG.sub(" ", prompt)
+    for b in sorted(branches, key=len, reverse=True):
+        words = re.sub(r"(?<![\w/.-])" + re.escape(b) + r"(?![\w/.-])", " ", words)
+    if CONFIRM_ONLY.fullmatch(words) and words.strip() != prompt.strip():
+        source = prompt
+    elif CONFIRM_ONLY.fullmatch(prompt):
+        if not DELETE_MENTION.search(answer):
+            return False, "a bare 'yes' to an answer that proposed no deletion"
+        source = answer
+    elif NOT_A_GO.search(words):
+        return False, "the request negates, hesitates or asks a question"
+    elif DELETE_INTENT.search(prompt):
+        source = prompt
+    else:
+        return False, "the latest request does not ask to remove branches"
+    unnamed = [b for b in branches if not _named(source, b)]
+    if unnamed:
+        return False, f"branches not named in the request or the proposal: {', '.join(unnamed)}"
+    try:
+        APPROVAL_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with APPROVAL_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"ts": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+                                 "session": event.get("session_id"), "action": "branch-rm",
+                                 "request": prompt[:300], "command": cmd[:500]},
+                                ensure_ascii=False) + "\n")
+    except OSError:
+        return False, "cannot write the approval audit record"
+    return True, "remote branch removal"
+
+
+# Owner 2026-11-03 («Да, удаляй» to a block naming two dead runner volumes and unused images was refused,
+# then «Поправь хук»): docker containers, volumes and images are removed when each one is named in my
+# «Удаление» block she answered with a bare yes, or in her own delete request. Only
+# `docker rm|container rm|volume rm <name>...` and `docker rmi|image rm <name:tag|@digest>...` without flags:
+# docker itself then refuses a running container and a volume or image still in use. Plain `ssh host '...'`.
+# A volume whose name looks like a data store must be named in her own words, never via the block.
+DOCKER_OBJ = r"[A-Za-z0-9][\w.-]*"
+DOCKER_RM_SEGMENT = re.compile(
+    r"(?:sudo\s+)?docker\s+(?:(?:rm|container\s+rm|volume\s+rm)(?:\s+" + DOCKER_OBJ + r")+|"
+    r"(?:rmi|image\s+rm)(?:\s+" + IMAGE_REF + r")+)(?:\s+2>&1)?\s*;?")
+DOCKER_RM_COMPANION = re.compile(r"(?:" + IMAGE_RM_COMPANION.pattern + r"|docker\s+volume\s+ls(?:\s+-q)?\s*;?)")
+# The one delete proposal format (owner 2026-11-01): a line starting «Удаление», then a fenced block.
+DOCKER_DELETE_BLOCK = re.compile(r"^[ \t>*_#]*удаление\b[^\n]*\n[ \t]*```[^\n]*\n(.*?)\n[ \t]*```",
+                                 re.IGNORECASE | re.MULTILINE | re.DOTALL)
+DOCKER_DATA_VOLUME = re.compile(r"postgres|pgdata|mysql|maria|mongo|redis|minio|backup|бэкап|dataset|датасет|"
+                                r"(?<![a-z])db(?![a-z])", re.IGNORECASE)
+
+
+# Owner 2026-11-04 («поправь хук. это будет восполнимое, если мы их перенесли и они работают в другом месте»):
+# a volume that looks like a data store is replaceable once a transfer contract in the session folder
+# (.claude|.agent|.codex/transfers/*.json) has verification performed with result PASS and lists it under
+# verified_copies as {"host": <ssh alias of the source>, "kind": "volume", "name": <volume>}. The host must be
+# the one the command runs on, so a same-named volume elsewhere stays protected.
+TRANSFER_DIRS = (".claude/transfers", ".agent/transfers", ".codex/transfers")
+
+
+def _ssh_host(cmd: str) -> str | None:
+    try:
+        toks = shlex.split(cmd.strip(), posix=True)
+    except ValueError:
+        return None
+    return toks[1] if len(toks) == 3 and toks[0] == "ssh" and not toks[1].startswith("-") else None
+
+
+def _verified_copy(name: str, host: str | None, event: dict) -> str | None:
+    """The contract that proves a verified copy of volume `name` from `host`, or None."""
+    cwd = event.get("cwd")
+    if not host or not cwd:
+        return None
+    for d in TRANSFER_DIRS:
+        for path in sorted(Path(cwd, d).glob("*.json")):
+            try:
+                c = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            v = c.get("verification") if isinstance(c, dict) else None
+            if not (isinstance(v, dict) and v.get("performed") is True and v.get("result") == "PASS"):
+                continue
+            for item in c.get("verified_copies") or []:
+                if (isinstance(item, dict) and item.get("kind") == "volume" and item.get("name") == name
+                        and item.get("host") == host):
+                    return str(path)
+    return None
+
+
+def docker_rm_targets(cmd: str) -> list[tuple[str, str]] | None:
+    """(kind, name) for every object when cmd is only named docker removals (plus read-only checks)."""
+    if not _only_segments(cmd, DOCKER_RM_SEGMENT, DOCKER_RM_COMPANION):
+        return None
+    out: list[tuple[str, str]] = []
+    for seg in (s.strip() for s in split_segments(executable_text(cmd))):
+        remote = remote_command(seg)
+        for part in ([seg] if remote in (None, UNPARSED) else split_segments(remote)):
+            part = part.strip()
+            if not DOCKER_RM_SEGMENT.fullmatch(part):
+                continue
+            toks = [t for t in part.rstrip(";").split() if t not in ("sudo", "2>&1")][1:]
+            verb = toks[:2] if toks[0] in ("container", "volume", "image") else toks[:1]
+            kind = {"rm": "container", "container": "container", "volume": "volume"}.get(verb[0], "image")
+            out += [(kind, t.rstrip(";")) for t in toks[len(verb):]]
+    return out or None
+
+
+def _docker_rm_approval(targets: list[tuple[str, str]], cmd: str, prompt: str, answer: str,
+                        event: dict) -> tuple[bool, str]:
+    names = [n for _, n in targets]
+    words = PASTED_TAG.sub(" ", prompt)
+    for n in sorted(names, key=len, reverse=True):
+        words = re.sub(r"(?<![\w/.:-])" + re.escape(n) + r"(?![\w/.-])", " ", words)
+    if CONFIRM_ONLY.fullmatch(prompt):
+        blocks = DOCKER_DELETE_BLOCK.findall(answer or "")
+        block = blocks[-1] if blocks else None
+        if block is None:
+            return False, "a bare 'yes' approves docker objects only from an «Удаление» block in my answer"
+        source, own = block, False
+    elif NOT_A_GO.search(words):
+        return False, "the request negates, hesitates or asks a question"
+    elif DELETE_INTENT.search(prompt) or IMAGE_INTENT.search(prompt):
+        source, own = prompt, True
+    else:
+        return False, "the latest request does not ask to remove docker objects"
+    # a volume may be listed by its folder, /var/lib/docker/volumes/<name>
+    unnamed = [n for k, n in targets if not _named(source, n) and not (
+        k == "volume" and re.search(r"/volumes/" + re.escape(n) + r"(?![\w.\-/])", source))]
+    if unnamed:
+        return False, f"docker objects not named in the request or the «Удаление» block: {', '.join(unnamed)}"
+    host = _ssh_host(cmd)
+    copies = {n: _verified_copy(n, host, event) for k, n in targets if k == "volume" and DOCKER_DATA_VOLUME.search(n)}
+    data = [n for n, proof in copies.items() if not proof]
+    if data and not own:
+        return False, f"volumes that may hold data need the owner's own words: {', '.join(data)}"
+    try:
+        APPROVAL_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with APPROVAL_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"ts": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+                                 "session": event.get("session_id"), "action": "docker-rm", "targets": names,
+                                 "verified_copies": {n: p for n, p in copies.items() if p},
+                                 "request": prompt[:300], "command": cmd[:500]},
+                                ensure_ascii=False) + "\n")
+    except OSError:
+        return False, "cannot write the approval audit record"
+    return True, "named docker objects removal"
 
 
 # Owner 2026-10-15 ("файлы, которые нельзя удалить, надо переносить внутрь темп", after a list delete hit
@@ -2101,10 +2769,49 @@ def _claude_limit(path: str) -> str | None:
     return None
 
 
-def target_hard_limit(target: str, recursive: bool = False) -> str | None:
-    """Why a target may never be deleted on request, or None."""
+ROOT_FILE = "a file directly in a drive root - the owner must name its full path herself"
+DRIVE_CHILD = "an entry inside a folder in a drive root - the owner must name its full path herself"
+SERVER_CHILD = "a folder one level below / on a server - the owner must name its full path herself"
+REMOTE_DRIVE_ROOT = "a folder directly in a drive root of a remote Windows host - the owner must name its full path herself"
+REMOTE_APP = "an application's files on a remote Windows host - her own words or a yes to the Удаление block must name the full path"
+# Owner 2026-11-07 («Поправь хук»: a trojan's files on a Windows host stayed after her «да»). Inside ssh only.
+# Windows' own folders stay a hard limit; in ProgramData/Microsoft only a single file directly in it.
+REMOTE_APP_PATH = re.compile(
+    r"^[a-z]:/(?:"
+    r"program files/(?!(?:common files|windows[^/]*|microsoft[^/]*|internet explorer)(?:/|$))[^/]+(?:/|$)|"
+    r"programdata/(?!microsoft(?:/|$))[^/]+(?:/|$)|"
+    r"programdata/microsoft/[^/]+\.[^/.]+$|"
+    r"users/[^/]+/appdata/(?:roaming|locallow)/(?!microsoft(?:/|$))[^/]+(?:/|$))",
+    re.IGNORECASE)
+LOCAL_DRIVE_ROOT = "a folder directly in a drive root - the owner must name its full path herself"
+# Windows folders directly in a drive root that belong to the OS, not to us: they stay a hard limit
+WIN_SYSTEM_TOP = {"users", "home", "recovery", "boot", "system volume information", "perflogs", "documents and settings",
+                  "msocache", "config.msi", "intel", "amd", "nvidia", "drivers", "efi", "inetpub", "onedrivetemp"}
+# top-level folders whose direct children belong to the OS, not to us: they stay a hard limit
+SERVER_SYSTEM_TOP = {"bin", "boot", "dev", "etc", "lib", "lib32", "lib64", "libx32", "proc", "run", "sbin",
+                     "sys", "usr", "var", "root", "home", "snap", "lost+found", "tmp", "media", "mnt"}
+
+
+def _is_long_windows_path(t: str) -> bool:
+    """Owner 2026-10-31 (profiles\\local~2 refused after «удали» with full paths): a "~digit" name is
+    an 8.3 alias only if Windows expands it. An existing local path that GetLongPathNameW returns
+    unchanged is its real long name, so the protected-location checks below see the true path."""
+    if sys.platform != "win32" or not re.match(r"^[A-Za-z]:/", t) or not os.path.lexists(t):
+        return False
+    import ctypes
+    buf = ctypes.create_unicode_buffer(32768)
+    n = ctypes.windll.kernel32.GetLongPathNameW(t.replace("/", "\\"), buf, len(buf))
+    return 0 < n < len(buf) and _norm(buf.value).rstrip("/").lower() == t.rstrip("/").lower()
+
+
+def target_hard_limit(target: str, recursive: bool = False, server: bool = False,
+                      literal: bool = False, remote: bool = False) -> str | None:
+    """Why a target may never be deleted on request, or None. server: the target sits in an
+    `ssh host '...'` command, so a direct child of /root or /home/<user> is not a hard limit.
+    literal: the caller removes the path as given, with no shell or glob expansion (delete_from_list),
+    so [ ] ( ) @ are plain name characters (owner 2026-11-01: course folders "[SW.BAND] … (2023)")."""
     t = _norm(target)
-    if not t or re.search(r"[$%`*?\[\]{}@()]", t):
+    if not t or re.search(r"[$%`*?{}]" if literal else r"[$%`*?\[\]{}@()]", t):
         return "glob/variable/expression"
     if t.startswith("//"):
         return "UNC/network path"
@@ -2114,7 +2821,9 @@ def target_hard_limit(target: str, recursive: bool = False) -> str | None:
         return "provider"
     if not (t.startswith("/") or re.match(r"^[A-Za-z]:/", t)):
         return "relative path (cwd unknown to the owner)"
-    if any(c not in {".", ".."} and (c.endswith((".", " ")) or re.search(r"~\d", c)) for c in t.split("/")):
+    comps = [c for c in t.split("/") if c not in {".", ".."}]
+    if any(c.endswith((".", " ")) for c in comps) or (
+            any(re.search(r"~\d", c) for c in comps) and not _is_long_windows_path(t)):
         return "ambiguous Windows name (trailing dot/space or 8.3 short name)"
     wsl = re.match(r"^/mnt/([a-zA-Z])(/.*)?$", t)
     # review 2026-10-11 F3: on Windows a drive-less "/<home>/AppData/Roaming" is "<current drive>:/<home>/...";
@@ -2122,6 +2831,9 @@ def target_hard_limit(target: str, recursive: bool = False) -> str | None:
     on_drive = f"c:{t}" if sys.platform == "win32" and t.startswith("/") and not t.startswith("//") else None
     if (PROTECTED.search(t) or (wsl and PROTECTED.search(f"{wsl.group(1)}:{wsl.group(2) or '/'}"))
             or (on_drive and PROTECTED.search(on_drive))):
+        if remote and REMOTE_APP_PATH.match(t) and not re.search(PROTECTED_DOT, t, re.IGNORECASE) \
+                and not _claude_limit(t):
+            return REMOTE_APP
         return "protected location"
     claude = _claude_limit(t) or (wsl and _claude_limit(f"{wsl.group(1)}:{wsl.group(2) or '/'}"))
     if claude:
@@ -2134,6 +2846,37 @@ def target_hard_limit(target: str, recursive: bool = False) -> str | None:
     # (could be a folder). System folders are already caught by PROTECTED above.
     depth2_file = (len(parts) == 2 and not recursive and re.match(r"^[A-Za-z]:/", t)
                    and "." in parts[1].strip(".") and low[0] not in {"users", "home"})
+    if server and _server_home_child(t):
+        return None
+    # Owner 2026-10-28 («должно удалять просто по моему разрешению», D:/cw-msg.txt and D:/_x refused):
+    # an existing regular file directly in a Windows drive root goes only when the owner names its full
+    # path herself (_approve checks that). The drive root, folders in it and recursion stay a hard limit.
+    if (len(parts) == 1 and not recursive and re.match(r"^[A-Za-z]:/", t)
+            and os.path.isfile(t) and not os.path.islink(t)):
+        return ROOT_FILE
+    # Owner 2026-11-01 («поправь хук, он должен удалять без танцев с бубном»: E:\VMs\<vm> folders she
+    # pasted by full path were refused): a folder or file inside a folder that sits directly in a drive
+    # root goes when the owner names its full path herself (_approve checks that). The drive root and the
+    # folders directly in it stay a hard limit.
+    if (len(parts) == 2 and not depth2_file and re.match(r"^[A-Za-z]:/", t)
+            and low[0] not in {"users", "home"}):
+        return DRIVE_CHILD
+    # Owner 2026-11-04 («поправь хук»: a /srv/<x> folder on a server was refused after she named it):
+    # inside ssh, /srv/<x>, /opt/<x>, /data/<x> go when she names the full path herself, like DRIVE_CHILD
+    # on Windows. / itself, the folders in it and the children of the OS folders stay a hard limit.
+    if remote and len(parts) == 2 and t.startswith("/") and low[0] not in SERVER_SYSTEM_TOP:
+        return SERVER_CHILD
+    # Owner 2026-11-05 (her «удали» with two C:\\<folder> paths for a Windows host over ssh was refused): inside ssh
+    # a folder directly in a Windows drive root goes when she names its full path herself. The drive root and
+    # the OS folders in it ($-names, WIN_SYSTEM_TOP, PROTECTED above) stay a hard limit.
+    if (remote and len(parts) == 1 and re.match(r"^[A-Za-z]:/", t) and low[0] not in WIN_SYSTEM_TOP
+            and not low[0].startswith("$")):
+        return REMOTE_DRIVE_ROOT
+    # Owner 2026-11-05 («поправь хук чтобы он не мешал работать»: her «удали» with ten pasted D:\<folder>
+    # paths was refused): the same on this machine. The drive root and its OS folders stay a hard limit.
+    if (not remote and len(parts) == 1 and re.match(r"^[A-Za-z]:/", t) and low[0] not in WIN_SYSTEM_TOP
+            and not low[0].startswith("$") and low[0] not in {"users", "home"}):
+        return LOCAL_DRIVE_ROOT
     if len(parts) < 3 and not depth2_file:
         return "root-level path"
     if low[0] in {"home", "users"} and len(parts) < 3:
@@ -2156,9 +2899,150 @@ def _home_child(target: str) -> bool:
     return len(parts) == 3 and parts[0].lower() in {"home", "users"}
 
 
+# Owner 2026-10-24 («поправь хук»: «разрешить удалять восполнимые папки прямо внутри /root на серверах,
+# если вы явно согласились на конкретный список»): inside `ssh host '...'` an ordinary entry directly
+# in /root or /home/<user> is deletable when its full path is in the approved message (her request, or
+# my answer she said a bare yes to). Hidden/standard folders, the home itself and the irreplaceable stay
+# as before; local homes (C:/Users/<u>/<dir>) keep the owner-names-it rule above.
+def _server_home_child(target: str) -> bool:
+    t = _norm(target)
+    if not t.startswith("/") or t.startswith("//"):
+        return False
+    parts = [p for p in t.split("/") if p]
+    if not ((len(parts) == 2 and parts[0] == "root") or (len(parts) == 3 and parts[0] == "home")):
+        return False
+    return not parts[-1].startswith(".") and parts[-1].lower() not in HOME_SYSTEM
+
+
+def _remote_targets(cmd: str) -> set[str]:
+    """Delete targets that sit only inside an ssh-wrapped (remote) command, never also run locally."""
+    out: set[str] = set()
+    local: set[str] = set()
+    _collect_remote(cmd, out, local)
+    return out - local
+
+
+def _collect_remote(cmd: str, out: set[str], local: set[str]) -> None:
+    for seg in (s.strip() for s in split_segments(executable_text(cmd))):
+        remote = remote_command(seg) if seg else None
+        if remote and remote != UNPARSED and _is_ssh_segment(seg):
+            out |= {t for t, _ in (_delete_targets_in(remote, False, True) or [])}
+        elif remote and remote != UNPARSED:
+            _collect_remote(remote, out, local)  # review 2026-10-24: bash -c / pwsh -c run here, not on a server
+        elif seg:
+            local |= set(delete_targets(seg) or [])
+
+
+def _is_ssh_segment(seg: str) -> bool:
+    try:
+        toks = shlex.split(seg, posix=True)
+    except ValueError:
+        return False
+    i = 0
+    while i < len(toks):
+        if toks[i] == "timeout" and i + 1 < len(toks) and re.fullmatch(r"\d+[smhd]?", toks[i + 1]):
+            i += 2
+        elif toks[i] in REMOTE_WRAPPERS or re.fullmatch(r"\w+=\S*", toks[i]):
+            i += 1
+        else:
+            break
+    word = toks[i].rsplit("/", 1)[-1].lower().removesuffix(".exe") if i < len(toks) else ""
+    return (word == "ssh" or (word == "tailscale" and toks[i + 1:i + 2] == ["ssh"])
+            or _probe_cmd(toks, i) is not None)
+
+
+def _listed(text: str, needle: str) -> bool:
+    """needle is an item of a prose list in text: like _named, but a sentence's closing dot may follow it
+    ("..., Ноутбуки и датасеты." was refused 2026-11-01); a dot that starts an extension still may not."""
+    return re.search(r"(?<![\w.\-/~:])" + re.escape(needle) + r"(?![\w\-/]|\.\w)", text) is not None
+
+
 def _named(text: str, needle: str) -> bool:
     """needle appears in text as a whole token (not as part of a longer name or path)."""
     return re.search(r"(?<![\w.\-/~:])" + re.escape(needle) + r"(?![\w.\-/])", text) is not None
+
+
+def relocate_problem(src: str, dst: str) -> str | None:
+    """Why src may not be renamed to dst, or None. A rename on one volume loses nothing, so a folder
+    two levels below a Windows drive root (D:/АНАЛИТИКА/<course>) may go; every other delete hard
+    limit still holds for both ends (drive roots and their direct folders, homes, system, .claude)."""
+    if not (re.match(r"^[A-Za-z]:[\\/]", src) and re.match(r"^[A-Za-z]:[\\/]", dst)):
+        return "both paths need a drive letter"
+    if src[0].lower() != dst[0].lower():
+        return "different volumes: copy, verify, then a deletion list"
+    for side, p in (("source", src), ("target", dst)):
+        why = target_hard_limit(p, True, literal=True)
+        parts = [x for x in _norm(p)[2:].split("/") if x]
+        if why and not (len(parts) == 2 and parts[0].lower() not in {"users", "home"}
+                        and why in {"root-level path", ROOT_FILE, globals().get("DRIVE_CHILD")}):
+            return f"{side}: {why}"
+    s, d = _norm(src).rstrip("/").lower(), _norm(dst).rstrip("/").lower()
+    if d == s or d.startswith(s + "/"):
+        return "target inside the source"
+    return None
+
+
+def read_relocate_list(path: str, sha: str) -> tuple[list[tuple[str, str]] | None, str]:
+    """(src, dst) pairs of a shown relocate list, or (None, why)."""
+    try:
+        p = Path(path.replace("\\", "/")).expanduser().resolve(strict=True)
+        p.relative_to(RELOCATE_LIST_DIR.resolve())
+        data = p.read_bytes()
+    except (OSError, ValueError):
+        return None, f"{path}: the list must be an existing file in {RELOCATE_LIST_DIR}"
+    if not hashlib.sha256(data).hexdigest().startswith(sha.lower()):
+        return None, f"{path}: the list changed after it was shown (sha256 mismatch)"
+    pairs = []
+    for ln in data.decode("utf-8-sig", errors="replace").splitlines():
+        ln = ln.strip()
+        if not ln or ln.startswith("#"):
+            continue
+        if ln.count(RELOCATE_SEP) != 1:
+            return None, f"line without exactly one '{RELOCATE_SEP.strip()}': {ln}"
+        src, dst = (x.strip() for x in ln.split(RELOCATE_SEP))
+        pairs.append((src, dst))
+    return pairs, ""
+
+
+def relocate_list_request(cmd: str, prompt: str, answer: str) -> tuple[bool | None, str, dict]:
+    """(True, "", record) for an approved relocate_from_list.py run, (False, why, {}) if refused,
+    (None, "", {}) if the command is not one."""
+    if "relocate_from_list.py" not in cmd:
+        return None, "", {}
+    raw = cmd.strip()
+    raw = raw[1:].lstrip() if raw.startswith("&") else raw
+    if LIST_CALL_FORBIDDEN.search(raw):
+        return False, "relocate_from_list.py must be the whole command (no separators or substitutions)", {}
+    try:
+        argv = shlex.split(raw.replace("\\", "/"), posix=True)
+    except ValueError:
+        return False, "relocate_from_list.py call cannot be parsed", {}
+    if (len(argv) != 5 or argv[0].lower() not in PYTHON_NAMES or argv[3] != "--sha"
+            or not re.fullmatch(r"[0-9a-fA-F]{16,64}", argv[4]) or not argv[2].lower().endswith(".txt")):
+        return False, "expected exactly: python <relocate_from_list.py> <list.txt> --sha <hex>", {}
+    try:
+        same = Path(argv[1]).expanduser().resolve(strict=True) == RELOCATE_SCRIPT
+    except OSError:
+        same = False
+    if not same:
+        return False, f"only {RELOCATE_SCRIPT.as_posix()} may act on a relocate list", {}
+    if (NOT_A_GO.search(prompt) or RELOCATE_NOT.search(prompt)
+            or not (CONFIRM_ONLY.fullmatch(prompt) or RELOCATE_INTENT.search(prompt))):
+        return False, "a relocate list needs a bare go-ahead or «переноси» to the answer that showed it", {}
+    path, sha = argv[2], argv[4]
+    if (_list_key(path), sha.lower()) not in {(_list_key(p), s.lower()) for p, s in RELOCATE_REF.findall(answer)}:
+        return False, "this relocate list and digest were not shown in my last answer", {}
+    pairs, why = read_relocate_list(path, sha)
+    if pairs is None:
+        return False, why, {}
+    if not pairs:
+        return False, "the list is empty", {}
+    for src, dst in pairs:
+        why = relocate_problem(src, dst)
+        if why:
+            return False, f"{src}: {why}", {}
+    return True, "", {"action": "relocate", "list": _list_key(path), "sha": sha.lower(),
+                      "targets": [s for s, _ in pairs]}
 
 
 def approved_by_owner(cmd: str, event: dict) -> tuple[bool, str]:
@@ -2166,14 +3050,51 @@ def approved_by_owner(cmd: str, event: dict) -> tuple[bool, str]:
     if not req:
         return False, "no human prompt in the transcript"
     prompt, answer = req
+    paths_prompt, list_why = prompt, ""
+    if OWNER_LIST_FILE.search(prompt):  # the timestamp costs a second transcript read; only for a named .txt
+        full = owner_request_at(event.get("transcript_path") or "")
+        paths_prompt, list_why = expand_owner_list_files(prompt, full[2] if full else "")
+    ok, why = _approved_by_owner(cmd, event, prompt, answer, paths_prompt)
+    return (ok, f"{why}; {list_why}" if list_why and not ok else why)
+
+
+def _approved_by_owner(cmd: str, event: dict, prompt: str, answer: str, paths_prompt: str) -> tuple[bool, str]:
+    """paths_prompt = her message plus the lines of a list file she named; it reaches only the
+    path-deletion branches, never restart, docker, database, branch, stop or relocate."""
     if restart_only(cmd):
         return _restart_approval(cmd, prompt, answer, event)
     if image_rm_only(cmd):
-        return _image_rm_approval(cmd, prompt, answer, event)
+        ok, why = _image_rm_approval(cmd, prompt, answer, event)
+        if ok:
+            return ok, why
+    docker_targets = docker_rm_targets(cmd)
+    if docker_targets:
+        return _docker_rm_approval(docker_targets, cmd, prompt, answer, event)
+    databases = db_drop_targets(cmd)
+    if databases:
+        return _db_drop_approval(databases, cmd, prompt, event)
+    branches = branch_rm_targets(cmd)
+    if branches:
+        return _branch_rm_approval(branches, cmd, prompt, answer, event)
     if stop_only(cmd):
         return _stop_approval(cmd, prompt, answer, event)
     if move_to_temp_parts(cmd):
         return _move_temp_approval(cmd, prompt, answer, event)
+    moved, why, rec = relocate_list_request(cmd, prompt, answer)
+    if moved is False:
+        return False, why
+    if moved:
+        try:  # the record is the script's one-shot approval, as for a deletion list
+            APPROVAL_LOG.parent.mkdir(parents=True, exist_ok=True)
+            with APPROVAL_LOG.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps({"ts": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+                                     "session": event.get("session_id"), "request": prompt[:300],
+                                     "command": cmd[:500], **rec}, ensure_ascii=False) + "\n")
+        except OSError:
+            return False, "cannot write the approval audit record"
+        return True, f"relocate list ({len(rec['targets'])} entries)"
+    own_words = prompt  # her message without list-file lines: only it can name a folder whole
+    prompt = paths_prompt  # from here on only path deletion is judged
     listed, why = list_delete_request(cmd, prompt, answer)
     if listed is None:
         return False, why
@@ -2183,18 +3104,40 @@ def approved_by_owner(cmd: str, event: dict) -> tuple[bool, str]:
         # script no longer depends on the hook recognising how it was invoked).
         argv = shlex.split(cmd.strip().lstrip("&").strip().replace("\\", "/"), posix=True)
         extra = {"list": _list_key(argv[2]), "sha": argv[4].lower()}
-        return _approve(listed, "\n".join(t for t, _ in listed), False, prompt, cmd, event, extra=extra)
+        if list_pasted_by_owner(prompt):
+            # the script skips the drive-root and irreplaceable refusals only on this record field
+            extra["owner_named"] = True
+        return _approve(listed, "\n".join(t for t, _ in listed), False, prompt, cmd, event, extra=extra,
+                        shown=answer if extra.get("owner_named") else "", own_words=own_words)
     bare, with_paths = CONFIRM_ONLY.fullmatch(prompt), CONFIRM_PATHS.fullmatch(prompt)
     if bare or with_paths:
         allow_delete, allow_move = bool(DELETE_MENTION.search(answer)), bool(REPLACE_MENTION.search(answer))
         if not (allow_delete or allow_move):
             return False, "a bare 'yes' to an answer that proposed no deletion"
         named_in, from_phrase = (answer if bare else prompt), False
+        block = delete_block(answer) if bare else None
+        if block is not None:
+            listed_targets = plain_delete_targets(cmd, allow_move, allow_delete)
+            if not listed_targets:
+                return False, "not a plain file delete"
+            return _approve(listed_targets, block, False, prompt, cmd, event, owner_list=True, own_words=own_words,
+                            remote=_remote_targets(cmd))
     elif NOT_A_GO.search(prompt):
         return False, "the request negates, hesitates or asks a question"
     elif DELETE_INTENT.search(prompt) or REPLACE_INTENT.search(prompt):
         named_in, from_phrase = prompt, bool(FROM_PHRASE.search(prompt))
         allow_delete, allow_move = bool(DELETE_INTENT.search(prompt)), bool(REPLACE_INTENT.search(prompt))
+    elif STOP_INTENT.search(prompt):   # owner 2026-10-29: "does not ask to delete" hid the real cause
+        # owner 2026-11-02 («поправь хук»): `ssh host taskkill //PID n` was refused without saying that only
+        # the quoted remote form passes; OpenSSH reads options after the host, so quotes stay required
+        unquoted = [s for s in split_segments(executable_text(cmd))
+                    if remote_command(s.strip()) not in (None, UNPARSED) and not SSH_PLAIN.fullmatch(s.strip())]
+        if unquoted:
+            return False, ("a stop over ssh passes only with the remote command quoted as one argument: "
+                           "ssh host 'taskkill /PID n /PID m' or ssh host 'kill n'; no ssh options")
+        return False, ("a stop request approves only a command that is nothing but a plain stop "
+                       "(kill/pkill/killall/systemctl stop of a .service unit, taskkill /PID n, sudo or sudo -n) "
+                       "with read-only checks, no protected daemon, inside a plain `ssh host '...'`")
     else:
         return False, "the latest request does not ask to delete"
     targets = plain_delete_targets(cmd, allow_move, allow_delete)
@@ -2203,43 +3146,95 @@ def approved_by_owner(cmd: str, event: dict) -> tuple[bool, str]:
     # A general go-ahead is a bare yes to my proposal, or a request that names no file itself
     # ("удали временные"). When the owner names a file, unnamed others are not covered.
     general = named_in is answer or not NAMES_FILE.search(prompt)
-    return _approve(targets, named_in, from_phrase, prompt, cmd, event, general=general)
+    return _approve(targets, named_in, from_phrase, prompt, cmd, event, general=general, own_words=own_words,
+                    remote=_remote_targets(cmd))
 
 
 def _approve(targets: list[tuple[str, bool]], named_in: str, from_phrase: bool,
              prompt: str, cmd: str, event: dict, general: bool = False,
-             extra: dict | None = None) -> tuple[bool, str]:
+             extra: dict | None = None, remote: set[str] = frozenset(),
+             owner_list: bool = False, shown: str = "", own_words: str | None = None) -> tuple[bool, str]:
     """Every target passes the hard limits and is named in named_in (or, with a general go-ahead,
-    is regenerable); then one audit record."""
+    is regenerable); then one audit record. shown: my proposal the owner pasted a list from; the
+    irreplaceable files inside a pasted folder count as named when they were listed there."""
     text = named_in.replace("\\", "/")
     for t, recursive in targets:
-        why = target_hard_limit(t, recursive)
-        if why:
+        server = t in remote and _server_home_child(t)
+        # extra["list"]: a delete_from_list.py run, which removes each entry literally
+        why = target_hard_limit(t, recursive, server, literal=bool(extra and extra.get("list")),
+                                remote=t in remote)
+        if why == REMOTE_DRIVE_ROOT:
+            if not _named(prompt.replace("\\", "/").lower(), _norm(t).rstrip("/").lower()):
+                return False, f"{t}: hard limit ({why})"
+            extra = {**(extra or {}), "action": "remote-drive-root"}
+        elif why == LOCAL_DRIVE_ROOT:  # only her own words name it: a bare yes to my answer does not
+            if not _named(prompt.replace("\\", "/").lower(), _norm(t).rstrip("/").lower()):
+                return False, f"{t}: hard limit ({why})"
+            extra = {**(extra or {}), "action": "drive-root-folder"}
+        elif why == REMOTE_APP:
+            own = (named_in if owner_list else prompt).replace("\\", "/").lower()
+            if not _named(own, _norm(t).rstrip("/").lower()):
+                return False, f"{t}: hard limit ({why})"
+            extra = {**(extra or {}), "action": "remote-app"}
+        elif why == SERVER_CHILD:
+            if not _named(prompt.replace("\\", "/"), _norm(t).rstrip("/")):
+                return False, f"{t}: hard limit ({why})"
+            extra = {**(extra or {}), "action": "server-child"}
+        elif why in (ROOT_FILE, DRIVE_CHILD):
+            # owner 2026-11-01: for DRIVE_CHILD a bare yes to my answer that lists the full path counts too
+            own = (named_in if why == DRIVE_CHILD or owner_list else prompt).replace("\\", "/").lower()
+            if not _named(own, _norm(t).rstrip("/").lower()):
+                return False, f"{t}: hard limit ({why})"
+        elif why:
             return False, f"{t}: hard limit ({why})"
         full = _norm(t).rstrip("/")
         hay = text
         if re.match(r"^[A-Za-z]:/", full):  # Windows: case-insensitive filesystem
             full, hay = full.lower(), text.lower()
         base = full.rsplit("/", 1)[-1]
-        if _home_child(t):
+        if server and _named(hay, full):
+            extra = {**(extra or {}), "action": "server-home-child"}
+        elif server and not _home_child(t):
+            return False, f"{t}: a folder directly in a server home - its full path must be in the approved message"
+        elif _home_child(t):
             own = prompt.replace("\\", "/")
             own = own.lower() if re.match(r"^[a-z]:/", full) else own
             if not (_named(own, full) or _named(own, base)):
                 return False, f"{t}: a folder directly in a home folder - the owner must name it in her own message"
         # review 2026-10-11 R7: the irreplaceable counts as named only in the OWNER's own words,
         # never because my answer mentioned it (an answer can mention a path to say "won't touch").
-        why, inner = irreplaceable_info(t, recursive)
+        own_named = prompt.replace("\\", "/").lower()
+        if _worker_profile(t) and _named(own_named, full.lower()):
+            blocker = _profile_blocker(t)
+            if blocker:
+                return False, f"{t}: {blocker}"
+            why, inner = None, []
+        else:
+            why, inner = irreplaceable_info(t, recursive, remote=t in remote)
         if why:
             own = prompt.replace("\\", "/")
             win = bool(re.match(r"^[a-z]:/", full))
             own = own.lower() if win else own
+            # Owner 2026-11-08 («поправь хук, чтобы можно было назвать папку просто и все файлы внутри
+            # удалились»): a folder whose full path she typed herself goes whole, databases inside
+            # included. Only her own words count: not my answer, not lines of a list file she named.
+            # A folder that could not be inspected (scan cap, unreadable subtree, no stat) still fails
+            # closed even when named (R9-R11); only "too many databases inside" is covered by her words.
+            whole = (prompt if own_words is None else own_words).replace("\\", "/")
+            inspected = inner is not None or why == "too many databases/backups inside"
+            if recursive and inner != [] and inspected and _named(whole.lower() if win else whole, full):
+                extra = {**(extra or {}), "action": "owner-named-folder-whole"}
+                continue
             if inner is None:
                 return False, (f"{t}: {why} - cannot be confirmed as a whole; delete it in parts "
                                f"or through a deletion list")
             if inner:
                 # review R8: naming a folder does not name the databases inside it; each one must be
                 # named by the owner herself, then the folder goes through the usual checks below.
-                missing = [n for n in inner if not _named(own, n.lower() if win else n)]
+                seen = shown.replace("\\", "/")
+                seen = seen.lower() if win else seen
+                missing = [n for n in inner
+                           if not (_named(own, n.lower() if win else n) or _listed(seen, n.lower() if win else n))]
                 if missing:
                     return False, (f"{t}: holds irreplaceable files the owner did not name herself: "
                                    f"{', '.join(missing)}")
@@ -2377,9 +3372,17 @@ def main() -> None:
         "(deletion-list: <путь> sha256:<хэш>) и после его «да» выполни "
         "`python ~/.claude/claude-code-config/scripts/delete_from_list.py <список> --sha <хэш>`. "
         "Маркеры в команде, env и файлы агента не являются одобрением.\n\n"
+        "Перенос папок (Move-Item/mv) внутри одного диска: строки `ИСТОЧНИК => НАЗНАЧЕНИЕ` в "
+        "~/.claude/state/relocate-lists/<имя>.txt, покажи владельцу строку из "
+        "`python ~/.claude/claude-code-config/scripts/relocate_from_list.py <список> --show` "
+        "(relocate-list: <путь> sha256:<хэш>) и после её «да»/«переноси» выполни "
+        "`python ~/.claude/claude-code-config/scripts/relocate_from_list.py <список> --sha <хэш>`.\n\n"
         "Перезапуск (reboot, systemctl reboot, shutdown -r, virsh reboot <vm>, Restart-Computer) "
         "проходит, если последнее сообщение владельца просит перезапустить или отвечает «да» на мой "
-        "ответ с предложением перезапуска, и в команде нет ничего разрушительного, кроме перезапуска.\n\n"
+        "ответ с предложением перезапуска, и в команде нет ничего разрушительного, кроме перезапуска.\n"
+        "Тестовая ВМ из списка проходит без просьбы, но только как одна голая команда: "
+        "`ssh <тестовая-вм> shutdown /r [/t N] [/f]` или `ssh <kvm-хост> virsh reboot <вм>`; "
+        "без `;`, `&&`, `|`, `$` и хвостов вроде `; echo rc=$?` (проверка кода — отдельной командой).\n\n"
         "Подмена файла без просьбы: `test ! -e BAK && cp -p DST BAK && mv NEW DST` - три соседних "
         "шага, простые имена (старое содержимое остаётся в свежей копии).\n\n"
         "Без просьбы проходят только routine build/cache/temp targets; DROP/docker/git/kill "
@@ -2408,6 +3411,10 @@ def self_test() -> int:
     repo_root = Path(__file__).resolve().parents[1]
     allow_cases = [
         "rm -rf /tmp/x",
+        # owner 2026-11-07: inside temp the location decides, a database there is scratch
+        "rm -rf C:/tmp/important.sqlite",
+        "rm -rf C:/tmp/pgdata/PG_VERSION",
+        f"rm -rf {_selftest_db_dir().as_posix()}",
         f"rm -rf {tmp}/claude-scratch/abc",
         f'Remove-Item -Recurse -Force "{tmp}\\claude\\x"',
         f"Remove-Item -LiteralPath '{tmp}\\a.txt' -ErrorAction SilentlyContinue",
@@ -2563,12 +3570,9 @@ def self_test() -> int:
         f"rm -rf {repo_root.as_posix()}/.claude/handoffs/x", # other .claude content
         f"rm -rf {repo_root.as_posix()}/.claude/tmp/../handoffs",  # traversal out of the scratch
         # independent review 2026-10-13: each of these passed before the fix
-        "rm -rf C:/tmp/important.sqlite",                    # a database inside temp
-        "rm -rf C:/tmp/pgdata/PG_VERSION",                   # server data inside temp
         "rm -rf C:/.claude/tmp/x",                           # "C:" is not a repo root
         "rm -rf C:/tmp/...",                                 # Windows reads it as C:/tmp itself
         "rm -rf C:/tmp/x./y",                                # trailing-dot component
-        f"rm -rf {_selftest_db_dir().as_posix()}",           # SQLite header, innocent name
         "git commit -m 'ok'; del C:\\data\\x",               # real del after a quoted message
         "docker rm -f bench-a",
         "docker rm production-db",
@@ -2684,8 +3688,49 @@ def self_test() -> int:
         # owner 2026-10-12: files in a folder directly on a drive root, general request naming the folder
         ("files in a drive-root folder", "ssh h \"del E:\\Firefox-setup\\FirefoxSetup.exe E:\\Firefox-setup\\FirefoxSession.tmp\"",
          transcript("удали установщик и архив из E:\\Firefox-setup")),
+        # owner 2026-11-01: an entry inside a drive-root folder goes when she names its full path
+        ("recursive at depth 2, full path named", "rm -rf E:/Firefox-setup/old.d", transcript("удали E:/Firefox-setup/old.d")),
+        ("no extension at depth 2, full path named", "rm E:/Firefox-setup/data", transcript("удали E:/Firefox-setup/data")),
     ]
-    refuse = [
+    # owner 2026-10-24: a direct child of a server home (/root, /home/<u>) inside ssh, full path listed
+    sroot = "/" + "root"
+    srv_a, srv_b = sroot + "/run-build-118abcf7", sroot + "/run-a1bed2e2-increment.bundle"
+    srv_rm = f"ssh srv-host 'rm -r {srv_a} {srv_b}'"
+    srv_list = f"Удалю на srv-host 2 записи:\n{srv_a}\n{srv_b}\nОставляю .json. Подтверди."
+    approve += [
+        ("server home child: bare yes on my listed paths", srv_rm, transcript("да, удаляй", srv_list)),
+        ("server home child: ssh inside a local bash -c", f"bash -c \"ssh srv-host 'rm -r {srv_a}'\"",
+         transcript("да, удаляй", srv_list)),
+        ("server home child: owner names the full path",f"ssh srv-host 'rm -r {srv_a}'",
+         transcript(f"удали {srv_a} на srv-host")),
+        ("server /home/<u> child: bare yes on listed path", "ssh h 'rm -r /" + "home/ws/run-20260811'",
+         transcript("да", "Удалю /" + "home/ws/run-20260811 (2 GB), подтверди")),
+        # was a refusal until 2026-10-24: a bare yes on my message listing the full server path now covers it
+        ("server home child by a bare yes on the listed path", "ssh h 'rm -rf /" + "home/someuser/lora-cache-20260823'",
+         transcript("да, удаляй", "Удалю /" + "home/someuser/lora-cache-20260823 - подтверди")),
+    ]
+    srv_refuse = [
+        ("server home child without approval", srv_rm, transcript("посмотри, что лежит в /root", srv_list)),
+        ("server home child: one path not listed", srv_rm, transcript("да, удаляй", f"Удалю {srv_a}. Подтверди.")),
+        ("server home child: general yes, paths not listed", srv_rm,
+         transcript("да, удаляй", "Удалю старые run-* в /root, подтверди")),
+        ("server home itself", f"ssh srv-host 'rm -r {sroot}'", transcript("да, удаляй", f"Удалю {sroot}")),
+        ("server home .ssh", f"ssh srv-host 'rm -r {sroot}/.ssh'", transcript(f"удали {sroot}/.ssh")),
+        ("server home mask", f"ssh srv-host 'rm -r {sroot}/run-*'",
+         transcript("да, удаляй", f"Удалю {sroot}/run-*")),
+        ("server home backup named only by me", f"ssh srv-host 'rm -r {sroot}/pg-backup-20260820'",
+         transcript("да, удаляй", f"Удалю {sroot}/pg-backup-20260820")),
+        ("server home dump named only by me", f"ssh srv-host 'rm {sroot}/run.dump'",
+         transcript("да, удаляй", f"Удалю {sroot}/run.dump")),
+        ("server home child run locally", f"rm -r {srv_a}", transcript("да, удаляй", f"Удалю {srv_a}")),
+        ("server home child via local bash -c", f"bash -c 'rm -r {srv_a}'", transcript("да, удаляй", f"Удалю {srv_a}")),
+        ("server home child via local sh -c", f"sh -c 'rm -r {srv_a}'", transcript("да, удаляй", f"Удалю {srv_a}")),
+        ("server home child via local pwsh -c", f"pwsh -c 'rm -r {srv_a}'", transcript("да, удаляй", f"Удалю {srv_a}")),
+        ("server home child via env bash -c", f"env bash -c 'rm -r {srv_a}'", transcript("да, удаляй", f"Удалю {srv_a}")),
+        ("local home child by a bare yes stays owner-named", "rm -rf " + HOME_FIX + "/lora-run",
+         transcript("да, удаляй", "Удалю " + HOME_FIX + "/lora-run")),
+    ]
+    refuse = srv_refuse + [
         ("no transcript", sft, {}),
         ("negated", sft, transcript("не удаляй flux1-dev.sft")),
         ("not a delete request", sft, transcript("посмотри flux1-dev.sft")),
@@ -2699,16 +3744,14 @@ def self_test() -> int:
         # owner 2026-10-12: files inside a drive-root folder pass, the folder itself and recursion do not
         ("drive-root folder itself", "ssh h \"rd /s /q E:\\Firefox-setup\"",
          transcript("удали папку E:\\Firefox-setup")),
-        ("recursive at depth 2", "rm -rf E:/Firefox-setup/old.d", transcript("удали E:/Firefox-setup/old.d")),
         ("from-folder covers only that folder", "rm E:/other/run/app.log", transcript("удали логи из E:/logs")),
         ("from-folder does not cover recursion", "rm -r E:/logs/old.d", transcript("удали старое из E:/logs")),
         ("from-folder does not cover a subfolder file", "rm E:/logs/sub/a.log", transcript("удали логи из E:/logs")),
-        ("no extension at depth 2", "rm E:/Firefox-setup/data", transcript("удали E:/Firefox-setup/data")),
         ("glob", "ssh h 'rm /srv/a/b/*.sft'", transcript("удали *.sft")),
         ("variable", "ssh h 'F=/srv/a/b/x.sft; rm $F'", transcript("удали x.sft")),
         (".git", "rm -rf C:/work/repo/.git/objects", transcript("удали objects")),
         ("non-file destructive", "psql -c 'DROP TABLE users'", transcript("удали таблицу users")),
-        ("docker", "docker rm production-db", transcript("удали production-db")),
+        ("docker", "docker system prune -a", transcript("удали production-db")),
         ("touches transcript", "rm " + HOME_FIX + "/.claude/projects/p/s.jsonl", transcript("удали s.jsonl")),
         # review 2026-10-06 (REJECT) probes
         ("parent dir by substring", "rm -rf /srv/a/models", transcript("удали models/old.bin")),
@@ -2719,8 +3762,6 @@ def self_test() -> int:
         # paths split as "/" + "home/..." so the public-repo PII scanner sees no home path
         ("hidden home child even when named", "ssh h 'rm -rf /" + "home/someuser/.ssh'",
          transcript("удали /" + "home/someuser/.ssh")),
-        ("home child by general yes only", "ssh h 'rm -rf /" + "home/someuser/lora-cache-20260823'",
-         transcript("да, удаляй", "Удалю /" + "home/someuser/lora-cache-20260823 - подтверди")),
         ("standard home folder named", "ssh h 'rm -rf /" + "home/someuser/Downloads'",
          transcript("удали /" + "home/someuser/Downloads")),
         ("the guard itself", "rm " + HOME_FIX + "/.claude/claude-code-config/hooks/human-confirmation-guard.py",
@@ -2881,6 +3922,17 @@ def self_test() -> int:
     dbdig = hashlib.sha256(dbl.read_bytes()).hexdigest()[:16]
     refuse.append(("database inside a list (R2)", f"python {LIST_SCRIPT.as_posix()} {dbl.as_posix()} --sha {dbdig}",
                    transcript("да", f"Удалю. deletion-list: {dbl.as_posix()} sha256:{dbdig}")))
+    # owner 2026-11-01: list entries are removed literally, so brackets in a course name are not a glob
+    brl = DELETION_LIST_DIR / "brackets.txt"
+    brl.write_text("D:/tmp/work/[SW.BAND] Course (2023)\n", encoding="utf-8")
+    brdig = hashlib.sha256(brl.read_bytes()).hexdigest()[:16]
+    approve.append(("bracketed course folder in a shown list", f"python {LIST_SCRIPT.as_posix()} {brl.as_posix()} --sha {brdig}",
+                    transcript("да", f"Удалю. deletion-list: {brl.as_posix()} sha256:{brdig}")))
+    gl = DELETION_LIST_DIR / "glob.txt"
+    gl.write_text("D:/tmp/work/*.mp4\n", encoding="utf-8")
+    gdig = hashlib.sha256(gl.read_bytes()).hexdigest()[:16]
+    refuse.append(("wildcard in a shown list", f"python {LIST_SCRIPT.as_posix()} {gl.as_posix()} --sha {gdig}",
+                   transcript("да", f"Удалю. deletion-list: {gl.as_posix()} sha256:{gdig}")))
     for ext in ("vault.kdbx", "export.sql.gz", "app.db-journal", "dump.rdb", "orders.ibd", "erp.mdf"):
         refuse.append((f"general yes, database-like {ext} (R4)", f"rm /srv/a/b/{ext}", transcript("да", "Удалю мусор")))
     pg = gdir / "proj" / "pgd"
@@ -2905,8 +3957,9 @@ def self_test() -> int:
     (prof / "History").write_bytes(b"SQLite format 3\x00" + b"\x00" * 84)
     refuse.append(("general request, folder holds a header-only SQLite (R8)", f"rm -rf {prof.as_posix()}",
                    transcript("удали старый кеш")))
-    refuse.append(("owner names a folder but not the database inside (R8)", f"rm -rf {app_dir}",
-                   transcript(f"удали {app_dir}")))
+    # owner 2026-11-08: a folder whose full path she typed goes whole, databases inside included
+    approve.append(("owner names a folder, the database inside goes with it", f"rm -rf {app_dir}",
+                    transcript(f"удали {app_dir}")))
     approve.append(("owner names the folder and the database inside", f"rm -rf {app_dir}",
                     transcript(f"удали {app_dir} вместе с state.sqlite")))
     # review round 5: R9 (overflowing either cap fails closed even when the owner names the folder)
@@ -2914,8 +3967,10 @@ def self_test() -> int:
     many.mkdir(parents=True)
     for i in range(INNER_NAME_CAP + 1):
         (many / f"s{i}.sqlite").write_text("x")
-    refuse.append(("folder with more databases than the cap, owner names only the folder (R9)",
-                   f"rm -rf {many.as_posix()}", transcript(f"удали {many.as_posix()}")))
+    approve.append(("folder with more databases than the cap, owner names the folder (2026-11-08)",
+                    f"rm -rf {many.as_posix()}", transcript(f"удали {many.as_posix()}")))
+    refuse.append(("folder with more databases than the cap, general yes (R9)",
+                   f"rm -rf {many.as_posix()}", transcript("да, удаляй", "Удалю many-dbs")))
     global CONTENT_SCAN_CAP
     saved_cap = CONTENT_SCAN_CAP
     CONTENT_SCAN_CAP = 3
@@ -2962,8 +4017,16 @@ def self_test() -> int:
         ("bare yes to my restart proposal", "virsh reboot build-vm",
          transcript("да", "Перезапустить VM build-vm сейчас? Очередь пустая.")),
         ("restart asked, mid-turn message", "ssh h 'shutdown -r now'", queued("перезагрузи сервер")),
+        ("hyper-v guest restart asked", "ssh h 'Restart-VM -Name gpu-vm-1 -Type Reboot -Force'",
+         transcript("перезапусти gpu-vm-1")),
+        ("hyper-v guest restart through powershell -Command",
+         "ssh h 'powershell -NoProfile -Command Restart-VM -Name gpu-vm-1 -Type Reboot -Force'",
+         transcript("перезапусти gpu-vm-1")),
     ]
     refuse += [
+        ("powershell wrapper around a removal next to a restart",
+         "ssh h 'powershell -NoProfile -Command Restart-VM gpu-vm-1; powershell -Command Remove-VM gpu-vm-2'",
+         transcript("перезапусти gpu-vm-1")),
         ("restart not asked", vm_reboot, transcript("проверь сервер")),
         ("restart negated", vm_reboot, transcript("не перезапускай VM")),
         ("restart asked as a question", vm_reboot, transcript("перезапустить VM?")),
@@ -2973,6 +4036,10 @@ def self_test() -> int:
         ("shutdown without -r", "ssh h 'sudo shutdown now'", transcript("перезапусти сервер")),
         ("delete request does not cover restart", vm_reboot, transcript("удали /srv/a/b/x.bin")),
         ("restart hidden in a substitution", "echo $(reboot)", transcript("перезапусти сервер")),
+        ("hyper-v guest restart not asked", "ssh h 'Restart-VM -Name gpu-vm-1 -Type Reboot -Force'",
+         transcript("проверь виртуалку")),
+        ("hyper-v restart plus a VM removal", "ssh h 'Restart-VM gpu-vm-1; Remove-VM gpu-vm-2 -Force'",
+         transcript("перезапусти gpu-vm-1")),
     ]
     # owner 2026-10-14: a test VM restart needs no approval at all; everything else still does
     global TEST_VM_SSH_HOSTS, TEST_VM_VIRSH_DOMAINS, TEST_VM_VIRSH_HOSTS, TEST_VM_JUMP_HOSTS, TEST_VM_SSH_CONFIGS
@@ -3028,6 +4095,18 @@ def self_test() -> int:
         ("bare yes to my stop proposal", "killall -9 python3",
          transcript("да", "Остановить все python3? `killall -9 python3`")),
         ("systemctl stop asked", "ssh h 'sudo systemctl stop worker'", transcript("stop the worker")),
+        # owner 2026-10-29 («останови службу ink-reader» was refused three times): sudo -n, the
+        # .service suffix on either side, and read-only status checks after the stop
+        ("unit with .service, owner says службу + bare name",
+         "ssh gpu-host 'sudo -n systemctl stop ink-reader.service; echo rc=$?; "
+         "systemctl is-active ink-reader.service'", transcript("останови службу ink-reader")),
+        ("bare unit, owner names it with .service",
+         "ssh gpu-host 'sudo -n systemctl stop ink-reader; echo rc=$?; systemctl is-active ink-reader'",
+         transcript("останови ink-reader.service")),
+        ("unit stop with an nvidia-smi check",
+         "ssh gpu-host 'sudo -n systemctl stop ink-reader.service; echo rc=$?; systemctl is-active "
+         "ink-reader.service; nvidia-smi --query-compute-apps=pid,used_memory,process_name --format=csv,noheader'",
+         transcript("останови службу ink-reader")),
         ("stop with read-only companions", "ssh h 'kill 4242; sleep 20; ps -eo pid,args | grep -c train'",
          transcript("останови процесс 4242")),
         ("owner names the pid", "kill -s KILL 4242", transcript("убей pid 4242")),
@@ -3072,6 +4151,56 @@ def self_test() -> int:
         ("question about a kill", "kill -9 4242", transcript("посмотри, почему kill -9 4242 не сработал")),
         ("kill as a noun", "pkill -9 python3", transcript("this will kill performance of python3")),
         ("systemctl stop --all", "systemctl stop --all", transcript("stop --all")),
+        # owner 2026-10-29: the unit-stop shape passes only for the unit she names, on a plain stop request
+        ("unit stop not asked", "ssh h 'sudo -n systemctl stop ink-reader.service'",
+         transcript("проверь службу ink-reader")),
+        ("a different unit", "ssh h 'sudo -n systemctl stop ink-writer.service'",
+         transcript("останови службу ink-reader")),
+        ("a longer unit than named", "ssh h 'sudo -n systemctl stop ink-reader.service'",
+         transcript("останови службу ink")),
+        ("same name, another unit type", "ssh h 'sudo -n systemctl stop ink-reader.socket'",
+         transcript("останови службу ink-reader")),
+        ("a second unit not named", "ssh h 'sudo -n systemctl stop ink-reader.service api-worker.service'",
+         transcript("останови службу ink-reader")),
+        ("unit stop negated", "ssh h 'sudo -n systemctl stop ink-reader.service'",
+         transcript("не останавливай службу ink-reader")),
+        ("unit stop as a question", "ssh h 'sudo -n systemctl stop ink-reader.service'",
+         transcript("остановить службу ink-reader?")),
+        ("own access unit with .service", "ssh h 'sudo -n systemctl stop sshd.service'", transcript("останови службу sshd")),
+        ("tunnel unit with .service", "ssh h 'sudo -n systemctl stop cloudflared.service'",
+         transcript("останови cloudflared.service")),
+        ("sudo as another user", "ssh h 'sudo -u root systemctl stop ink-reader.service'",
+         transcript("останови службу ink-reader")),
+        ("status check that writes", "ssh h 'sudo -n systemctl stop ink-reader; systemctl mask ink-reader'",
+         transcript("останови службу ink-reader")),
+        ("status check piped to a shell", "ssh h 'sudo -n systemctl stop ink-reader; systemctl is-active x | sh'",
+         transcript("останови службу ink-reader")),
+        ("exit code echo hides a substitution", "ssh h 'sudo -n systemctl stop ink-reader; echo rc=$(id)'",
+         transcript("останови службу ink-reader")),
+        ("network interface unit", "ssh h 'sudo -n systemctl stop ifup@eth0'",
+         transcript("останови службу ifup@eth0")),
+        ("wifi supplicant", "ssh h 'sudo systemctl stop wpa_supplicant'", transcript("останови wpa_supplicant")),
+        ("a whole target", "ssh h 'sudo systemctl stop multi-user.target'", transcript("останови multi-user.target")),
+        # review 2026-10-29: only services, by name or .service; other unit types refused by default
+        ("a slice", "ssh h 'sudo systemctl stop user.slice'", transcript("останови user.slice")),
+        ("a scope", "ssh h 'sudo systemctl stop session-3.scope'", transcript("останови session-3.scope")),
+        ("a mount", "ssh h 'sudo systemctl stop data.mount'", transcript("останови data.mount")),
+        ("a timer", "ssh h 'sudo -n systemctl stop backup.timer'", transcript("останови службу backup.timer")),
+        ("a dotted name without a type", "ssh h 'sudo systemctl stop app.v2'", transcript("останови app.v2")),
+        ("disable a socket", "ssh h 'sudo systemctl disable ink-reader.socket'",
+         transcript("убери ink-reader.socket из автозапуска")),
+        ("the user manager", "ssh h 'sudo systemctl stop user@1000'", transcript("останови службу user@1000")),
+        ("the legacy network service", "ssh h 'sudo systemctl stop network.service'", transcript("останови network.service")),
+        ("network-manager", "ssh h 'sudo systemctl stop network-manager'", transcript("останови network-manager")),
+        ("pkill a supplicant fragment", "ssh h 'pkill wpa_supp'", transcript("останови wpa_supp")),
+        ("pkill a dhcp client fragment", "ssh h 'pkill dhcl'", transcript("останови dhcl")),
+        ("pkill networkd", "ssh h 'pkill networkd'", transcript("останови networkd")),
+        ("pkill a dhcpcd fragment", "ssh h 'pkill dhcpc'", transcript("останови dhcpc")),
+        ("pkill an ifplugd fragment", "ssh h 'pkill ifplug'", transcript("останови ifplug")),
+        ("pkill a connman fragment", "ssh h 'pkill connma'", transcript("останови connma")),
+        ("pkill iwd", "ssh h 'pkill -f libexec/iwd'", transcript("останови libexec/iwd")),
+        ("restart after the stop","ssh h 'sudo -n systemctl stop ink-reader; systemctl restart api-worker'",
+         transcript("останови службу ink-reader")),
         # re-review 2026-10-12 REJECT findings, each must stay refused
         ("a time read as a pid", "kill -9 4242 22", transcript("Убей процесс 4242, в 22:30 он висел")),
         ("exclusion read as inclusion", "kill -9 4242 22", transcript("убей процесс 4242, но не 22")),
@@ -3237,6 +4366,8 @@ def self_test() -> int:
             fails.append(f"owner request should refuse ({name})")
     if not APPROVAL_LOG.exists() or len(APPROVAL_LOG.read_text(encoding="utf-8").splitlines()) != len(approve):
         fails.append("every owner-approved delete must leave exactly one audit record")
+    elif sum('"action": "server-home-child"' in r for r in APPROVAL_LOG.read_text(encoding="utf-8").splitlines()) != 5:
+        fails.append("each server-home-child approval must be logged with action server-home-child")
     APPROVAL_LOG = saved_log
     DELETION_LIST_DIR = saved_list_dir
     if decide(call)[0]:

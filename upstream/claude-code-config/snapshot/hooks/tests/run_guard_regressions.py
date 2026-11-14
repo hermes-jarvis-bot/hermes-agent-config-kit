@@ -25,12 +25,18 @@ TESTS = [
     "test_guard_evasions_round6.py",
     "test_guard_evasions_round7.py",
     "test_safety_common_scope.py",
+    "test_command_text_is_data.py",
     "test_transfer_guard_scope.py",
     "test_delivery_guard_scope.py",
+    "test_delivery_guard_notification_intent.py",
+    "test_delivery_guard_machine_messages.py",
     "test_article_voice_gate_scope.py",
     "test_powershell_coverage.py",
     "test_powershell_dynamic_execution_guard.py",
     "test_root_cause_proof_executor.py",
+    "test_root_cause_supersede_retriage.py",
+    "test_publish_bypass_guard.py",
+    "test_handoff_sidecar.py",
     "smoke_hooks_live.py",
 ]
 TOTAL = re.compile(r"\ball\s+(\d+)\b.*\bcorrect\b", re.IGNORECASE)

@@ -1,20 +1,20 @@
-# Upstream sync report: 9a56783f7000a3302e946de51eacd014ffd16ee7..9a56783f7000a3302e946de51eacd014ffd16ee7
+# Upstream sync report: a4e0b5b97efab68b366867f4a817c3198e3bd3f6..a4e0b5b97efab68b366867f4a817c3198e3bd3f6
 
-Generated: 2026-10-25T04:28:11.776853+00:00
+Generated: 2026-11-14T10:19:39.755961+00:00
 Source: `AnastasiyaW/claude-code-config` branch `main`
-Base SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
-Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
+Base SHA: `a4e0b5b97efab68b366867f4a817c3198e3bd3f6`
+Target SHA: `a4e0b5b97efab68b366867f4a817c3198e3bd3f6`
 
 ## Summary
 
 - Commits included: 0
-- Files changed/snapshotted: 838
+- Files changed/snapshotted: 913
 - Generated artefacts: 237
 - Missing supported sources: 0
 - Manual re-approval candidates: 149
-- Manual-review candidates: 210
-- Unsupported candidates: 1
-- Risk counts: {"high": 210, "low": 255, "medium": 373}
+- Manual-review candidates: 263
+- Unsupported candidates: 2
+- Risk counts: {"high": 263, "low": 261, "medium": 389}
 
 ## Commits
 
@@ -302,27 +302,35 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `hooks/handoff-closure-audit-guard.py`
 - `hooks/handoff-resume-gate.py`
 - `hooks/handoff-to-todo.py`
+- `hooks/handoff_sidecar.py`
 - `hooks/harness-load-advisor.py`
 - `hooks/hook-tree-drift-check.py`
+- `hooks/hooks.json`
 - `hooks/human-confirmation-guard.py`
 - `hooks/kb-validate-gate.py`
 - `hooks/keyword-skill-router.py`
 - `hooks/launch-watch-guard.py`
 - `hooks/live-tree-guard.py`
 - `hooks/long-run-detector.py`
+- `hooks/merge-gate-guard.py`
 - `hooks/module-shape-advisor.py`
 - `hooks/open-items-are-work-orders.py`
 - `hooks/outward-claim-evidence-guard.py`
 - `hooks/over-engineering-advisor.py`
 - `hooks/plan-gate.py`
+- `hooks/plugin-rules-context.py`
 - `hooks/powershell-dynamic-execution-guard.py`
+- `hooks/pre-push-chain.sh`
 - `hooks/pre-push-claude-attribution.py`
 - `hooks/pre-push-personal-email-guard.py`
 - `hooks/pre-push-public-repo-scan.py`
 - `hooks/precompact-handoff-guard.py`
 - `hooks/problems-md-validator.py`
+- `hooks/problems_md.py`
+- `hooks/publish-bypass-guard.py`
 - `hooks/repeated-attempt-guard.py`
 - `hooks/root-cause-delivery-guard.py`
+- `hooks/rtk-plugin-hook.py`
 - `hooks/safety_common.py`
 - `hooks/secret-leak-guard.py`
 - `hooks/secret-on-disk-guard.py`
@@ -347,7 +355,9 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `hooks/tests/test_agent_policy_commit_gate.py`
 - `hooks/tests/test_agent_policy_gates.py`
 - `hooks/tests/test_article_voice_gate_scope.py`
+- `hooks/tests/test_command_text_is_data.py`
 - `hooks/tests/test_delete_from_list.py`
+- `hooks/tests/test_delivery_guard_machine_messages.py`
 - `hooks/tests/test_delivery_guard_notification_intent.py`
 - `hooks/tests/test_delivery_guard_scope.py`
 - `hooks/tests/test_guard_evasions.py`
@@ -357,20 +367,51 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `hooks/tests/test_guard_evasions_round5.py`
 - `hooks/tests/test_guard_evasions_round6.py`
 - `hooks/tests/test_guard_evasions_round7.py`
+- `hooks/tests/test_handoff_sidecar.py`
 - `hooks/tests/test_human_confirmation_authority.py`
+- `hooks/tests/test_human_confirmation_bare_yes_stop.py`
+- `hooks/tests/test_human_confirmation_branch_rm.py`
+- `hooks/tests/test_human_confirmation_db_drop.py`
+- `hooks/tests/test_human_confirmation_delete_block.py`
+- `hooks/tests/test_human_confirmation_docker_rm.py`
+- `hooks/tests/test_human_confirmation_docker_verified_copy.py`
+- `hooks/tests/test_human_confirmation_drive_child.py`
+- `hooks/tests/test_human_confirmation_force_adverb.py`
+- `hooks/tests/test_human_confirmation_git_worktree.py`
 - `hooks/tests/test_human_confirmation_image_rm.py`
+- `hooks/tests/test_human_confirmation_list_file.py`
+- `hooks/tests/test_human_confirmation_local_drive_root.py`
 - `hooks/tests/test_human_confirmation_move_to_temp.py`
+- `hooks/tests/test_human_confirmation_named_folder_whole.py`
+- `hooks/tests/test_human_confirmation_owner_list.py`
+- `hooks/tests/test_human_confirmation_remote_app.py`
+- `hooks/tests/test_human_confirmation_remote_drive_root.py`
+- `hooks/tests/test_human_confirmation_remote_paths.py`
+- `hooks/tests/test_human_confirmation_restart_lines.py`
+- `hooks/tests/test_human_confirmation_root_file.py`
+- `hooks/tests/test_human_confirmation_server_child.py`
+- `hooks/tests/test_human_confirmation_ssh_taskkill.py`
+- `hooks/tests/test_human_confirmation_temp_location.py`
+- `hooks/tests/test_human_confirmation_tilde_name.py`
+- `hooks/tests/test_human_confirmation_worker_profile.py`
+- `hooks/tests/test_merge_gate_branch_delete.py`
+- `hooks/tests/test_merge_gate_guard.py`
 - `hooks/tests/test_powershell_coverage.py`
 - `hooks/tests/test_powershell_dynamic_execution_guard.py`
 - `hooks/tests/test_pre_push_public_repo_scan.py`
+- `hooks/tests/test_pre_push_scan_hardening.py`
+- `hooks/tests/test_publish_bypass_guard.py`
 - `hooks/tests/test_reconciliation_owner_stamp.py`
 - `hooks/tests/test_reconciliation_stop_scope.py`
+- `hooks/tests/test_relocate_list.py`
 - `hooks/tests/test_root_cause_proof_executor.py`
+- `hooks/tests/test_root_cause_supersede_retriage.py`
 - `hooks/tests/test_safety_common_scope.py`
 - `hooks/tests/test_stop_reentry_common.py`
 - `hooks/tests/test_task_cycle_controller.py`
 - `hooks/tests/test_transfer_contract_collision.py`
 - `hooks/tests/test_transfer_guard_scope.py`
+- `hooks/tests/test_transfer_local_temp.py`
 - `hooks/tests/test_user_task_completion_guard.py`
 - `hooks/todo-inbox.py`
 - `hooks/transfer-contract-guard.py`
@@ -388,10 +429,13 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `scripts/cleanup_handoffs.py`
 - `scripts/cleanup_temp_workspace.py`
 - `scripts/codex_hook_dispatch_install.py`
+- `scripts/codex_update.py`
 - `scripts/context_degradation.py`
+- `scripts/crap_probe.py`
 - `scripts/cross_reference_check.py`
 - `scripts/delete_from_list.py`
 - `scripts/dependency-alternatives.py`
+- `scripts/failure_mine.py`
 - `scripts/find_duplicate_implementations.py`
 - `scripts/find_duplicate_requirements.py`
 - `scripts/folder_lifecycle_audit.py`
@@ -404,21 +448,26 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `scripts/harness_improvement_pilot.py`
 - `scripts/install_hooks.py`
 - `scripts/kvcache_stats.py`
+- `scripts/mutation_probe.py`
 - `scripts/openscience_skill_inventory.py`
 - `scripts/orphan_reaper.py`
 - `scripts/pc_load_watch.py`
+- `scripts/plugin_build.py`
 - `scripts/reasoning_metrics.py`
 - `scripts/recover_skill_trees.py`
+- `scripts/relocate_from_list.py`
 - `scripts/relocate_temp_workspace.py`
 - `scripts/repair_codex_plugin_hook_schema.py`
 - `scripts/replay_retry_guard_keys.py`
 - `scripts/review_handoff_memory_loop.py`
 - `scripts/rtk_integration.py`
 - `scripts/rules_drift_report.py`
+- `scripts/safe_merge.py`
 - `scripts/scan_report.py`
 - `scripts/sched_task.py`
 - `scripts/skill_frontmatter.py`
 - `scripts/skill_lint.py`
+- `scripts/skill_paths.py`
 - `scripts/sweep_private_markers.py`
 - `scripts/sync_public_config.py`
 - `scripts/sync_skills_to_codex.py`
@@ -448,6 +497,7 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `scripts/test_no_silent_pass.py`
 - `scripts/test_openscience_skill_inventory.py`
 - `scripts/test_plan_gate.py`
+- `scripts/test_plugin_build.py`
 - `scripts/test_relocate_temp_workspace.py`
 - `scripts/test_repair_codex_plugin_hook_schema.py`
 - `scripts/test_repo_map_counts.py`
@@ -457,6 +507,7 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `scripts/test_safety_common_block.py`
 - `scripts/test_shape_single_source.py`
 - `scripts/test_shell_test_command.py`
+- `scripts/test_skill_paths.py`
 - `scripts/test_stage_ledger_validator.py`
 - `scripts/test_subagent_evidence_receipt.py`
 - `scripts/test_subagent_skill_context.py`
@@ -470,8 +521,10 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `scripts/test_transfer_contract.py`
 - `scripts/test_validate_agent_tickets.py`
 - `scripts/test_validate_config.py`
+- `scripts/tests/fake_gh.py`
 - `scripts/tests/fixtures/hooks/sleeper.py`
 - `scripts/tests/test_pc_load_watch.py`
+- `scripts/tests/test_safe_merge.py`
 - `scripts/tests/test_sched_task.py`
 - `scripts/validate_agent_tickets.py`
 - `scripts/validate_config.py`
@@ -488,6 +541,11 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 
 ### review
 
+- `.agent/delivery-cases/delivery-guard-machine-messages-20261028/evidence/after.txt`
+- `.agent/delivery-cases/delivery-guard-machine-messages-20261028/evidence/before-main-4940341.txt`
+- `.agent/delivery-cases/delivery-guard-machine-messages-20261028/evidence/mutation_probe.txt`
+- `.agent/delivery-cases/delivery-guard-machine-messages-20261028/evidence/run_guard_regressions.txt`
+- `.agent/delivery-cases/delivery-guard-machine-messages-20261028/evidence/transcript-replay-old-vs-new.txt`
 - `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/case.json`
 - `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/evidence/after-00.txt`
 - `.agent/delivery-cases/delivery-guard-notification-overwrites-intent-20260915/evidence/after-01.txt`
@@ -509,6 +567,8 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `.agent/delivery-cases/transfer-guard-cannot-close-a-cleaned-copy-20260901/evidence/after-00.txt`
 - `.agent/delivery-cases/transfer-guard-cannot-close-a-cleaned-copy-20260901/evidence/before-00.txt`
 - `.gitattributes`
+- `.github/workflows/merge-gate-check.yml`
+- `.github/workflows/plugin-check.yml`
 - `.github/workflows/skills-lock-check.yml`
 - `.gitignore`
 - `AGENTS.md`
@@ -558,6 +618,7 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `docs/openscience-ml-domain-eval.md`
 - `docs/openscience-ml-skill-inventory.json`
 - `docs/output-legibility.md`
+- `docs/publish-bypass-guard.md`
 - `docs/reports/claude-architecture-quality-handoff-2026-08-03.md`
 - `docs/research/2026-08-23-skill-routing-and-epistemic-challenge.md`
 - `docs/research/2026-08-architecture-readable-code.md`
@@ -573,9 +634,11 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `docs/skills-organised-by-author.md`
 - `docs/starting-from-what-you-remember.md`
 - `docs/task-cycle-controller.md`
+- `docs/team-plugin.md`
 - `docs/temp-cleanup-policy.example.json`
 - `docs/temp-workspace-cleanup.md`
 - `docs/temp-workspace-relocation.md`
+- `docs/token-overspend-interim.md`
 - `docs/why-agents-circle-instead-of-acting.md`
 - `evals/hooks/cases.json`
 - `evals/hooks/fixtures/research-built-skill/SKILL.md`
@@ -606,6 +669,15 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `evals/hooks/fixtures/skill-gap-receipt-research-shallow.md`
 - `evals/hooks/fixtures/skill-gap-receipt-unchecked.md`
 - `evals/hooks/run_hook_evals.py`
+- `mods/pult/.claude-plugin/plugin.json`
+- `mods/pult/.gitignore`
+- `mods/pult/README.md`
+- `mods/pult/hooks/hooks.json`
+- `mods/pult/hooks/register.tsx`
+- `mods/pult/tests/hooks.test.ts`
+- `mods/pult/tests/pure.test.ts`
+- `mods/pult/tsconfig.json`
+- `mods/pult/types/index.d.ts`
 - `principles/README.md`
 - `references/benjamin-plus/LICENSE`
 - `references/benjamin-plus/PROVENANCE.md`
@@ -616,6 +688,8 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `rules/README.md`
 - `rules/live-tree-is-receive-only.md`
 - `rules/long-run-harness.md`
+- `rules/long-wait-cache-ttl.md`
+- `rules/merge-gate.md`
 - `rules/no-commit-junk.md`
 - `rules/no-pre-existing-evasion.md`
 - `rules/safety-hooks.md`
@@ -767,31 +841,11 @@ Target SHA: `9a56783f7000a3302e946de51eacd014ffd16ee7`
 - `skills/frontend/ui-design/references/editable-visual-assets.md`
 - `skills/frontend/ui-ux-pro-max/LICENSE`
 - `skills/frontend/ui-ux-pro-max/SKILL.md`
-- `skills/frontend/ui-ux-pro-max/data/app-interface.csv`
-- `skills/frontend/ui-ux-pro-max/data/catalog-summary.json`
-- `skills/frontend/ui-ux-pro-max/data/charts.csv`
-- `skills/frontend/ui-ux-pro-max/data/colors.csv`
-- `skills/frontend/ui-ux-pro-max/data/data-provenance.json`
-- `skills/frontend/ui-ux-pro-max/data/google-font-licenses.json`
-- `skills/frontend/ui-ux-pro-max/data/google-fonts.csv`
-- `skills/frontend/ui-ux-pro-max/data/icons.csv`
-- `skills/frontend/ui-ux-pro-max/data/landing.csv`
-- `skills/frontend/ui-ux-pro-max/data/motion.csv`
-- `skills/frontend/ui-ux-pro-max/data/phosphor-icons-upstream.json`
-- `skills/frontend/ui-ux-pro-max/data/products.csv`
-- `skills/frontend/ui-ux-pro-max/data/react-performance.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/angular.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/astro.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/avalonia.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/flutter.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/html-tailwind.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/javafx.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/jetpack-compose.csv`
-- `skills/frontend/ui-ux-pro-max/data/stacks/laravel.csv`
-- ... 85 more
+- ... 106 more
 
 ### unsupported
 
+- `.claude-plugin/marketplace.json`
 - `.claude-plugin/plugin.json`
 
 ## Missing supported sources

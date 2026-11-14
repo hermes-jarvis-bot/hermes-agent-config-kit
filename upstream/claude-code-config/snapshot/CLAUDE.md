@@ -203,6 +203,9 @@ Source: Andrej Karpathy (github.com/karpathy/autoresearch, Mar 2026) + uditgoenk
 
 **Principle: any measurable output can be improved automatically.** Cycle: Read -> Change ONE thing -> Test mechanically -> Keep/Discard -> Repeat. Works on skills, prompts, code, templates -- anything with a numerical score.
 
+### Anatomy -- Three Parts, Three Choices
+Every autoresearch framework is a **loop** (change -> run -> measure -> keep/revert), **state** carried to step N+1, and an **external verdict**. Frameworks differ only in where state lives (file, DB, folder, graph), how the next step is chosen (score, tree search, fixed pipeline) and what judges success (number, grader, compiler/prover, another model). Name these three choices before building one; the default here is file state + strict-improvement score + mechanical verdict.
+
 ### Three Conditions for Applicability
 1. **Numerical scoring** -- binary pass/fail criteria -> percentage score
 2. **Automated evaluation** -- eval scripts without human involvement
@@ -214,6 +217,9 @@ Source: Andrej Karpathy (github.com/karpathy/autoresearch, Mar 2026) + uditgoenk
 - **Git = memory** -- `experiment:` commits, git revert on failure
 - **Guard mechanism** -- Verify (did the metric improve?) + Guard (did nothing break?)
 - **3-6 binary assertions** -- <3 = loopholes, >6 = checklist gaming
+- **Evaluator is out of reach** -- the agent never edits the scoring script, its data or hidden labels; score each candidate at its commit in a clean checkout/detached worktree. A score from a tree the agent could touch is UNKNOWN, not a win (CORAL grader daemon, karpathy `prepare.py`)
+- **Journal every attempt** -- before reverting, append one row per run to an untracked `results.tsv` (commit, metric, cost, status keep|discard|crash|timeout, one-line idea); git keeps the winners, the journal keeps the negative results the next step needs (karpathy/autoresearch)
+- **Fixed budget, noise floor, pivot on plateau** -- same wall-clock/step budget per run, kill at 2x and log `timeout`; run the baseline twice to know the noise; after N runs with no gain beyond the noise, stop tweaking and do a reflect/pivot step (CORAL heartbeat, Sibyl quality gate)
 
 ### Relationship to Other Practices
 - **vs Proof Loop**: proof loop *verifies* (pass/fail on ACs), autoresearch *optimizes* (iteratively)
@@ -250,6 +256,10 @@ Source: github.com/google-research/harness2, arxiv 2610.14224. Weights stay fixe
 
 Adopt the method, not the auto-patcher: its executor runs with network open and the Codex sandbox disabled, and its README describes no held-out protocol. Here a change is adopted only through `scripts/harness_improvement_pilot.py` -- frozen suite of 3-5 cases plus a held-out case, one change per candidate, mechanical receipts, strict improvement, no safety or held-out regression, git rollback, fresh-context review. Live hooks, permissions and guardrails are never pilot targets. Guide: `docs/harness-improvement-pilot.md`.
 
+Visual workflows (OpenVLHarness, github.com/uclanlp/OpenVLHarness, assessed 2026-10-25): take the patterns, not the stack (schemas are our adaptation of upstream's addressable memory, run manifest and validated resume) -- typed evidence objects with addressable artifacts (frame, crop, mask, number, provenance), an explicit capability set where degradation is a receipt and never a silent fallback, and a run manifest (redacted config, versions, input digest, trajectory, resume key). Never run model-written Python on the host (upstream: "execution timeout is not a sandbox"). Details and pilot: `docs/harness-improvement-pilot.md`, section "Candidate: evidence-backed visual workflow"; start with local crop/zoom.
+
+Waiting on long background work (CI, pipelines, training): one wait is at most 50 minutes, then check live progress; the main and subagent prompt cache TTL is 1 hour (`promptCacheTtl`, `subagentPromptCacheTtl`). Rule: [`rules/long-wait-cache-ttl.md`](rules/long-wait-cache-ttl.md).
+
 ## Output Legibility -- Make Agent Output Cheap to Read (2026-10)
 
 Source: Andrej Karpathy, 2 Oct 2026. Ladder, lowest rung that makes the answer obvious: (1) text in ASD-STE100 style -> (2) diagram -> (3) interactive HTML -> (4) explainer video.
@@ -272,6 +282,7 @@ Mechanical tasks (test, lint, format, stack detection) **must not go through the
 - `pytest`, `eslint`, `tsc --noEmit` -> Bash tool directly, without "creative" wrappers
 - Script results -> structured output (JSON/exit code), not free-form text
 - This saves tokens AND removes non-determinism ("slightly different flags every time")
+- **Build the lever:** when repetitive work is not obvious at a glance, do ONE unit by hand first, then write the tool so its output matches that hand-made unit exactly; the hand unit is the tool's first test (source: https://github.com/unclebob/ub-mode, "Build the Lever")
 
 ### Relay Pattern (One-Task-at-a-Time)
 For complex multi-step processes, the agent should NOT see the entire process. It receives one task, executes, returns the result, receives the next. Control flow is external.
