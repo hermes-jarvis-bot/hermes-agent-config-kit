@@ -73,6 +73,17 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+# One recognizer of the backup swap for every guard that judges it (transfer-contract-guard too):
+# two copies disagreed once and no form of the swap passed both guards (2026-11-16).
+from backup_swap import (  # noqa: E402
+    BACKUP_COPY_FLAGS,
+    MOVE_FLAGS,
+    PLAIN_WORD,
+    _norm_name,
+    backed_up_moves,
+    move_overwrite_targets,
+    split_steps,
+)
 from safety_common import (  # noqa: E402
     GIT_FORCE_BRANCH_DELETE_PATTERNS,
     allow,
@@ -461,38 +472,10 @@ def delete_targets(segment: str) -> list[str] | None:
     return targets
 
 
-MOVE_FLAGS = {"-f", "--force", "-T", "--no-target-directory", "-v", "--verbose"}
 
 
-def move_overwrite_targets(segment: str) -> list[str] | None:
-    """Destination of `mv [-f|-T|-v] SRC DST`: the file a replacement overwrites (owner 2026-10-11).
-    None for any other shape (several sources, -t, unknown flags), which stays unapproved."""
-    # simplification: POSIX mv only; a Move-Item replacement still needs an explicit delete request
-    try:
-        toks = [t.strip("'\"") for t in shlex.split(segment, posix=False)]
-    except ValueError:
-        return None
-    if not toks or toks[0].rsplit("/", 1)[-1] != "mv":
-        return None
-    flags = [t for t in toks[1:] if t.startswith("-")]
-    operands = [t for t in toks[1:] if not t.startswith("-")]
-    if any(f not in MOVE_FLAGS for f in flags) or len(operands) != 2:
-        return None
-    return [operands[1]]
 
 
-# Owner 2026-10-12 ("поправь хук, чтобы ты такое делала сама" after a deploy swap was refused):
-# `test ! -e f.bak && cp -p f f.bak && mv f.new f` loses nothing - the old content survives in a
-# backup that provably did not exist before (review 2026-10-12: cp onto an existing file destroys
-# it) - so that mv is not a deletion. && only (each step runs only if the previous succeeded);
-# plain names only (no glob, variable, quote or redirect). The three steps must be adjacent: any
-# step between them (cd, pushd, touch, a redirect) could move or rewrite what the check proved, so
-# none is allowed. Approval is by step position, so an identical second mv later in the command is
-# judged on its own (review 2026-10-12).
-# No -a/-r: a directory (or a symlink to one) is then refused by cp and && stops the chain;
-# `cp -a link` would copy the link, not the files behind it (review 2026-10-12).
-BACKUP_COPY_FLAGS = {"-p", "--preserve"}
-PLAIN_WORD = re.compile(r"[A-Za-z0-9_./~+-]+")
 
 
 # review 2026-10-12: `(mv n f)`, `{ mv n f; }`, `sudo -u root mv`, `sudo -n mv`, `\mv`, `/bin/mv`,
@@ -523,54 +506,6 @@ def command_core(seg: str) -> str:
         else:
             return seg  # the command is something else (`git mv`, `grep mv`)
     return seg
-
-
-def _norm_name(path: str) -> str:
-    return os.path.normpath(path.replace("\\", "/")).replace("\\", "/")
-
-
-def backed_up_moves(text: str) -> set[int]:
-    """Index of the mv step when the WHOLE of text is `[cd DIR &&] test ! -e BAK && cp -p DST BAK
-    && mv NEW DST` (or `[ ! -e BAK ]`), else nothing.
-
-    Whole-command shape, by review 2026-10-12: a step after the mv could clobber BAK without
-    naming it (`> ?`, `> B`, $'\\x62'); a step before the test could redefine `test`/`cp` (a shell
-    function, PATH) so no backup is made. Only a plain `cd` may come first."""
-    steps = [(seg.split(), sep) for seg, sep in split_steps(executable_text(text))]
-    while steps and not steps[-1][0]:
-        steps.pop()
-    mv_index = len(steps) - 1  # index in decide()'s segment list (same split)
-    if len(steps) == 4 and len(steps[0][0]) == 2 and steps[0][0][0] == "cd" \
-            and PLAIN_WORD.fullmatch(steps[0][0][1]) and steps[1][1] == "&&":
-        steps = steps[1:]
-    if len(steps) != 3:
-        return set()
-    (test, _), (cp, cp_sep), (mv, mv_sep) = steps
-    if cp_sep != "&&" or mv_sep != "&&" or not all(PLAIN_WORD.fullmatch(t) for t in cp + mv):
-        return set()  # also rejects > < $ * quotes
-    if test[:3] == ["test", "!", "-e"] and len(test) == 4:
-        bak = test[3]
-    elif test[:3] == ["[", "!", "-e"] and len(test) == 5 and test[4] == "]":
-        bak = test[3]
-    else:
-        return set()
-    cp_ops = [t for t in cp[1:] if not t.startswith("-")]
-    mv_ops = [t for t in mv[1:] if not t.startswith("-")]
-    if cp[0].rsplit("/", 1)[-1] != "cp" or len(cp_ops) != 2 \
-            or any(t not in BACKUP_COPY_FLAGS for t in cp[1:] if t.startswith("-")):
-        return set()
-    dst = move_overwrite_targets(" ".join(mv))  # it already accepts /bin/mv
-    if mv[0].rsplit("/", 1)[-1] != "mv" or not dst or len(mv_ops) != 2:
-        return set()
-    # Equalities that GRANT the exemption compare raw strings: normpath would make `x/../f` equal
-    # `f` although x may be a symlink, and on a case-sensitive disk `B` is not `b`. Differences it
-    # REQUIRES are normalised and case-folded, the cautious direction (review rounds 4-5).
-    src, new = cp_ops[0], mv_ops[0]
-    if cp_ops[1] != bak or dst[0] != src:
-        return set()
-    if _norm_name(new).casefold() in (_norm_name(bak).casefold(), _norm_name(src).casefold()):
-        return set()
-    return {mv_index}
 
 
 def is_ephemeral_docker_rm(segment: str) -> bool:
@@ -617,6 +552,23 @@ def _probe_cmd(toks: list[str], i: int) -> str | None:
 
 
 PS_SPACED_PATH = re.compile(r"[A-Za-z]:[\\/][^;|&`$()<>'\"\n]* [^;|&`$()<>'\"\n]*")
+# owner 2026-11-17: `cmd /c rmdir <junction>` is the one form that removes an NTFS junction and keeps its
+# target (PowerShell 5.1 Remove-Item throws on a junction, or empties the target with -Recurse). The body is
+# taken from the raw text, because posix shlex would eat the backslashes of an unquoted Windows path.
+CMD_C = re.compile(r"\s*(?:\S*[\\/])?cmd(?:\.exe)?(?:\s+/(?![ck]\b)[a-z](?::\w+)?)*\s+/c\s+(.+?)\s*",
+                   re.IGNORECASE | re.DOTALL)
+
+
+def _cmd_c_body(segment: str) -> str | None:
+    """The command `cmd [/d /q ...] /c BODY` runs, UNPARSED when BODY uses cmd expansion or escapes
+    (%VAR%, ^, !VAR!) that this parser cannot follow, None when the segment is not cmd /c."""
+    m = CMD_C.fullmatch(segment)
+    if not m:
+        return None
+    body = m.group(1)
+    if len(body) > 1 and body[0] == body[-1] == '"' and '"' not in body[1:-1]:
+        body = body[1:-1].strip()
+    return UNPARSED if re.search(r"[%^!]", body) else body
 
 
 def remote_command(segment: str) -> str | None:
@@ -626,6 +578,9 @@ def remote_command(segment: str) -> str | None:
     `ssh host 'rm /data/x'` passing untouched because the segment's command word is ssh.
     Returns None when the segment is not ssh, UNPARSED when it is ssh we cannot read.
     """
+    body = _cmd_c_body(segment)
+    if body is not None:
+        return body
     try:
         toks = shlex.split(segment, posix=True)
     except ValueError:
@@ -754,44 +709,6 @@ def split_segments(text: str) -> list[str]:
     """Split on && || ; | newline, but never inside '...' or "..." (a commit
     message saying "step; del old" is not a del command - review round 2)."""
     return [seg for seg, _ in split_steps(text)]
-
-
-def split_steps(text: str) -> list[tuple[str, str]]:
-    """split_segments with the separator that preceded each segment ("" for the first)."""
-    out: list[tuple[str, str]] = []
-    buf: list[str] = []
-    sep = ""
-    quote = None
-    i = 0
-    while i < len(text):
-        c = text[i]
-        if c == "\\" and quote != "'" and i + 1 < len(text):
-            buf.append(text[i:i + 2])  # \" \; \<newline> are literal to the shell (review 2026-10-06)
-            i += 2
-            continue
-        if quote:
-            buf.append(c)
-            if c == quote:
-                quote = None
-        elif c in "'\"":
-            quote = c
-            buf.append(c)
-        elif text.startswith(("&&", "||"), i):
-            out.append(("".join(buf), sep))
-            buf, sep = [], text[i:i + 2]
-            i += 2
-            continue
-        elif c in ";|\n" or (c == "&" and text[i - 1:i] not in (">", "<")
-                               and text[i + 1:i + 2] != ">"):
-            # a lone & (background) ends a command too; >& <& &> are redirections (review 2026-10-28:
-            # `ssh h rm F&rm F` ran the second rm locally while it was judged as remote)
-            out.append(("".join(buf), sep))
-            buf, sep = [], c
-        else:
-            buf.append(c)
-        i += 1
-    out.append(("".join(buf), sep))
-    return out
 
 
 def substitutions(text: str) -> list[str]:
@@ -976,12 +893,31 @@ IMAGE_INTENT = re.compile(
 IMAGE_MENTION = re.compile(r"образ|\bimages?\b", re.IGNORECASE)
 IMAGE_REF = r"[a-z0-9][a-z0-9._/-]*(?::[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}|@sha256:[0-9a-f]{64})"
 # Read-only commands allowed beside an image removal; anything else (sh, tee, python) -> refuse.
-IMAGE_RM_COMPANION = re.compile(
-    r"(?:grep(?:\s+-[A-Za-z]+)*\s+[\w.:-]+|head(?:\s+-n?\s*\d+)?|tail(?:\s+-n?\s*\d+)?|wc\s+-l|"
-    r"df\s+-h(?:\s+/)?|docker\s+(?:images|ps|system\s+df)(?:\s+-a)?)\s*;?")
+# Owner 2026-11-17 ("да, поправь хук"): activity-journal-guard demands the journal call in the same
+# command as the change. The journal scripts named in the local config (`journal_log_scripts`, absolute
+# paths; private, so not in this file) may run beside an image removal as `python3 <script> log <project>
+# "text" ["text"]` with plain quoted text (no $ ` \ inside) and a `|| true` tail. No config -> no such companion.
+JOURNAL_LOG_SCRIPTS = tuple(
+    c for c in (_CFG.get("journal_log_scripts") or []) if isinstance(c, str) and re.fullmatch(r"/[A-Za-z0-9_./-]+", c))
+
+
+def _image_rm_companion(journal_scripts: tuple[str, ...]) -> re.Pattern:
+    journal = ""
+    if journal_scripts:
+        journal = (r"|(?:CLAUDE_SESSION=[A-Za-z0-9_-]{1,64}\s+)?python3\s+(?:"
+                   + "|".join(re.escape(s) for s in journal_scripts)
+                   + r")\s+log\s+[A-Za-z0-9_.-]+(?:\s+\"[^\"$`\\]*\"){1,2}(?:\s+2>/dev/null)?|true")
+    return re.compile(
+        r"(?:grep(?:\s+-[A-Za-z]+)*\s+[\w.:-]+|head(?:\s+-n?\s*\d+)?|tail(?:\s+-n?\s*\d+)?|wc\s+-l|"
+        r"df\s+-h(?:\s+/)?|docker\s+(?:images|ps|system\s+df)(?:\s+-a)?" + journal + r")\s*;?")
+
+
+IMAGE_RM_COMPANION = _image_rm_companion(JOURNAL_LOG_SCRIPTS)
 # A plain `ssh host 'cmd'` / `ssh host "cmd"`: no options, host of safe characters only.
 # Only options that cannot run anything locally are allowed (no ProxyCommand/-F/-J/Include/Match).
-SSH_PLAIN = re.compile(r"ssh\s+(?:-o\s+(?:BatchMode=(?:yes|no)|ConnectTimeout=\d+|ServerAliveInterval=\d+|"
+# `tailscale ssh` is the route ssh-connection-guard requires for our VMs (owner 2026-11-18: a named stop on a VM
+# was refused because only `ssh` counted as plain)
+SSH_PLAIN = re.compile(r"(?:tailscale\s+)?ssh\s+(?:-o\s+(?:BatchMode=(?:yes|no)|ConnectTimeout=\d+|ServerAliveInterval=\d+|"
                        r"ServerAliveCountMax=\d+)\s+)*[A-Za-z0-9][A-Za-z0-9_.@-]*\s+(?:'[^']*'|\"[^\"]*\")\s*")
 IMAGE_RM_SEGMENT = re.compile(
     r"(?:sudo\s+)?docker\s+(?:rmi|image\s+rm)(?:\s+" + IMAGE_REF + r")+(?:\s+2>&1)?\s*;?")
@@ -1056,32 +992,64 @@ def span_declined(line: str, span: str) -> bool:
 _DIS_V = r"(?:убери(?:те)?|убрать|выключи(?:те)?|отключи(?:те)?|сними(?:те)?)"
 _DIS_NOUN = r"(?:(?:юнит|сервис|службу)\s+)?"
 _DIS_FROM = r"из\s+автозапуска"
+# owner 2026-11-18 («убери <unit> из автозапуска на большом сервере» was refused): a trailing host
+# place is allowed; at most two filler words, never a negation, ending in a host noun. No Latin alias form:
+# the host is not compared with the ssh target (see unit_disable_requested), so an alias would claim a scope
+# the check does not enforce, and an alias equal to a unit name would name the unit outside the request
+_DIS_WHERE = r"(?:\s+на\s+(?:(?!(?:не|ни|кроме)\b)[\w-]+\s+){0,2}(?:сервере|машине|хосте|компьютере|виртуалке))?"
 # fourth review 2026-10-15: cancellations anywhere, numbered options and "could" voids a proposal or a request
 CANCEL_WORDS = re.compile(r"\bотбой\b|\bотмен|\bхотя\s+нет\b|\bстоп\b|\bне\s+дела|\bcancel|\babort\b|\bnever\s*mind\b",
                           re.IGNORECASE)
 OPTION_LIST = re.compile(r"(?m)^\s*\d+[.)]\s|\s\d\)\s|\bpick\s+one\b|\bвыбира|\bкакой\b|\bwhich\b", re.IGNORECASE)
 
 
-def unit_disable_requested(prompt: str, unit: str) -> bool:
+def ssh_target_hosts(cmd: str) -> set[str]:
+    """Hosts (user@ stripped, lower case) the command's `ssh host '...'` / `tailscale ssh host '...'` segments reach."""
+    out: set[str] = set()
+    for seg in (s.strip() for s in split_segments(executable_text(cmd))):
+        try:
+            toks = shlex.split(seg, posix=True)
+        except ValueError:
+            continue
+        if toks[:2] == ["tailscale", "ssh"]:
+            toks = toks[1:]
+        if len(toks) >= 3 and toks[0] == "ssh" and not toks[1].startswith("-"):
+            out.add(toks[1].rsplit("@", 1)[-1].lower())
+    return out
+
+
+_DIS_UNIT = r"[A-Za-z][\w@.\-]{2,}"
+# owner 2026-11-18 («убери из автозапуска A и B на <vm>» was refused): one message may list several
+# units; each disabled unit must still be one of them (checked on the request span below)
+_DIS_UNITS = r"(?:" + _DIS_UNIT + r"(?:\s*,\s*|\s+(?:и|and)\s+))*" + _DIS_UNIT
+
+
+def unit_disable_requested(prompt: str, unit: str, hosts: set[str] | None = None) -> bool:
     """The owner's WHOLE message is one request to remove THIS unit from autostart (sixth review 2026-10-15:
     every free-text heuristic leaked - a negation after the command, reported speech across lines - so the
     request is a fixed grammar, matched against the entire message; anything else is refused)."""
     # simplification: the host is not compared with the one the owner names; same residual risk as every
     # stop/delete approval here (a per-host check needs the ssh alias resolved against her words).
-    u = re.escape(unit) + r"(?:\.service)?"
+    u = re.escape(re.sub(r"\.service$", "", unit, flags=re.IGNORECASE)) + r"(?:\.service)?"
     body = (
         r"(?:(?:останови(?:те)?\s+" + u + r"\s+и\s+)?" + _DIS_V + r"\s+(?:е[её]\s+|его\s+)?" + _DIS_FROM + r"|"
-        + _DIS_V + r"\s+" + _DIS_NOUN + u + r"\s+" + _DIS_FROM + r"|"
-        + _DIS_V + r"\s+" + _DIS_FROM + r"\s+" + _DIS_NOUN + u + r"|"
-        + _DIS_V + r"\s+автозапуск\s+" + _DIS_NOUN + u + r"|"
+        + _DIS_V + r"\s+" + _DIS_NOUN + _DIS_UNITS + r"\s+" + _DIS_FROM + r"|"
+        + _DIS_V + r"\s+" + _DIS_FROM + r"\s+" + _DIS_NOUN + _DIS_UNITS + r"|"
+        + _DIS_V + r"\s+автозапуск\s+" + _DIS_NOUN + _DIS_UNITS + r"|"
         r"(?:stop\s+" + u + r",?\s+(?:then|and)\s+)?disable\s+" + u + r"|"
         r"remove\s+" + u + r"\s+from\s+(?:the\s+)?autostart)"
     )
+    # a host alias («на <vm>») must be the host the command actually reaches
+    where = r"(?:\s+на\s+(?P<host>[A-Za-z][\w.\-]*[A-Za-z0-9])|" + _DIS_WHERE + r")"
     # the first form names the unit only in its stop clause: that clause is then required
-    if re.fullmatch(r"\s*(?:да[\s,]+)?(?:(?:please|пожалуйста)[\s,]+)?" + body
-                    + r"(?:[\s,]+(?:please|пожалуйста))?\s*[.!]*\s*", prompt, re.IGNORECASE) is None:
+    m = re.fullmatch(r"\s*(?:да[\s,]+)?(?:(?:please|пожалуйста)[\s,]+)?(?P<req>" + body + r")" + where
+                     + r"(?:[\s,]+(?:please|пожалуйста))?\s*[.!]*\s*", prompt, re.IGNORECASE)
+    if m is None:
         return False
-    return re.search(r"(?<![\w.\-/@])" + u + r"(?![\w\-/@.])", prompt, re.IGNORECASE) is not None
+    if m.group("host") and m.group("host").lower() not in (hosts or set()):
+        return False
+    # the unit must be named inside the request itself, not in the place tail or a politeness word
+    return re.search(r"(?<![\w.\-/@])" + u + r"(?![\w\-/@.])", m.group("req"), re.IGNORECASE) is not None
 
 
 DISABLE_SPAN = re.compile(r"\bsystemctl\s+disable\s+([A-Za-z][\w@.\-]{2,})(?=\s*$|\s*;)", re.IGNORECASE)
@@ -1238,9 +1206,9 @@ _DB_FILE_RE = (
     r"(?:\.(?:gz|bz2|xz|zst|7z|zip|tar|tgz))?$|-journal$|"
     # server data directories recognised by their marker files (review R5)
     r"(?:^|/)(?:PG_VERSION|pg_wal|pg_xlog|ibdata\d*|dump\.rdb|appendonly\.aof|WiredTiger[^/]*)(?:/|$)")
-_DB_WORD_RE = (
-    r"(?:^|/)[^/]*(?:backup|бэкап|бекап|snapshot|pgdata|postgres|mysql|mariadb|mongo|redis|"
-    r"dataset|датасет)[^/]*(?:/|$)")
+_DB_WORDS = r"backup|бэкап|бекап|snapshot|pgdata|postgres|mysql|mariadb|mongo|redis"
+_WORD_RE = r"(?:^|/)[^/]*(?:%s)[^/]*(?:/|$)"
+_DB_WORD_RE = _WORD_RE % (_DB_WORDS + "|dataset|датасет")
 # DB_FILE: the file itself is a database. IRREPLACEABLE adds names that suggest one (owner path only).
 DB_FILE = re.compile(_DB_FILE_RE, re.IGNORECASE)
 IRREPLACEABLE = re.compile(_DB_FILE_RE + "|" + _DB_WORD_RE, re.IGNORECASE)
@@ -1470,7 +1438,7 @@ def irreplaceable_info(target: str, recursive: bool,
         inner: list[str] = []
         walk_errors: list[OSError] = []
         n = 0
-        restorable = _git_restorable(p) or set()
+        restorable = _git_restorable(p)
         # review R10: os.walk with onerror, not rglob (which silently skips unreadable subtrees)
         for root, dirs, files in WALK(p, onerror=walk_errors.append, followlinks=False):
             for name in dirs + files:
@@ -1479,10 +1447,14 @@ def irreplaceable_info(target: str, recursive: bool,
                     return "too many entries to inspect", None
                 f = Path(root) / name
                 fk = _kind(f)
-                if fk == "file" and _norm(str(f)).lower() in restorable:
+                if fk == "file" and restorable is not None and _norm(str(f)).lower() in restorable:
                     continue
                 if fk == "error":
                     return f"cannot check {f.as_posix()} (access denied)", None
+                # owner 2026-11-17: in a verified worktree a plain folder holds nothing itself; every file
+                # under it is judged with its full path, so backup*/ alone is not a finding (links still are)
+                if fk == "dir" and restorable is not None:
+                    continue
                 header = _sqlite_header(f) if fk == "file" else False
                 if header is None:
                     return f"cannot read {f.as_posix()} to check it", None
@@ -1505,7 +1477,9 @@ def irreplaceable_reason(target: str, recursive: bool) -> str | None:
 
 LIST_MENTION = re.compile(r"(?<![\w])(?:delete|relocate)_from_list|deletion-approvals", re.IGNORECASE)
 # a .py path built by a glob, a variable or a substitution (review rounds 10-11)
-GLOB_SCRIPT = re.compile(r"\b(?:python3?|py)(?:\.exe)?[\"']?\s+[\"']?[^\s\"']*[*?\[\]$%{}`][^\s\"']*\.py\b",
+# (?<![.\w]): the `.py` ending of the previous argument is not the `py` launcher (owner 2026-11-16: a pytest
+# run over `a.py b_*.py` was refused as a script given by a glob)
+GLOB_SCRIPT = re.compile(r"(?<![.\w])(?:python3?|py)(?:\.exe)?[\"']?\s+[\"']?[^\s\"']*[*?\[\]$%{}`][^\s\"']*\.py\b",
                          re.IGNORECASE)
 GIT_PLAIN = {"add", "diff", "log", "status", "show", "commit", "blame", "restore", "stash"}
 INLINE_PY_DELETE = re.compile(
@@ -1632,8 +1606,35 @@ def _timeout_forced(args: list[str]) -> bool:
     return False
 
 
+LIST_SCRIPT_NAME = re.compile(r"(?<![\w])(?:delete|relocate)_from_list", re.IGNORECASE)
+# Programs that cannot write a file from these arguments (no awk/sed/sort/uniq/tee: each can).
+LOG_READERS = {"cat", "head", "tail", "grep", "egrep", "fgrep", "wc", "cut", "jq", "ls", "stat", "cd", "echo"}
+
+
+def _read_only_log_view(cmd: str) -> bool:
+    """Reading the approval log (`tail ... deletion-approvals.jsonl | cut`) writes nothing, so it is not a
+    list run. Owner 2026-11-16 («проверь хук»): a plain tail of the log was refused as a delete."""
+    raw = cmd.strip()
+    if LIST_SCRIPT_NAME.search(raw) or LIST_SCRIPT_NAME.search(re.sub(r"[\"'`\\]", "", raw)):
+        return False
+    if re.search(r"[`$<>\n\r{}()]", raw) or re.search(r"&(?!&)", raw.replace("&&", "")):
+        return False
+    for segment in re.split(r"\|\||&&|[|;]", raw):
+        try:
+            argv = shlex.split(segment.replace("\\", "/"), posix=True)
+        except ValueError:
+            return False
+        # A bare name only: `./cat` or `/tmp/x/cat` is whatever program sits there (review 2026-11-16).
+        if argv and argv[0].lower().removesuffix(".exe") not in LOG_READERS:
+            return False
+    return True
+
+
 def _benign_list_mention(cmd: str) -> bool:
-    """A strict read-only `python <real script> <list>.txt --show`, or a one-line git command."""
+    """A strict read-only `python <real script> <list>.txt --show`, a one-line git command, or a
+    read-only view of the approval log."""
+    if _read_only_log_view(cmd):
+        return True
     raw = cmd.strip()
     if LIST_CALL_FORBIDDEN.search(raw) or "&" in raw:  # review round 11: `git status & <run>`
         return False
@@ -1874,12 +1875,27 @@ OWNER_LIST_MAX_BYTES = 1 << 20
 OWNER_LIST_MTIME_SLACK_S = 2.0  # host timestamp and file mtime come from two clocks of one machine
 
 
+LIST_PICTURE = re.compile(r"\.(?:jpe?g|png|webp|tiff?|bmp)$", re.IGNORECASE)
+NOT_ONLY_DATASET = re.compile(_DB_FILE_RE + "|" + _WORD_RE % _DB_WORDS, re.IGNORECASE)
+
+
+def _dataset_picture(line: str) -> bool:
+    """Owner 2026-11-16 («Поправь хук»: 1633 derived .jpg under D:\\ювелирка-до-датасет-2048 were refused
+    by the list she named): a picture is irreplaceable only by the word dataset in its path, and she
+    named the list herself. A database, backup, other file type, folder or link there stays refused."""
+    t = _norm(line).rstrip("/")
+    if not LIST_PICTURE.search(t) or NOT_ONLY_DATASET.search(t):
+        return False
+    kind = _kind(Path(t))
+    return kind == "missing" or (kind == "file" and _sqlite_header(Path(t)) is False)
+
+
 def expand_owner_list_files(prompt: str, ts: str) -> tuple[str, str]:
     """Owner 2026-11-08 («поправь хук, чтобы ему можно было дать текстовый файл со ссылками на
     удаление»): a request to delete that names a .txt file counts as pasting its lines. The file must
     exist and be unchanged since her message (mtime not after its timestamp), so a list edited after
     she pointed at it names nothing. Only absolute paths are taken; a database or backup in the file still
-    needs her own typed words. The mtime check catches an accidental edit, not deliberate forgery (the
+    needs her own typed words (a picture in a dataset folder does not, see _dataset_picture). The mtime check catches an accidental edit, not deliberate forgery (the
     boundary stated in rules/deletion-confirm-and-verify.md). Returns (prompt with the lines appended,
     why a named file or line was not used); the caller feeds that only to the path-deletion branches."""
     # «удали C:\x\notes.txt» deletes that file; only «по списку / из файла» reads it as a list
@@ -1910,7 +1926,7 @@ def expand_owner_list_files(prompt: str, ts: str) -> tuple[str, str]:
                 if not OWNER_LIST_PATH_LINE.fullmatch(ln):
                     why = f"{name}: {ln[:80]!r} is not an absolute path - lines of a list are paths only"
                     continue
-                if irreplaceable_reason(ln, True):
+                if irreplaceable_reason(ln, True) and not _dataset_picture(ln):
                     why = f"{ln}: irreplaceable - name it in the chat, not in a list file"
                     continue
                 extra.append(ln)
@@ -2216,13 +2232,19 @@ def stop_only(cmd: str) -> bool:
     except ValueError:
         return False
     # residual risk (documented): a pid is checked only for being named, not resolved to its process here
-    if not targets or any(STOP_PROTECTED.search(t) for t in targets):
+    if not targets:
         return False
     # review 2026-10-29: a unit is a service, by name or with .service; every other unit type (target,
     # slice, scope, socket, mount, timer ...) is refused instead of listing the dangerous ones
     try:
         units = disable_units(cmd, "stop") + disable_units(cmd)
     except ValueError:
+        return False
+    # owner 2026-11-18 («останови службы jobs-tunnel@a1 и …» was refused): inside a unit name the
+    # word "tunnel" alone does not protect it; access tunnels are caught by their own names (ssh, autossh,
+    # cloudflared, frpc ...), a bare "tunnel" unit and pkill patterns stay protected
+    if any(STOP_PROTECTED.search(t) if t not in units or t.removesuffix(".service").lower() == "tunnel"
+           else any(m.group(0).lower() != "tunnel" for m in STOP_PROTECTED.finditer(t)) for t in targets):
         return False
     if any("." in u.removesuffix(".service") for u in units):
         return False
@@ -2359,7 +2381,8 @@ def _stop_approval(cmd: str, prompt: str, answer: str, event: dict) -> tuple[boo
         elif not DISABLE_INTENT.search(prompt) or NOT_A_DISABLE_GO.search(prompt) or CANCEL_WORDS.search(prompt):
             return False, "systemctl disable needs a request to remove the unit from autostart"
         else:
-            unasked = [u for u in disabled if not unit_disable_requested(prompt, u)]
+            hosts = ssh_target_hosts(cmd)
+            unasked = [u for u in disabled if not unit_disable_requested(prompt, u, hosts)]
             if unasked:
                 return False, f"the request does not remove these units from autostart: {', '.join(unasked)}"
     # /T kills the whole tree: only when my proposal itself wrote taskkill with /T (review 2026-10-13)
@@ -2381,7 +2404,8 @@ def _stop_approval(cmd: str, prompt: str, answer: str, event: dict) -> tuple[boo
                              r"(?!\s*(?:час|мин|сек|ч\b|h\b|m\b|s\b|hours?|min|sec))",
                              prompt, re.IGNORECASE) is not None
         name = re.escape(t)
-        if t in units:   # owner 2026-10-29: a unit is named with or without .service on either side
+        # owner 2026-10-29: a unit is named with or without .service on either side (2026-11-18: disable too)
+        if t in units or t in disabled:
             name = re.escape(t.removesuffix(".service")) + r"(?:\.service)?"
         return re.search(r"(?<![\w.\-/~:])" + name + r"(?![\w\-/]|\.\w)", prompt) is not None
     # third review 2026-10-12: when the owner names operands herself ("останови процесс 4242"), my proposal
@@ -2480,6 +2504,74 @@ def _db_drop_approval(names: list[str], cmd: str, prompt: str, event: dict) -> t
     except OSError:
         return False, "cannot write the approval audit record"
     return True, "database drop"
+
+
+# Owner 2026-11-19 («Да, поправь хук»: «удали тестовую группу, учётку и черновик» was refused, a row delete
+# never passed). A row is removed only by its id, every (table, id) named: in her own message, or in the
+# «Удаление» block of my answer she said a bare yes to. Only one shape, one row per -c:
+# `[docker exec [-i] C] psql [opts] [-1] -c "DELETE FROM table WHERE id = N" [-c ...]`. The backup before it
+# stays the agent's step (deletion-confirm-and-verify): the hook cannot see a remote dump.
+ROW_TABLE = r"[A-Za-z_][A-Za-z0-9_]{0,62}"
+ROW_DELETE_SQL = r"DELETE\s+FROM\s+(" + ROW_TABLE + r")\s+WHERE\s+id\s*=\s*(\d{1,18})\s*;?"
+ROW_DELETE_C = r"-c\s+(?:\"" + ROW_DELETE_SQL + r"\"|'" + ROW_DELETE_SQL + r"')"
+ROW_DELETE_SEGMENT = re.compile(
+    r"(?:docker\s+exec\s+(?:-i\s+)?[\w.-]+\s+)?psql"
+    r"(?:\s+(?:-U\s*[\w-]+|-p\s*\d+|-X|-q|-1|-v\s+ON_ERROR_STOP=1|-P\s+pager=off))*"
+    r"\s+-d\s*(" + DB_NAME + r")"
+    r"(?:\s+(?:-U\s*[\w-]+|-p\s*\d+|-X|-q|-1|-v\s+ON_ERROR_STOP=1|-P\s+pager=off))*"
+    r"(?:\s+" + ROW_DELETE_C + r")+(?:\s+2>&1)?\s*;?", re.IGNORECASE)
+# review 2026-11-19: no -h (the host is the ssh target) and -d is required and must be named too, so a named
+# `t 1` cannot be removed from another database; «сохрани/keep» next to a row also voids the request
+ROW_KEEP = re.compile(r"\bсохран|\bне\s+трог", re.IGNORECASE)
+
+
+def row_delete_targets(cmd: str) -> list[tuple[str, str]] | None:
+    """(table, id) pairs, plus ("database", name) for each -d, when every destructive part of cmd (ssh
+    unwrapped) is a psql -d DB -c "DELETE FROM t WHERE id = N"."""
+    cmd = re.sub(r"\s+#\s*claude-bypass\s*:\s*destructive\s*$", "", cmd, flags=re.IGNORECASE)
+    if not _only_segments(cmd, ROW_DELETE_SEGMENT, DB_DROP_COMPANION):
+        return None
+    text = executable_text(cmd)
+    rows = [(a or c, b or d) for a, b, c, d in re.findall(ROW_DELETE_C, text, re.IGNORECASE)]
+    dbs = sorted(set(re.findall(r"\bpsql\b[^\n]*?\s-d\s*(" + DB_NAME + r")", text)))
+    return (rows + [("database", n) for n in dbs]) if rows and dbs else None
+
+
+def _row_named(text: str, table: str, row: str) -> bool:
+    if table == "database":
+        return re.search(r"(?<![\w])" + re.escape(row) + r"(?![\w])", text) is not None
+    return re.search(r"(?<![\w])" + re.escape(table) + r"\s+(?:id\s*=?\s*)?" + row + r"(?!\d)", text,
+                     re.IGNORECASE) is not None
+
+
+def _row_delete_approval(rows: list[tuple[str, str]], cmd: str, prompt: str, answer: str,
+                         event: dict) -> tuple[bool, str]:
+    if CONFIRM_ONLY.fullmatch(prompt):
+        named_in = delete_block(answer)
+        if named_in is None:
+            return False, "a bare 'yes' approves rows only when my answer lists them in an «Удаление» block"
+    elif NOT_A_GO.search(prompt) or ROW_KEEP.search(prompt):
+        return False, "the request negates, hesitates or asks a question"
+    elif not DB_DROP_INTENT.search(prompt):
+        return False, "the latest request does not ask to delete"
+    else:
+        named_in = prompt
+    # simplification: a parent row's ON DELETE CASCADE children are not seen here (no schema access); the
+    # agent lists them in the «Удаление» block next to the row
+    unnamed = [f"{t} {i}" for t, i in rows if not _row_named(named_in, t, i)]
+    if unnamed:
+        return False, f"rows not named as `table id`: {', '.join(unnamed)}"
+    try:
+        APPROVAL_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with APPROVAL_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"ts": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
+                                 "session": event.get("session_id"), "action": "row-delete",
+                                 "rows": [f"{t} {i}" for t, i in rows],
+                                 "request": prompt[:300], "command": cmd[:500]},
+                                ensure_ascii=False) + "\n")
+    except OSError:
+        return False, "cannot write the approval audit record"
+    return True, "row delete"
 
 
 # Owner 2026-10-31 («исправь хук, это мешает работе»: «удаляй» five old branches was refused): a remote
@@ -3073,6 +3165,9 @@ def _approved_by_owner(cmd: str, event: dict, prompt: str, answer: str, paths_pr
     databases = db_drop_targets(cmd)
     if databases:
         return _db_drop_approval(databases, cmd, prompt, event)
+    rows = row_delete_targets(cmd)
+    if rows:
+        return _row_delete_approval(rows, cmd, prompt, answer, event)
     branches = branch_rm_targets(cmd)
     if branches:
         return _branch_rm_approval(branches, cmd, prompt, answer, event)
@@ -4118,6 +4213,8 @@ def self_test() -> int:
          transcript("да", "Уберу worker из автозапуска: `sudo systemctl disable worker`")),
         ("stop then disable in english", "ssh h 'sudo systemctl disable worker'",
          transcript("stop worker, then disable worker")),
+        ("disable with a host place", "ssh big-host 'sudo -n systemctl disable vision-model-8061.service'",
+         transcript("убери vision-model-8061 из автозапуска на большом сервере")),
         # third review 2026-10-15: proposals with an unrelated negation earlier in the line still count
         ("negation in an earlier clause", "kill 4242",
          transcript("да", "Воркер не отвечает, останавливаю: `kill 4242`")),
@@ -4227,6 +4324,24 @@ def self_test() -> int:
         ("disable of the access daemon", "ssh h 'sudo systemctl disable sshd'", transcript("убери sshd из автозапуска")),
         ("disable of an unnamed unit", "ssh h 'sudo systemctl disable worker2'", transcript("убери worker из автозапуска")),
         ("disable negated", "ssh h 'sudo systemctl disable worker'", transcript("не убирай worker из автозапуска")),
+        ("host place: other unit", "ssh h 'sudo systemctl disable worker'",
+         transcript("убери worker2 из автозапуска на большом сервере")),
+        ("host place: question", "ssh h 'sudo systemctl disable worker'",
+         transcript("убери worker из автозапуска на большом сервере?")),
+        ("host place: negation inside", "ssh h 'sudo systemctl disable worker'",
+         transcript("убери worker из автозапуска не на большом сервере")),
+        ("host place: negated filler", "ssh h 'sudo systemctl disable worker'",
+         transcript("убери worker из автозапуска на не большом сервере")),
+        ("host place: extra clause after", "ssh h 'sudo systemctl disable worker'",
+         transcript("убери worker из автозапуска на большом сервере и потом запусти worker2")),
+        ("host place: unit named only as the place", "ssh h 'sudo systemctl disable worker'",
+         transcript("убери из автозапуска на worker")),
+        ("host place: unit named only as a host word", "ssh h 'sudo systemctl disable worker'",
+         transcript("убери из автозапуска на worker сервере")),
+        ("host place: latin alias", "ssh h 'sudo systemctl disable worker'",
+         transcript("убери worker из автозапуска на big-host")),
+        ("host place: add to autostart", "ssh h 'sudo systemctl disable worker'",
+         transcript("добавь worker в автозапуск на большом сервере")),
         ("autostart words do not approve a kill", "kill 4242", transcript("убери процесс 4242 из автозапуска")),
         # review 2026-10-15 REJECT findings, each must stay refused
         ("add to autostart", "ssh h 'sudo systemctl disable worker'", transcript("добавь worker в автозапуск")),
