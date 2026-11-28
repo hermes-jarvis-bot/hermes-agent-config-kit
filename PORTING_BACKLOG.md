@@ -45,17 +45,17 @@ available to evaluate: `Files in snapshot − Ported − Rejected`.
 | `.github/` | 3 | 0 | 0 | 3 |
 | `agents/` | 8 | 0 | 0 | 8 |
 | `alternatives/` | 19 | 0 | 0 | 19 |
-| `docs/` | 34 | 0 | 0 | 34 |
-| `evals/` | 29 | 0 | 0 | 29 |
-| `hooks/` | 152 | 24 | 13 | 115 |
+| `docs/` | 35 | 0 | 0 | 35 |
+| `evals/` | 30 | 0 | 0 | 30 |
+| `hooks/` | 168 | 24 | 13 | 131 |
 | `principles/` | 31 | 30 | 0 | 1 |
 | `references/` | 6 | 0 | 0 | 6 |
 | `rules/` | 38 | 29 | 0 | 9 |
 | `scripts/` | 111 | 0 | 1 | 110 |
-| `skills/` | 379 | 155 | 0 | 224 |
+| `skills/` | 385 | 155 | 0 | 230 |
 | `templates/` | 50 | 34 | 0 | 16 |
 | `workflows/` | 5 | 0 | 0 | 5 |
-| **Total** | **879** | **272** | **14** | **593** |
+| **Total** | **903** | **272** | **14** | **617** |
 
 Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only areas are omitted here, see `Ported` column above):
 
@@ -64,7 +64,7 @@ Lane detail (only areas with reviewed-lane or rejected activity; fast-lane-only 
 - `skills/`: reviewed-lane Ported (9): `animate.py`, `bake_animation.py`, `dither.py`, `extract_feedback_queue.py`, `palette.py`, `preprocess.py`, `quality_check.py`, `render.py`, `verify_notebooklm_setup.py`; initially rejected, later superseded/accepted (counts as Ported, not Rejected): `bake_animation.py`
 - `templates/`: reviewed-lane Ported (2): `build_kb_graph.py`, `validate_kb.py`
 
-_Last recomputed against upstream commit `a4e0b5b97efab68b366867f4a817c3198e3bd3f6` (`upstream.lock.json`'s `last_synced_sha`)._
+_Last recomputed against upstream commit `6c062e0eb89b09a7e2a9babcb6d2cc6ebd8cc9b7` (`upstream.lock.json`'s `last_synced_sha`)._
 
 <!-- END SNAPSHOT_BASELINE_TABLE -->
 
